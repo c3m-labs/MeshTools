@@ -66,17 +66,26 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=ToElementMesh[
 (* Code is adjusted after this source: 
 https://mathematica.stackexchange.com/questions/156445/automatically-generating-boundary-meshes-for-region-intersections 
 *)
-MergeMesh[mesh1_,mesh2_]:=Block[
-	{m1=mesh1,m2=mesh2,c1,c2,nc1,newCrds,newElements,eleType,inci1,inci2},
-	c1=m1["Coordinates"];
-	c2=m2["Coordinates"];
+MergeMesh[mesh1_,mesh2_]:=Module[
+	{c1,c2,nc1,newCrds,newElements,eleType,inci1,inci2},
+	c1=mesh1["Coordinates"];
+	c2=mesh2["Coordinates"];
 	nc1=Length[c1];
 	newCrds=Join[c1,c2];
-	eleType=Join[Head/@m1["MeshElements"],Head/@m2["MeshElements"]];
-	inci1=ElementIncidents[m1["MeshElements"]];
-	inci2=ElementIncidents[m2["MeshElements"]]+nc1;
-	newElements=MapThread[#1[#2]&,{eleType,Join[inci1,inci2]}];
-	ToElementMesh["Coordinates"->newCrds,"MeshElements"->newElements]
+	eleType=Join[Head/@mesh1["MeshElements"],Head/@mesh2["MeshElements"]];
+	inci1=ElementIncidents[mesh1["MeshElements"]];
+	inci2=ElementIncidents[mesh2["MeshElements"]]+nc1;
+	(* If all elements are of the same type, then this type is specified only once. *)
+	newElements=If[
+		SameQ@@eleType,
+		{First[eleType][Join[Join@@inci1,Join@@inci2]]},
+		MapThread[#1[#2]&,{eleType,Join[inci1,inci2]}]
+	];
+	ToElementMesh[
+		"Coordinates"->newCrds,
+		"MeshElements"->newElements,
+		"DeleteDuplicateCoordinates"->True (* already a default option *)
+	]
 ]
 
 
@@ -246,10 +255,11 @@ diskMeshBlock[n_Integer/;(n>=2)]:=Module[
 
 
 DiskMesh::method="Method \"`1`\" is not supported.";
+DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
 DiskMesh//Options={"MeshOrder"->Automatic,Method->Automatic};
 
-DiskMesh[n_Integer/;(n>=2),opts:OptionsPattern[]]:=Module[
+DiskMesh[n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
 	{squareMesh,order,method},
 	order=OptionValue["MeshOrder"]/.(Except[1|2]->1);
 	method=OptionValue[Method]/.Automatic->"Block";
