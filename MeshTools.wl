@@ -28,6 +28,9 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 MergeMesh::usage="MergeMesh[mesh1, mesh2] merges two ElementMesh objects.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
 
+MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
+BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
+
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
 DiskMesh::usage="DiskMesh[n] created structured mesh on Disk.";
@@ -86,6 +89,75 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 		"MeshElements"->newElements,
 		"DeleteDuplicateCoordinates"->True (* already a default option *)
 	]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*Mesh measurements*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MeshElementMeasure*)
+
+
+Clear[elementMeasure]
+
+(* Definition for multiple elements in a list. *)
+elementMeasure[nodes_List/;(Depth[nodes]==4),type_,order_]:=elementMeasure[#,type,order]&/@nodes
+
+(* Length of LineElement (as "MeshElement") is calculated differently. *)
+elementMeasure[nodes_List/;(Depth[nodes]==3),LineElement,order_]:=Abs[Differences@Flatten@Take[nodes,2]]
+
+elementMeasure[nodes_List/;(Depth[nodes]==3),type_,order_]:=Block[{
+	igCrds=ElementIntegrationPoints[type,order],
+	igWgts=ElementIntegrationWeights[type,order],
+	shapeDerivative=ElementShapeFunctionDerivative[type,order],
+	jacobian,r,s,t
+	},
+	
+	jacobian=With[{
+		vars=(type/.{
+			TriangleElement|QuadElement->{r,s},
+			TetrahedronElement|HexahedronElement->{r,s,t}
+		})
+		},
+		Function[Evaluate@vars,Evaluate@Det[(shapeDerivative@@vars).nodes]]
+	];
+	
+	(jacobian@@@igCrds).igWgts
+]
+
+
+(* This function gives the same result as asking for the property mesh["MeshElementMeasure"] *)
+MeshElementMeasure[mesh_ElementMesh]:=Module[{
+	order=mesh["MeshOrder"],
+	elements=mesh["MeshElements"],
+	nodes=mesh["Coordinates"],
+	elementCoordinates,
+	elementTypes
+	},
+	elementCoordinates=Map[Part[nodes,#]&,ElementIncidents@elements,{2}];
+	elementTypes=Head/@elements;
+	
+	MapThread[
+		elementMeasure[#1,#2,order]&,
+		{elementCoordinates,elementTypes}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BoundaryElementMeasure*)
+
+
+(*
+This function returns the surface of boundary elements in 3D embedding and length of 
+boundary elements in 2D embedding.
+*)
+
+BoundaryElementMeasure[mesh_ElementMesh]:=Module[
+	{},
+	Print["Placeholder"];
 ]
 
 
