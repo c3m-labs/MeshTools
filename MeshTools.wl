@@ -150,15 +150,63 @@ MeshElementMeasure[mesh_ElementMesh]:=Module[{
 (*BoundaryElementMeasure*)
 
 
+Clear[elementMeasure]
+
+(* Boundary mesh measure for each submesh. *)
+boundaryElementMeasure[
+	nodes_List/;(Depth[nodes]==4),
+	type_,
+	order_,
+	integrationOrder_]:=
+	Total[boundaryElementMeasure[#,type,order,integrationOrder]&/@nodes]
+
+(* Boundary mesh measure for each 1D element. *)
+boundaryElementMeasure[
+	nodes_List/;(Depth[nodes]==3),
+	type_/;(type==LineElement),
+	order_,
+	integrationOrder_]:=Block[{
+		f,\[Xi],
+		igCrds=ElementIntegrationPoints[type,integrationOrder],
+		igWgts=ElementIntegrationWeights[type,integrationOrder]
+		},
+		f=Function[{\[Xi]},Cross@@(ElementShapeFunctionDerivative[type,order][\[Xi]].nodes//Simplify )//Norm];
+		igWgts.(f@@@igCrds)
+	]
+
+(* Boundary mesh measure for each 2D element. *)
+boundaryElementMeasure[
+	nodes_List/;(Depth[nodes]==3),
+	type_/;(type==TriangleElement||type==QuadElement),
+	order_,
+	integrationOrder_]:=Block[{
+		f,\[Xi],\[Eta],
+		igCrds=ElementIntegrationPoints[type,integrationOrder],
+		igWgts=ElementIntegrationWeights[type,integrationOrder]
+		},
+		f=Function[{\[Xi],\[Eta]},Cross@@(ElementShapeFunctionDerivative[type,order][\[Xi],\[Eta]].nodes//Simplify )//Norm];
+		igWgts.(f@@@igCrds)
+	]
+
+
 (*
 This function returns the surface of boundary elements in 3D embedding and length of 
 boundary elements in 2D embedding.
 *)
 
-BoundaryElementMeasure[mesh_ElementMesh]:=Module[
-	{},
-	Print["Placeholder"];
-]
+BoundaryMeshElementMeasure[mesh_ElementMesh,integrationOrder_:3]:=Module[
+	{order=mesh["MeshOrder"],
+	elements=mesh["BoundaryElements"],
+	nodes=mesh["Coordinates"],
+	elementCoordinates,
+	elementTypes
+	},
+	elementCoordinates=Map[Part[nodes,#]&,ElementIncidents@elements,{2}];
+	elementTypes=Head/@mesh["BoundaryElements"];
+	MapThread[
+		boundaryElementMeasure[#1,#2,order,integrationOrder]&,
+		{elementCoordinates,elementTypes}]
+	]//Total
 
 
 (* ::Subsection::Closed:: *)
