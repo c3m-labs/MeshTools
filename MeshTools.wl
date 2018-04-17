@@ -38,7 +38,8 @@ SphereMesh::usage="SphereMesh[n] creates structured mesh of sphere.";
 StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
 StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
 
-HollowCubeMesh::usage="HollowCubeMesh[voidRadius,noElements] creates a mesh of 1/8 cube with spherical void.";
+EllipsoidVoidMesh::usage="EllipsoidVoidMesh[radius, noElements] creates a mesh with spherical void.
+EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
 
 
 (* ::Section::Closed:: *)
@@ -390,8 +391,8 @@ Projection (with RegionNearest) of points from one side of the cube to a sphere.
 Argument f should be a Function to specify on which side of cube points are created (e.g. {1,#1,#2}& ). 
 It is assumed size of domain is 1.
 *)
-Clear[raster]
-raster[f_Function,semiAxis:{_,_,_}]:=Module[
+Clear[voidRaster]
+voidRaster[f_Function,semiAxis:{_,_,_}]:=Module[
 	{n=30,pts,sidePts,innerPts,middlePts},
 	pts=N@Subdivide[0,1,n-1];
 	sidePts=Flatten[Outer[f,pts,pts],1];
@@ -401,29 +402,29 @@ raster[f_Function,semiAxis:{_,_,_}]:=Module[
 ]
 
 
-HollowCubeMesh[{r1_,r2_,r3_},noElements_Integer]:=With[{
+EllipsoidVoidMesh[{r1_,r2_,r3_},noElements_Integer]:=With[{
 	dim=Clip[#,{0.01,0.8}]&/@{r1,r2,r3},
 	n=Round@Clip[noElements,{1,100}]
 	},
 	Fold[
 		MergeMesh[#1,#2]&,
 		{
-		StructuredMesh[raster[{1,#1,#2}&,dim],n{1,1,2}],
-		StructuredMesh[raster[{#2,1,#1}&,dim],n{1,1,2}],
-		StructuredMesh[raster[{#1,#2,1}&,dim],n{1,1,2}]
+		StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}],
+		StructuredMesh[voidRaster[{#2,1,#1}&,dim],n{1,1,2}],
+		StructuredMesh[voidRaster[{#1,#2,1}&,dim],n{1,1,2}]
 		}
 	]
 ]
 
 (* Implementation for spherical void is faster, because (costly) StructuredMesh is generated
 only once and then rotated. *)
-HollowCubeMesh[voidRadius_,noElements_Integer]:=Module[{
+EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 	dim=Clip[voidRadius,{0.01,0.8}]*{1,1,1},
 	n=Round@Clip[noElements,{1,100}],
 	rotations=RotationTransform[#,{1,1,1},{0,0,0}]&/@{0,2Pi/3,4Pi/3},
 	basicMesh
 	},
-	basicMesh=StructuredMesh[raster[{1,#1,#2}&,dim],n{1,1,2}];
+	basicMesh=StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}];
 	Fold[
 		MergeMesh[#1,#2]&,
 		TransformMesh[basicMesh,#]&/@rotations
