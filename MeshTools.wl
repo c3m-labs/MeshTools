@@ -27,6 +27,8 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 MergeMesh::usage="MergeMesh[mesh1, mesh2] merges two ElementMesh objects.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
+ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
+SmoothenMesh::usage"SmoothenMesh[mesh] improves the quality of 2D mesh.";
 
 MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
@@ -91,6 +93,96 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 		"Coordinates"->newCrds,
 		"MeshElements"->newElements,
 		"DeleteDuplicateCoordinates"->True (* already a default option *)
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExtrudeMesh*)
+
+
+(* Basics of this function are taken from AceFEM help. *)
+ExtrudeMesh::badType="Only first order 2D quadrilateral mesh is supported.";
+ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=Module[{
+	fi=0,stretch=0,rot,n2D,nodes2D,nodes3D,elements2D,elements3D
+	},
+	If[
+		Or[mesh["MeshOrder"]=!=1,(Head/@mesh["MeshElements"])=!={QuadElement},mesh["EmbeddingDimension"]=!=2],
+		Message[ExtrudeMesh::badType];Return[$Failed]
+	];
+	
+	
+	nodes2D=mesh["Coordinates"];
+	elements2D=Join@@ElementIncidents[mesh["MeshElements"]];
+	n2D=Length@nodes2D;
+	nodes3D=With[{
+		dz=thickness/layers,dfi=fi/layers,dstretch=stretch/layers
+		},
+		Flatten[
+			Table[
+				rot=RotationTransform[(l-1)dfi];
+				Map[Join[(1+(l-1) dstretch) rot[#],{(l-1)dz}]&,nodes2D],
+				{l,layers+1}
+			],
+		1]
+	];
+	
+	elements3D=Flatten[
+		Table[
+			Map[Join[n2D (l-1)+#,n2D l+#]&,elements2D],
+			{l,layers}
+		],
+	1];
+		
+	ToElementMesh[
+		"Coordinates"->nodes3D,
+		"MeshElements"->{HexahedronElement[elements3D]}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Mesh smoothing*)
+
+
+(* 
+This implements Laplacian mesh smoothing method as described in 
+https://mathematica.stackexchange.com/a/156669 
+*)
+SmoothenMesh::badType="Smoothing is only supported for first order 2D meshes.";
+
+SmoothenMesh[mesh_ElementMesh]:=Block[
+	{n,vec,mat,adjacencymatrix2,mass2,laplacian2,bndvertices2,interiorvertices,stiffness,load,newCoords},
+	
+	If[
+		Or[mesh["MeshOrder"]=!=1,mesh["EmbeddingDimension"]=!=2],
+		Message[SmoothenMesh::badType];Return[$Failed]
+	];
+	
+	n=Length[mesh["Coordinates"]];
+	vec=mesh["VertexElementConnectivity"];
+	mat=Unitize[vec.Transpose[vec]];
+	vec=Null;
+	adjacencymatrix2=mat-DiagonalMatrix[Diagonal[mat]];
+	mass2=DiagonalMatrix[SparseArray[Total[adjacencymatrix2,{2}]]];
+	stiffness=N[mass2-adjacencymatrix2];
+	adjacencymatrix2=Null;
+	mass2=Null;
+	bndvertices2=Flatten[Join@@ElementIncidents[mesh["PointElements"]]];
+	interiorvertices=Complement[Range[1,n],bndvertices2];
+	stiffness[[bndvertices2]]=IdentityMatrix[n,SparseArray][[bndvertices2]];
+	load=ConstantArray[0.,{n,mesh["EmbeddingDimension"]}];
+	load[[bndvertices2]]=mesh["Coordinates"][[bndvertices2]];
+	newCoords=LinearSolve[stiffness,load(*,Method\[Rule]"Pardiso"*)];
+	
+	ToElementMesh[
+		"Coordinates"->newCoords,
+		"MeshElements"->mesh["MeshElements"],
+		"BoundaryElements"->mesh["BoundaryElements"],
+		"PointElements"->mesh["PointElements"],
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"DeleteDuplicateCoordinates"->False
 	]
 ]
 
