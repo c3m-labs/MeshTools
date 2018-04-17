@@ -150,7 +150,7 @@ MeshElementMeasure[mesh_ElementMesh]:=Module[{
 (*BoundaryElementMeasure*)
 
 
-Clear[elementMeasure]
+Clear[boundaryElementMeasure]
 
 (* Boundary mesh measure for each submesh. *)
 boundaryElementMeasure[
@@ -158,7 +158,7 @@ boundaryElementMeasure[
 	type_,
 	order_,
 	integrationOrder_]:=
-	Total[boundaryElementMeasure[#,type,order,integrationOrder]&/@nodes]
+	boundaryElementMeasure[#,type,order,integrationOrder]&/@nodes
 
 (* Boundary mesh measure for each 1D element. *)
 boundaryElementMeasure[
@@ -177,7 +177,7 @@ boundaryElementMeasure[
 (* Boundary mesh measure for each 2D element. *)
 boundaryElementMeasure[
 	nodes_List/;(Depth[nodes]==3),
-	type_/;(type==TriangleElement||type==QuadElement),
+	type_,
 	order_,
 	integrationOrder_]:=Block[{
 		f,\[Xi],\[Eta],
@@ -194,7 +194,7 @@ This function returns the surface of boundary elements in 3D embedding and lengt
 boundary elements in 2D embedding.
 *)
 
-BoundaryMeshElementMeasure[mesh_ElementMesh,integrationOrder_:3]:=Module[
+BoundaryElementMeasure[mesh_ElementMesh,integrationOrder_:3]:=Module[
 	{order=mesh["MeshOrder"],
 	elements=mesh["BoundaryElements"],
 	nodes=mesh["Coordinates"],
@@ -206,7 +206,7 @@ BoundaryMeshElementMeasure[mesh_ElementMesh,integrationOrder_:3]:=Module[
 	MapThread[
 		boundaryElementMeasure[#1,#2,order,integrationOrder]&,
 		{elementCoordinates,elementTypes}]
-	]//Total
+	]
 
 
 (* ::Subsection::Closed:: *)
