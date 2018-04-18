@@ -60,10 +60,28 @@ Begin["`Private`"];
 (*TransformMesh*)
 
 
+reflectionQ[tfun_TransformationFunction]:=Negative@Det[TransformationMatrix[tfun]]
+
+
+reorderElements[elements_,1,2]:=Map[Reverse,elements,{3}]
+reorderElements[elements_,2,2]:=Map[Join@@(Reverse/@TakeDrop[#,Length[#]/2])&,elements,{3}]
+reorderElements[elements_,order_,dim_]:=elements
+
+
 (* This function doesn't work for ReflectionTransform because it breaks the node order in elements. *)
-TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=ToElementMesh[
-	"Coordinates"->tfun/@mesh["Coordinates"],
-	"MeshElements"->mesh["MeshElements"]
+TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
+	elements=mesh["MeshElements"],transformedElements
+	},
+	transformedElements=If[
+		reflectionQ[tfun],
+		reorderElements[elements,mesh["MeshOrder"],mesh["EmbeddingDimension"]],
+		elements
+	];
+	
+	ToElementMesh[
+		"Coordinates"->tfun/@mesh["Coordinates"],
+		"MeshElements"->transformedElements
+	]
 ]
 
 
