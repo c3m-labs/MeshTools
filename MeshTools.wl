@@ -27,6 +27,8 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 MergeMesh::usage="MergeMesh[mesh1, mesh2] merges two ElementMesh objects.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
+ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
+SmoothenMesh::usage"SmoothenMesh[mesh] improves the quality of 2D mesh.";
 
 MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
@@ -37,6 +39,9 @@ DiskMesh::usage="DiskMesh[n] created structured mesh on Disk.";
 SphereMesh::usage="SphereMesh[n] creates structured mesh of sphere.";
 StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
 StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
+
+EllipsoidVoidMesh::usage="EllipsoidVoidMesh[radius, noElements] creates a mesh with spherical void.
+EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
 
 
 (* ::Section::Closed:: *)
@@ -88,6 +93,96 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 		"Coordinates"->newCrds,
 		"MeshElements"->newElements,
 		"DeleteDuplicateCoordinates"->True (* already a default option *)
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExtrudeMesh*)
+
+
+(* Basics of this function are taken from AceFEM help. *)
+ExtrudeMesh::badType="Only first order 2D quadrilateral mesh is supported.";
+ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=Module[{
+	fi=0,stretch=0,rot,n2D,nodes2D,nodes3D,elements2D,elements3D
+	},
+	If[
+		Or[mesh["MeshOrder"]=!=1,(Head/@mesh["MeshElements"])=!={QuadElement},mesh["EmbeddingDimension"]=!=2],
+		Message[ExtrudeMesh::badType];Return[$Failed]
+	];
+	
+	
+	nodes2D=mesh["Coordinates"];
+	elements2D=Join@@ElementIncidents[mesh["MeshElements"]];
+	n2D=Length@nodes2D;
+	nodes3D=With[{
+		dz=thickness/layers,dfi=fi/layers,dstretch=stretch/layers
+		},
+		Flatten[
+			Table[
+				rot=RotationTransform[(l-1)dfi];
+				Map[Join[(1+(l-1) dstretch) rot[#],{(l-1)dz}]&,nodes2D],
+				{l,layers+1}
+			],
+		1]
+	];
+	
+	elements3D=Flatten[
+		Table[
+			Map[Join[n2D (l-1)+#,n2D l+#]&,elements2D],
+			{l,layers}
+		],
+	1];
+		
+	ToElementMesh[
+		"Coordinates"->nodes3D,
+		"MeshElements"->{HexahedronElement[elements3D]}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Mesh smoothing*)
+
+
+(* 
+This implements Laplacian mesh smoothing method as described in 
+https://mathematica.stackexchange.com/a/156669 
+*)
+SmoothenMesh::badType="Smoothing is only supported for first order 2D meshes.";
+
+SmoothenMesh[mesh_ElementMesh]:=Block[
+	{n,vec,mat,adjacencymatrix2,mass2,laplacian2,bndvertices2,interiorvertices,stiffness,load,newCoords},
+	
+	If[
+		Or[mesh["MeshOrder"]=!=1,mesh["EmbeddingDimension"]=!=2],
+		Message[SmoothenMesh::badType];Return[$Failed]
+	];
+	
+	n=Length[mesh["Coordinates"]];
+	vec=mesh["VertexElementConnectivity"];
+	mat=Unitize[vec.Transpose[vec]];
+	vec=Null;
+	adjacencymatrix2=mat-DiagonalMatrix[Diagonal[mat]];
+	mass2=DiagonalMatrix[SparseArray[Total[adjacencymatrix2,{2}]]];
+	stiffness=N[mass2-adjacencymatrix2];
+	adjacencymatrix2=Null;
+	mass2=Null;
+	bndvertices2=Flatten[Join@@ElementIncidents[mesh["PointElements"]]];
+	interiorvertices=Complement[Range[1,n],bndvertices2];
+	stiffness[[bndvertices2]]=IdentityMatrix[n,SparseArray][[bndvertices2]];
+	load=ConstantArray[0.,{n,mesh["EmbeddingDimension"]}];
+	load[[bndvertices2]]=mesh["Coordinates"][[bndvertices2]];
+	newCoords=LinearSolve[stiffness,load(*,Method\[Rule]"Pardiso"*)];
+	
+	ToElementMesh[
+		"Coordinates"->newCoords,
+		"MeshElements"->mesh["MeshElements"],
+		"BoundaryElements"->mesh["BoundaryElements"],
+		"PointElements"->mesh["PointElements"],
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"DeleteDuplicateCoordinates"->False
 	]
 ]
 
@@ -419,6 +514,60 @@ SphereMesh[n_Integer/;(n>=2),opts:OptionsPattern[]]:=Module[
 	ToElementMesh[
 		"Coordinates" -> rescale /@ cuboidMesh["Coordinates"],
 		"MeshElements" -> cuboidMesh["MeshElements"]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Hollow cube mesh*)
+
+
+(* ::Text:: *)
+(*This is a quick prototype, made for analysis of voids inside material (forging).*)
+
+
+(* 
+Projection (with RegionNearest) of points from one side of the cube to a sphere. 
+Argument f should be a Function to specify on which side of cube points are created (e.g. {1,#1,#2}& ). 
+It is assumed size of domain is 1.
+*)
+Clear[voidRaster]
+voidRaster[f_Function,semiAxis:{_,_,_}]:=Module[
+	{n=30,pts,sidePts,innerPts,middlePts},
+	pts=N@Subdivide[0,1,n-1];
+	sidePts=Flatten[Outer[f,pts,pts],1];
+	innerPts=RegionNearest[Ellipsoid[{0,0,0},semiAxis],sidePts];
+	middlePts=RegionNearest[Ellipsoid[{0,0,0},semiAxis*2],sidePts];
+	{Partition[sidePts,n],Partition[middlePts,n],Partition[innerPts,n]}
+]
+
+
+EllipsoidVoidMesh[{r1_,r2_,r3_},noElements_Integer]:=With[{
+	dim=Clip[#,{0.01,0.8}]&/@{r1,r2,r3},
+	n=Round@Clip[noElements,{1,100}]
+	},
+	Fold[
+		MergeMesh[#1,#2]&,
+		{
+		StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}],
+		StructuredMesh[voidRaster[{#2,1,#1}&,dim],n{1,1,2}],
+		StructuredMesh[voidRaster[{#1,#2,1}&,dim],n{1,1,2}]
+		}
+	]
+]
+
+(* Implementation for spherical void is faster, because (costly) StructuredMesh is generated
+only once and then rotated. *)
+EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
+	dim=Clip[voidRadius,{0.01,0.8}]*{1,1,1},
+	n=Round@Clip[noElements,{1,100}],
+	rotations=RotationTransform[#,{1,1,1},{0,0,0}]&/@{0,2Pi/3,4Pi/3},
+	basicMesh
+	},
+	basicMesh=StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}];
+	Fold[
+		MergeMesh[#1,#2]&,
+		TransformMesh[basicMesh,#]&/@rotations
 	]
 ]
 
