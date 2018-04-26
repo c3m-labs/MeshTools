@@ -42,6 +42,7 @@ StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
 
 EllipsoidVoidMesh::usage="EllipsoidVoidMesh[radius, noElements] creates a mesh with spherical void.
 EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
+RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues space used in metal texture analysis.";
 
 
 (* ::Section::Closed:: *)
@@ -587,6 +588,92 @@ EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 		MergeMesh[#1,#2]&,
 		TransformMesh[basicMesh,#]&/@rotations
 	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RodriguesSpaceMesh*)
+
+
+(* From documentation page on Tetrahedron *)
+symmetricSubdivision[Tetrahedron[pl_],k_]/;0<=k<2^Length[pl]:=Module[
+	{n=Length[pl]-1,i0,bl,pos},
+	
+	i0=DigitCount[k,2,1]; 
+	bl=IntegerDigits[k,2,n];
+	pos=FoldList[If[#2==0,#1+{0,1},#1+{1,0}]&,{0,i0},Reverse[bl]];
+	Tetrahedron@Map[Mean,Extract[pl,#]&/@Map[{#}&,pos+1,{2}]] 
+]
+
+
+(* From documentation page on Tetrahedron *)
+nestedSymmetricSubdivision[Tetrahedron[pl_],level_Integer]/;level==0:=Tetrahedron[pl]
+
+nestedSymmetricSubdivision[Tetrahedron[pl_],level_Integer]/;level>0:=Flatten[
+	nestedSymmetricSubdivision[symmetricSubdivision[Tetrahedron[pl],#],level-1]&/@Range[0,7]
+]
+
+
+(* Helper function to check the orientation of nodes used in TetrahedronElement *)
+reorientQ[{a_,b_,c_,d_}]:=Positive@Det[{a-d,b-d,c-d}]
+
+
+(* TODO: It would be really nice if tetrahedron could be split to arbitrary 
+number of elements per edge.*)
+tetrahedronSubMesh[pts_,n_Integer]:=Module[
+	{f,allCrds,nodes,connectivity},
+	
+	f=If[reorientQ[#],#[[{1,2,4,3}]],#]&;
+	allCrds=f/@(Join@@List@@@nestedSymmetricSubdivision[Tetrahedron[pts],n]);
+	nodes=DeleteDuplicates@Flatten[allCrds,1];
+	connectivity=With[
+		{rules=Thread[nodes->Range@Length[nodes]]},
+		Replace[allCrds,rules,{2}]
+	];
+	
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{TetrahedronElement[connectivity]}
+	]
+]
+
+
+RodriguesSpaceMesh::noelms="Currently only 2, 4, 8 or 16 elements per edge are allowed.";
+RodriguesSpaceMesh[n_Integer]:=Module[
+	{a,b,divisions,sideBasicMesh,basicRotations,sideMesh,sideRotations,allSidesMesh,cornerMesh,cornerRotations,allCornersMesh},
+	a=N@Tan[Pi/8];
+	b=N@(1-2a);
+	
+	If[Not@MemberQ[{2,4,8,16},n],Message[RodriguesSpaceMesh::noelms];Return[$Failed]];
+	divisions=Log[2,n];
+	sideBasicMesh=tetrahedronSubMesh[{{a,0,0},{a,b,a},{a,-b,a},{0,0,0}},divisions];
+	
+	basicRotations=N@RotationTransform[#,{1,0,0}]&/@(Most@Subdivide[0,2Pi,8]);
+	sideMesh=Fold[
+		MergeMesh[#1,#2]&,
+		TransformMesh[sideBasicMesh,#]&/@basicRotations
+	];
+	
+	sideRotations=N@Join[
+		RotationTransform[#,{0,0,1}]&/@{0,Pi/2,Pi,3Pi/2},
+		RotationTransform[#,{0,1,0}]&/@{Pi/2,3Pi/2}
+	];
+	allSidesMesh=Fold[
+		MergeMesh[#1,#2]&,
+		TransformMesh[sideMesh,#]&/@sideRotations
+	];
+	
+	cornerMesh=tetrahedronSubMesh[{{a,a,b},{b,a,a},{a,b,a},{0,0,0}},divisions];
+	cornerRotations=N@Join[
+		RotationTransform[#,{0,0,1}]&/@{0,Pi/2,Pi,3Pi/2},
+		(RotationTransform[#,{0,0,1}]@*RotationTransform[Pi,{1,1,0}])&/@{0,Pi/2,Pi,3Pi/2}
+	];
+	allCornersMesh=Fold[
+		MergeMesh[#1,#2]&,
+		TransformMesh[cornerMesh,#]&/@cornerRotations
+	];
+	
+	MergeMesh[allSidesMesh,allCornersMesh]
 ]
 
 
