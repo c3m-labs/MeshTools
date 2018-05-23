@@ -35,7 +35,7 @@ BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives th
 
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
-DiskMesh::usage="DiskMesh[n] created structured mesh on Disk.";
+DiskMesh::usage="DiskMesh[{x,y},r,n] created structured mesh with n elements on Disk or radius r centered at {x,y}.";
 SphereMesh::usage="SphereMesh[n] creates structured mesh of sphere.";
 StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
 StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
@@ -447,42 +447,51 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 (*DiskMesh*)
 
 
-diskMeshProjection[n_Integer/;(n>=2),order_Integer]:=Module[
-	{squareMesh,d=1},
-	squareMesh=StructuredMesh[
-		{{{-d,-d},{d,-d}},{{-d,d},{d,d}}}/2,
-		{n,n}
-	];
-	
-	squareMesh=MeshOrderAlteration[squareMesh,order];
-	
+squareMesh[{x_,y_},r_,n_]:=StructuredMesh[
+	{{{x-r,y-r},{x+r,y-r}},{{x-r,y+r},{x+r,y+r}}},
+	{n,n}
+]
+
+
+(* ElementMesh must contain only one type of element. *)
+addMarkers[mesh_ElementMesh,marker_Integer]:=With[{
+	incd=First@ElementIncidents@mesh["MeshElements"],
+	type=Head@First@mesh["MeshElements"]
+	},
 	ToElementMesh[
-		"Coordinates" -> rescale/@squareMesh["Coordinates"],
-		"MeshElements" -> squareMesh["MeshElements"]
+		"Coordinates"->mesh["Coordinates"],
+		"MeshElements"->{type@@{incd,ConstantArray[marker,Length[incd]]}}
 	]
 ]
 
 
-diskMeshBlock[n_Integer/;(n>=2)]:=Module[
-	{squareMesh,sideMesh,d,r,raster,rotations},
-	r=1;
-	d=0.33*r;
+diskMeshProjection[{x_,y_},r_,n_Integer/;(n>=2)]:=With[{
+	square=squareMesh[{x,y},r,n],
+	rescale=( Max[Abs@#]*Normalize[#])&
+	},
+	ToElementMesh[
+		"Coordinates" -> rescale/@square["Coordinates"],
+		"MeshElements" -> square["MeshElements"]
+	]
+]
+
+
+diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
+	{square,sideMesh,d,raster,rotations},
 	
-	squareMesh=StructuredMesh[
-		{{{-d,-d},{d,-d}},{{-d,d},{d,d}}},
-		{n,n}
-	];
+	d=0.33*r;(* Size of internal square. *)
+	square=squareMesh[{x,y},d,n];
 	
 	raster={
-		Thread[{Subdivide[-d,d,90],d}],
-		N@Table[{r*Cos[fi],r*Sin[fi]},{fi,3Pi/4,Pi/4,-Pi/180}]
+		Thread[{x+Subdivide[-d,d,90],y+d}],
+		N@Table[{x+r*Cos[fi],y+r*Sin[fi]},{fi,3Pi/4,Pi/4,-Pi/180}]
 	};
 	sideMesh=StructuredMesh[raster,{n,n}];
-	rotations=RotationTransform/@(Range[4]*Pi/2);
+	rotations=RotationTransform[#,{x,y}]&/@(Range[4]*Pi/2);
 	
 	Fold[
 		MergeMesh[#1,#2]&,
-		squareMesh,
+		square,
 		TransformMesh[sideMesh,#]&/@rotations
 	]
 ]
@@ -491,23 +500,36 @@ diskMeshBlock[n_Integer/;(n>=2)]:=Module[
 DiskMesh::method="Method \"`1`\" is not supported.";
 DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-DiskMesh//Options={"MeshOrder"->Automatic,Method->Automatic};
+DiskMesh//Options={Method->Automatic,"Marker"->None};
 
-DiskMesh[n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
-	{squareMesh,order,method},
-	order=OptionValue["MeshOrder"]/.(Except[1|2]->1);
-	method=OptionValue[Method]/.Automatic->"Block";
+DiskMesh[n_,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts]
+
+DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
+	{squareMesh,order,method,mesh,marker},
 	
-	Switch[method,
-		"Block",diskMeshBlock[n],
-		"Projection",diskMeshProjection[n,order],
-		_,Message[DiskMesh::method,method];$Failed
+	method=OptionValue[Method]/.Automatic->"Block";
+	marker=OptionValue["Marker"];
+	
+	If[
+		Not@MemberQ[{"Block","Projection"},method],
+		Message[DiskMesh::method,method];Return[$Failed]
+	];
+	
+	mesh=Switch[method,
+		"Block",diskMeshBlock[{x,y},r,n],
+		"Projection",diskMeshProjection[{x,y},r,n]
+	];
+	
+	If[
+		IntegerQ[marker],
+		addMarkers[mesh,marker],
+		mesh
 	]
 ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*Sphere mesh*)
+(*SphereMesh*)
 
 
 rescale[v_] := Max[Abs@v]*Normalize[v]
@@ -538,7 +560,7 @@ SphereMesh[n_Integer/;(n>=2),opts:OptionsPattern[]]:=Module[
 
 
 (* ::Subsubsection::Closed:: *)
-(*Hollow cube mesh*)
+(*EllipsoidVoidMesh*)
 
 
 (* ::Text:: *)
