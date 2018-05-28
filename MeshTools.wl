@@ -93,24 +93,34 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
 (* Code is adjusted after this source: 
 https://mathematica.stackexchange.com/questions/156445/automatically-generating-boundary-meshes-for-region-intersections 
 *)
+MergeMesh::order="Meshes must have the same \"MeshOrder\".";
 MergeMesh[mesh1_,mesh2_]:=Module[
-	{c1,c2,nc1,newCrds,newElements,eleType,inci1,inci2},
+	{meshType,head,c1,c2,newCrds,newElements,elementTypes,inci1,inci2},
+	
+	If[mesh1["MeshOrder"]=!=mesh2["MeshOrder"],Message[MergeMesh::order];Return[$Failed]];
+	
+	{meshType,head}=If[
+		mesh1["MeshElements"]===Automatic,
+		{"BoundaryElements",ToBoundaryMesh},
+		{"MeshElements",ToElementMesh}
+	];
+	
 	c1=mesh1["Coordinates"];
 	c2=mesh2["Coordinates"];
-	nc1=Length[c1];
 	newCrds=Join[c1,c2];
-	eleType=Join[Head/@mesh1["MeshElements"],Head/@mesh2["MeshElements"]];
-	inci1=ElementIncidents[mesh1["MeshElements"]];
-	inci2=ElementIncidents[mesh2["MeshElements"]]+nc1;
+	elementTypes=Join[Head/@mesh1[meshType],Head/@mesh2[meshType]];
+	inci1=ElementIncidents[mesh1[meshType]];
+	inci2=ElementIncidents[mesh2[meshType]]+Length[c1];
 	(* If all elements are of the same type, then this type is specified only once. *)
 	newElements=If[
-		SameQ@@eleType,
-		{First[eleType][Join[Join@@inci1,Join@@inci2]]},
-		MapThread[#1[#2]&,{eleType,Join[inci1,inci2]}]
+		SameQ@@elementTypes,
+		{First[elementTypes][Join[Join@@inci1,Join@@inci2]]},
+		MapThread[#1[#2]&,{elementTypes,Join[inci1,inci2]}]
 	];
-	ToElementMesh[
+	
+	head[
 		"Coordinates"->newCrds,
-		"MeshElements"->newElements,
+		meshType->newElements,
 		"DeleteDuplicateCoordinates"->True (* already a default option *)
 	]
 ]
