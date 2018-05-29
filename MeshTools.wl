@@ -25,7 +25,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 (*Messages*)
 
 
-MergeMesh::usage="MergeMesh[mesh1, mesh2] merges two ElementMesh objects.";
+MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
 SmoothenMesh::usage"SmoothenMesh[mesh] improves the quality of 2D mesh.";
@@ -90,15 +90,21 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
 (*MergeMesh*)
 
 
-(* Code is adjusted after this source: 
+(* 
+Code is adjusted after this source: 
 https://mathematica.stackexchange.com/questions/156445/automatically-generating-boundary-meshes-for-region-intersections 
 *)
 MergeMesh::order="Meshes must have the same \"MeshOrder\".";
+MergeMesh::dim="Meshes must have the same \"EmbeddingDimension\".";
+
+MergeMesh[list_List/;Length[list]>=2]:=Fold[MergeMesh,list]
+
 MergeMesh[mesh1_,mesh2_]:=Module[
-	{meshType,head,c1,c2,newCrds,newElements,elementTypes,inci1,inci2},
+	{meshType,head,c1,c2,newCrds,newElements,elementTypes,elementMarkers,inci1,inci2},
 	
 	If[mesh1["MeshOrder"]=!=mesh2["MeshOrder"],Message[MergeMesh::order];Return[$Failed]];
-	
+	If[mesh1["EmbeddingDimension"]=!=mesh2["EmbeddingDimension"],Message[MergeMesh::dim];Return[$Failed]];
+		
 	{meshType,head}=If[
 		mesh1["MeshElements"]===Automatic,
 		{"BoundaryElements",ToBoundaryMesh},
@@ -109,13 +115,15 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 	c2=mesh2["Coordinates"];
 	newCrds=Join[c1,c2];
 	elementTypes=Join[Head/@mesh1[meshType],Head/@mesh2[meshType]];
+	elementMarkers=ElementMarkers/@{mesh1[meshType],mesh2[meshType]};
+	
 	inci1=ElementIncidents[mesh1[meshType]];
 	inci2=ElementIncidents[mesh2[meshType]]+Length[c1];
 	(* If all elements are of the same type, then this type is specified only once. *)
 	newElements=If[
 		SameQ@@elementTypes,
-		{First[elementTypes][Join[Join@@inci1,Join@@inci2]]},
-		MapThread[#1[#2]&,{elementTypes,Join[inci1,inci2]}]
+		{First[elementTypes][Join[Join@@inci1,Join@@inci2],Flatten[elementMarkers]]},
+		MapThread[#1[#2,#3]&,{elementTypes,Join[inci1,inci2],Join@@elementMarkers}]
 	];
 	
 	head[
