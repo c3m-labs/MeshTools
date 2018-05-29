@@ -25,6 +25,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 (*Messages*)
 
 
+AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
@@ -35,8 +36,10 @@ BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives th
 
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
+
 DiskMesh::usage="DiskMesh[{x,y},r,n] created structured mesh with n elements on Disk or radius r centered at {x,y}.";
 SphereMesh::usage="SphereMesh[n] creates structured mesh of sphere.";
+
 StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
 StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
 
@@ -55,6 +58,31 @@ Begin["`Private`"];
 
 (* ::Subsection::Closed:: *)
 (*Mesh operations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*AddMeshMarkers*)
+
+
+AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
+	meshType,head,elementTypes,elementIncidents,elementMarkers
+	},
+	
+	{meshType,head}=If[
+		mesh["MeshElements"]===Automatic,
+		{"BoundaryElements",ToBoundaryMesh},
+		{"MeshElements",ToElementMesh}
+	];
+	
+	elementTypes=Head/@mesh[meshType];
+	elementIncidents=ElementIncidents@mesh[meshType];
+	elementMarkers=ConstantArray[marker,#]&/@(Length/@elementIncidents);
+	
+	head[
+		"Coordinates"->mesh["Coordinates"],
+		meshType->MapThread[#1[#2,#3]&,{elementTypes,elementIncidents,elementMarkers}]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -141,17 +169,18 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 (* Basics of this function are taken from AceFEM help. *)
 ExtrudeMesh::badType="Only first order 2D quadrilateral mesh is supported.";
 ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=Module[{
-	fi=0,stretch=0,rot,n2D,nodes2D,nodes3D,elements2D,elements3D
+	fi=0,stretch=0,rot,n2D,nodes2D,nodes3D,elements2D,elements3D,markers2D,markers3D
 	},
 	If[
 		Or[mesh["MeshOrder"]=!=1,(Head/@mesh["MeshElements"])=!={QuadElement},mesh["EmbeddingDimension"]=!=2],
 		Message[ExtrudeMesh::badType];Return[$Failed]
 	];
-	
-	
+		
 	nodes2D=mesh["Coordinates"];
 	elements2D=Join@@ElementIncidents[mesh["MeshElements"]];
+	markers2D=Join@@ElementMarkers[mesh["MeshElements"]];
 	n2D=Length@nodes2D;
+	
 	nodes3D=With[{
 		dz=thickness/layers,dfi=fi/layers,dstretch=stretch/layers
 		},
@@ -166,14 +195,16 @@ ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=M
 	
 	elements3D=Flatten[
 		Table[
-			Map[Join[n2D (l-1)+#,n2D l+#]&,elements2D],
+			Map[Join[n2D*(l-1)+#,n2D*l+#]&,elements2D],
 			{l,layers}
 		],
 	1];
-		
+	
+	markers3D=Flatten@ConstantArray[markers2D,layers];
+	
 	ToElementMesh[
 		"Coordinates"->nodes3D,
-		"MeshElements"->{HexahedronElement[elements3D]}
+		"MeshElements"->{HexahedronElement[elements3D,markers3D]}
 	]
 ]
 
@@ -465,32 +496,28 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 (*DiskMesh*)
 
 
+diskMeshProjection[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[{
+	square,rescale,coordinates
+	},
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	(* This special raster makes all element edges on disk edge of the same length. *)
+	square=With[
+		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
+		StructuredMesh[Outer[Reverse@*List,pts,pts],{n,n}]
+	];
+	
+	coordinates=Transpose[Transpose[rescale/@square["Coordinates"]]+{x,y}];
+	
+	ToElementMesh[
+		"Coordinates" ->coordinates,
+		"MeshElements" -> square["MeshElements"]
+	]
+]
+
+
 squareMesh[{x_,y_},r_,n_]:=StructuredMesh[
 	{{{x-r,y-r},{x+r,y-r}},{{x-r,y+r},{x+r,y+r}}},
 	{n,n}
-]
-
-
-(* ElementMesh must contain only one type of element. *)
-addMarkers[mesh_ElementMesh,marker_Integer]:=With[{
-	incd=First@ElementIncidents@mesh["MeshElements"],
-	type=Head@First@mesh["MeshElements"]
-	},
-	ToElementMesh[
-		"Coordinates"->mesh["Coordinates"],
-		"MeshElements"->{type@@{incd,ConstantArray[marker,Length[incd]]}}
-	]
-]
-
-
-diskMeshProjection[{x_,y_},r_,n_Integer/;(n>=2)]:=With[{
-	square=squareMesh[{x,y},r,n],
-	rescale=( Max[Abs@#]*Normalize[#])&
-	},
-	ToElementMesh[
-		"Coordinates" -> rescale/@square["Coordinates"],
-		"MeshElements" -> square["MeshElements"]
-	]
 ]
 
 
@@ -518,16 +545,15 @@ diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 DiskMesh::method="Method \"`1`\" is not supported.";
 DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-DiskMesh//Options={Method->Automatic,"Marker"->None};
+DiskMesh//Options={Method->Automatic};
 
 DiskMesh[n_,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts]
 
 DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
-	{squareMesh,order,method,mesh,marker},
+	{squareMesh,order,method,mesh},
 	
 	method=OptionValue[Method]/.Automatic->"Block";
-	marker=OptionValue["Marker"];
-	
+		
 	If[
 		Not@MemberQ[{"Block","Projection"},method],
 		Message[DiskMesh::method,method];Return[$Failed]
@@ -537,12 +563,7 @@ DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,
 		"Block",diskMeshBlock[{x,y},r,n],
 		"Projection",diskMeshProjection[{x,y},r,n]
 	];
-	
-	If[
-		IntegerQ[marker],
-		addMarkers[mesh,marker],
-		mesh
-	]
+	mesh
 ]
 
 
