@@ -37,8 +37,8 @@ BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives th
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
 
-DiskMesh::usage="DiskMesh[{x,y},r,n] created structured mesh with n elements on Disk or radius r centered at {x,y}.";
-SphereMesh::usage="SphereMesh[n] creates structured mesh of sphere.";
+DiskMesh::usage="DiskMesh[{x,y},r,n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
+SphereMesh::usage="SphereMesh[{x,y,z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 
 StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
 StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
@@ -523,8 +523,9 @@ squareMesh[{x_,y_},r_,n_]:=StructuredMesh[
 
 diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	{square,sideMesh,d,raster,rotations},
-	
-	d=0.33*r;(* Size of internal square. *)
+	(* Size of internal square. *)
+	(* TODO: Find the best value for this size. *)
+	d=0.33*r;
 	square=squareMesh[{x,y},d,n];
 	
 	raster={
@@ -571,28 +572,35 @@ DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,
 (*SphereMesh*)
 
 
-rescale[v_] := Max[Abs@v]*Normalize[v]
-
-
-(* Source of this code is the answer from "Michael E2" on topic: 
+(* 
+Some key ideas for this code come from the answer by "Michael E2" on topic: 
 https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
 *)
-
+SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 SphereMesh//Options={"MeshOrder"->Automatic};
-SphereMesh[n_Integer/;(n>=2),opts:OptionsPattern[]]:=Module[
-	{cuboidMesh,order,d=2},
+
+SphereMesh[n_,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
+
+SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
+	{rescale,cuboidMesh,order,coordinates},
+	If[TrueQ[n<2]&&Not@IntegerQ[n],Message[SphereMesh::noelems,n];$Failed];
+	
+	rescale=(Max[Abs@#]*Normalize[#])&;
 	order=OptionValue["MeshOrder"]/.(Except[1|2]->2);
-	cuboidMesh=CuboidMesh[
-		-{d,d,d}/2,
-		{d,d,d}/2,
-		{n,n,n}
+		
+	(* This special raster makes all element edges on sphere edge of the same length. *)
+	cuboidMesh=With[
+		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
+		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
 	];
-	
-	
+	(* If we do order alteration (more than 1st order) before projection, then geometry is
+	more accurate and elements have curved edges. *)
 	cuboidMesh=MeshOrderAlteration[cuboidMesh,order];
 	
+	coordinates=Transpose[Transpose[rescale/@cuboidMesh["Coordinates"]]+{x,y,z}];
+	
 	ToElementMesh[
-		"Coordinates" -> rescale /@ cuboidMesh["Coordinates"],
+		"Coordinates" -> coordinates,
 		"MeshElements" -> cuboidMesh["MeshElements"]
 	]
 ]
