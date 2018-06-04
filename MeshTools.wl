@@ -48,7 +48,7 @@ EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void wit
 RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues space used in metal texture analysis.";
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Code*)
 
 
@@ -466,7 +466,7 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Shape meshes*)
 
 
@@ -492,7 +492,7 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 ];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*DiskMesh*)
 
 
@@ -568,8 +568,43 @@ DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*SphereMesh*)
+
+
+sphereMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[
+	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitCube},
+	(* Size of internal square. *)
+
+	d=0.33;
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	
+	bottomRaster=With[
+		{pts=d*N@Subdivide[-1,1,n]},
+		Map[Append[d], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	
+	(* This special raster makes all element edges on disk edge of the same length. *)
+	topRaster=With[
+		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
+		Map[rescale@*Append[1.], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	
+	cubeMesh=CuboidMesh[-d*{1,1,1},d*{1,1,1},{n,n,n}];
+	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,n}];
+	
+	rotations=Join[
+		RotationTransform[#,{1,0,0}]&/@(Range[4]*Pi/2),
+		RotationTransform[#,{0,1,0}]&/@{Pi/2,3Pi/2}
+	];
+	
+	unitCube=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
+	
+	ToElementMesh[
+		"Coordinates" ->Transpose[Transpose[r*unitCube["Coordinates"]]+{x,y,z}],
+		"MeshElements" -> unitCube["MeshElements"]
+	]
+]
 
 
 (* 
