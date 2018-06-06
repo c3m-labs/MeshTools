@@ -492,7 +492,7 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DiskMesh*)
 
 
@@ -603,6 +603,28 @@ sphereMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[
 	ToElementMesh[
 		"Coordinates" ->Transpose[Transpose[r*unitCube["Coordinates"]]+{x,y,z}],
 		"MeshElements" -> unitCube["MeshElements"]
+	]
+]
+
+
+sphereMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[{
+	rescale,cuboidMesh,coordinates
+	},
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	(* This special raster makes all element edges on sphere edge of the same length. *)
+	cuboidMesh=With[
+		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
+		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
+	];
+	(* If we do order alteration (more than 1st order) before projection, then geometry is
+	more accurate and elements have curved edges. *)
+	cuboidMesh=MeshOrderAlteration[cuboidMesh,order];
+	
+	coordinates=Transpose[Transpose[rescale/@cuboidMesh["Coordinates"]]+{x,y,z}];
+	
+	ToElementMesh[
+		"Coordinates" -> coordinates,
+		"MeshElements" -> cuboidMesh["MeshElements"]
 	]
 ]
 
