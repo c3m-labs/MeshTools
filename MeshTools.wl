@@ -48,7 +48,7 @@ EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void wit
 RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues space used in metal texture analysis.";
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Code*)
 
 
@@ -466,7 +466,7 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Shape meshes*)
 
 
@@ -523,9 +523,8 @@ squareMesh[{x_,y_},r_,n_]:=StructuredMesh[
 
 diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	{square,sideMesh,d,raster,rotations},
-	(* Size of internal square. *)
-	(* TODO: Find the best value for this size. *)
-	d=0.33*r;
+	(* Size of internal square. Value is chosen to optimize minimal element quality. *)
+	d=0.2*r;
 	square=squareMesh[{x,y},d,n];
 	
 	raster={
@@ -535,11 +534,7 @@ diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	sideMesh=StructuredMesh[raster,{n,n}];
 	rotations=RotationTransform[#,{x,y}]&/@(Range[4]*Pi/2);
 	
-	Fold[
-		MergeMesh[#1,#2]&,
-		square,
-		TransformMesh[sideMesh,#]&/@rotations
-	]
+	MergeMesh@Join[{square},TransformMesh[sideMesh,#]&/@rotations]	
 ]
 
 
@@ -568,15 +563,14 @@ DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SphereMesh*)
 
 
 sphereMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[
 	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitCube},
-	(* Size of internal square. *)
-
-	d=0.33;
+	(* Size of internal square. Size is determined to optimize the minimal quality of all elements. *)
+	d=0.2;
 	rescale=(Max[Abs@#]*Normalize[#])&;
 	
 	bottomRaster=With[
@@ -607,6 +601,10 @@ sphereMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[
 ]
 
 
+(* 
+Some key ideas for this code come from the answer by "Michael E2" on topic: 
+https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
+*)
 sphereMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[{
 	rescale,cuboidMesh,coordinates
 	},
@@ -618,7 +616,7 @@ sphereMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[{
 	];
 	(* If we do order alteration (more than 1st order) before projection, then geometry is
 	more accurate and elements have curved edges. *)
-	cuboidMesh=MeshOrderAlteration[cuboidMesh,order];
+	(*cuboidMesh=MeshOrderAlteration[cuboidMesh,order];*)
 	
 	coordinates=Transpose[Transpose[rescale/@cuboidMesh["Coordinates"]]+{x,y,z}];
 	
@@ -629,37 +627,28 @@ sphereMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[{
 ]
 
 
-(* 
-Some key ideas for this code come from the answer by "Michael E2" on topic: 
-https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
-*)
 SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
-SphereMesh//Options={"MeshOrder"->Automatic};
+SphereMesh::method="Method \"`1`\" is not supported.";
+SphereMesh//Options={Method->Automatic};
 
 SphereMesh[n_,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
 
 SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
-	{rescale,cuboidMesh,order,coordinates},
-	If[TrueQ[n<2]&&Not@IntegerQ[n],Message[SphereMesh::noelems,n];$Failed];
+	{order,method,mesh},
+	If[TrueQ[n<2]||Not@IntegerQ[n],Message[SphereMesh::noelems,n];Return[$Failed]];
 	
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	order=OptionValue["MeshOrder"]/.(Except[1|2]->2);
+	method=OptionValue[Method]/.Automatic->"Block";
 		
-	(* This special raster makes all element edges on sphere edge of the same length. *)
-	cuboidMesh=With[
-		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
-		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
+	If[
+		Not@MemberQ[{"Block","Projection"},method],
+		Message[SphereMesh::method,method];Return[$Failed]
 	];
-	(* If we do order alteration (more than 1st order) before projection, then geometry is
-	more accurate and elements have curved edges. *)
-	cuboidMesh=MeshOrderAlteration[cuboidMesh,order];
 	
-	coordinates=Transpose[Transpose[rescale/@cuboidMesh["Coordinates"]]+{x,y,z}];
-	
-	ToElementMesh[
-		"Coordinates" -> coordinates,
-		"MeshElements" -> cuboidMesh["MeshElements"]
-	]
+	mesh=Switch[method,
+		"Block",sphereMeshBlock[{x,y,z},r,n],
+		"Projection",sphereMeshProjection[{x,y,z},r,n]
+	];
+	mesh
 ]
 
 
