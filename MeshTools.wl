@@ -31,6 +31,8 @@ TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh acco
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
 SmoothenMesh::usage"SmoothenMesh[mesh] improves the quality of 2D mesh.";
 
+ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[ mesh ] draws accurately second order 2D mesh.";
+
 MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
 
@@ -370,6 +372,40 @@ BoundaryElementMeasure[mesh_ElementMesh,integrationOrder_:3]:=Module[
 		boundaryElementMeasure[#1,#2,order,integrationOrder]&,
 		{elementCoordinates,elementTypes}]
 	]
+
+
+(* ::Subsection::Closed:: *)
+(*Mesh vizualization*)
+
+
+(* 
+Function to visualize 2D second order FEM mesh. 
+Copied from: WTC 2017 talk "Finite Element Method: How to talk to it and make it your friend" by Paritosh Mokhasi 
+*)
+
+ElementMeshCurvedWireframe[mesh_ElementMesh]:=Block[
+	{triIncidentsOrder,quadIncidentsOrder,interpolatingQuadBezierCurve,interpolatingQuadBezierCurveComplex,
+	triEdges,triIncidents,coordinates},
+
+	triIncidentsOrder={1,4,2,5,3,6};
+	quadIncidentsOrder={1,5,2,6,3,7,4,8};
+
+	interpolatingQuadBezierCurve[pts_List]/;Length[pts]==3:=
+		BezierCurve[{pts[[1]],(1/2)(-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]}];
+	interpolatingQuadBezierCurve[pts_List,"ControlPoints"]/;(Length[pts]==3):=
+		{pts[[1]],(1/2)(-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]};
+	interpolatingQuadBezierCurve[ptslist_List]:=interpolatingQuadBezierCurve/@ptslist;
+
+	interpolatingQuadBezierCurveComplex[coords_,indices_]:=interpolatingQuadBezierCurve[Map[coords[[#]]&,indices]];
+
+	triEdges=Partition[triIncidentsOrder, 3, 2, {1,1}];
+	triIncidents=Join@@ElementIncidents[mesh["MeshElements"]];
+	coordinates=mesh["Coordinates"];
+	
+	Graphics[{
+		interpolatingQuadBezierCurveComplex[coordinates,triIncidents[[All, #]]]&/@triEdges
+	}]
+]
 
 
 (* ::Subsection::Closed:: *)
