@@ -39,8 +39,8 @@ BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives th
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
 
-DiskMesh::usage="DiskMesh[{x,y},r,n] created structured mesh with n elements on Disk or radius r centered at {x,y}.";
-SphereMesh::usage="SphereMesh[n] creates structured mesh of sphere.";
+DiskMesh::usage="DiskMesh[{x,y},r,n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
+SphereMesh::usage="SphereMesh[{x,y,z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 
 StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
 StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
@@ -559,8 +559,8 @@ squareMesh[{x_,y_},r_,n_]:=StructuredMesh[
 
 diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	{square,sideMesh,d,raster,rotations},
-	
-	d=0.33*r;(* Size of internal square. *)
+	(* Size of internal square. Value is chosen to optimize minimal element quality. *)
+	d=0.2*r;
 	square=squareMesh[{x,y},d,n];
 	
 	raster={
@@ -570,11 +570,7 @@ diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	sideMesh=StructuredMesh[raster,{n,n}];
 	rotations=RotationTransform[#,{x,y}]&/@(Range[4]*Pi/2);
 	
-	Fold[
-		MergeMesh[#1,#2]&,
-		square,
-		TransformMesh[sideMesh,#]&/@rotations
-	]
+	MergeMesh@Join[{square},TransformMesh[sideMesh,#]&/@rotations]	
 ]
 
 
@@ -607,30 +603,88 @@ DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,
 (*SphereMesh*)
 
 
-rescale[v_] := Max[Abs@v]*Normalize[v]
-
-
-(* Source of this code is the answer from "Michael E2" on topic: 
-https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
-*)
-
-SphereMesh//Options={"MeshOrder"->Automatic};
-SphereMesh[n_Integer/;(n>=2),opts:OptionsPattern[]]:=Module[
-	{cuboidMesh,order,d=2},
-	order=OptionValue["MeshOrder"]/.(Except[1|2]->2);
-	cuboidMesh=CuboidMesh[
-		-{d,d,d}/2,
-		{d,d,d}/2,
-		{n,n,n}
+sphereMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[
+	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitCube},
+	(* Size of internal square. Size is determined to optimize the minimal quality of all elements. *)
+	d=0.2;
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	
+	bottomRaster=With[
+		{pts=d*N@Subdivide[-1,1,n]},
+		Map[Append[d], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	
+	(* This special raster makes all element edges on disk edge of the same length. *)
+	topRaster=With[
+		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
+		Map[rescale@*Append[1.], Outer[Reverse@*List,pts,pts], {2}]
+	];
 	
-	cuboidMesh=MeshOrderAlteration[cuboidMesh,order];
+	cubeMesh=CuboidMesh[-d*{1,1,1},d*{1,1,1},{n,n,n}];
+	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,n}];
+	
+	rotations=Join[
+		RotationTransform[#,{1,0,0}]&/@(Range[4]*Pi/2),
+		RotationTransform[#,{0,1,0}]&/@{Pi/2,3Pi/2}
+	];
+	
+	unitCube=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
 	
 	ToElementMesh[
-		"Coordinates" -> rescale /@ cuboidMesh["Coordinates"],
+		"Coordinates" ->Transpose[Transpose[r*unitCube["Coordinates"]]+{x,y,z}],
+		"MeshElements" -> unitCube["MeshElements"]
+	]
+]
+
+
+(* 
+Some key ideas for this code come from the answer by "Michael E2" on topic: 
+https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
+*)
+sphereMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[{
+	rescale,cuboidMesh,coordinates
+	},
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	(* This special raster makes all element edges on sphere edge of the same length. *)
+	cuboidMesh=With[
+		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
+		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
+	];
+	(* If we do order alteration (more than 1st order) before projection, then geometry is
+	more accurate and elements have curved edges. *)
+	(*cuboidMesh=MeshOrderAlteration[cuboidMesh,order];*)
+	
+	coordinates=Transpose[Transpose[rescale/@cuboidMesh["Coordinates"]]+{x,y,z}];
+	
+	ToElementMesh[
+		"Coordinates" -> coordinates,
 		"MeshElements" -> cuboidMesh["MeshElements"]
 	]
+]
+
+
+SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+SphereMesh::method="Method \"`1`\" is not supported.";
+SphereMesh//Options={Method->Automatic};
+
+SphereMesh[n_,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
+
+SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
+	{order,method,mesh},
+	If[TrueQ[n<2]||Not@IntegerQ[n],Message[SphereMesh::noelems,n];Return[$Failed]];
+	
+	method=OptionValue[Method]/.Automatic->"Block";
+		
+	If[
+		Not@MemberQ[{"Block","Projection"},method],
+		Message[SphereMesh::method,method];Return[$Failed]
+	];
+	
+	mesh=Switch[method,
+		"Block",sphereMeshBlock[{x,y,z},r,n],
+		"Projection",sphereMeshProjection[{x,y,z},r,n]
+	];
+	mesh
 ]
 
 
