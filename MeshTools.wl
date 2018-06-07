@@ -67,22 +67,22 @@ Begin["`Private`"];
 
 
 AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
-	meshType,head,elementTypes,elementIncidents,elementMarkers
+	elementType,head,elementTypes,elementIncidents,elementMarkers
 	},
 	
-	{meshType,head}=If[
+	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
 		{"BoundaryElements",ToBoundaryMesh},
 		{"MeshElements",ToElementMesh}
 	];
 	
-	elementTypes=Head/@mesh[meshType];
-	elementIncidents=ElementIncidents@mesh[meshType];
+	elementTypes=Head/@mesh[elementType];
+	elementIncidents=ElementIncidents@mesh[elementType];
 	elementMarkers=ConstantArray[marker,#]&/@(Length/@elementIncidents);
 	
 	head[
 		"Coordinates"->mesh["Coordinates"],
-		meshType->MapThread[#1[#2,#3]&,{elementTypes,elementIncidents,elementMarkers}]
+		elementType->MapThread[#1[#2,#3]&,{elementTypes,elementIncidents,elementMarkers}]
 	]
 ]
 
@@ -91,25 +91,47 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
 (*TransformMesh*)
 
 
-reflectionQ[tfun_TransformationFunction]:=Negative@Det[TransformationMatrix[tfun]]
+(* Argument must be an expression of the form ElementType[incidents,markers] *)
+reorderNodes[elements_]:=Module[
+	{head,conn,markers,length,numbering},
+	head=Head[elements];
+	conn=First[elements];
+	markers=If[Length[elements]===2,elements[[2]],Nothing];
+	length=Last@Dimensions[conn];
+	numbering=Take[
+		head/.{
+			TriangleElement->{2,1,3,4,6,5},
+			QuadElement->{2,1,4,3,5,8,7,6},
+			TetrahedronElement->{3,2,1,4,6,5,7,8,10,9},
+			HexahedronElement->{2,1,4,3,6,5,8,7,9,12,11,10,13,16,15,14,18,17,20,19}
+			},
+		length
+	];
+	
+	head[Sequence@@{conn[[All,numbering]],markers}]
+]
 
 
-reorderElements[elements_,1,2]:=Map[Reverse,elements,{3}]
-reorderElements[elements_,2,2]:=Map[Join@@(Reverse/@TakeDrop[#,Length[#]/2])&,elements,{3}]
-reorderElements[elements_,order_,dim_]:=elements
-
-
-(* This function doesn't work for ReflectionTransform because it breaks the node order in elements. *)
 TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
-	elements=mesh["MeshElements"],transformedElements
+	elementsType,head,elements,transformedElements,reflectionQ
 	},
+	
+	{elementsType,head}=If[
+		mesh["MeshElements"]===Automatic,
+		{"BoundaryElements",ToBoundaryMesh},
+		{"MeshElements",ToElementMesh}
+	];
+	
+	elements=mesh[elementsType];
+	
+	(* If TransformationFunction means reflection (or inversion), then reorder element incidents. *)
 	transformedElements=If[
-		reflectionQ[tfun],
-		reorderElements[elements,mesh["MeshOrder"],mesh["EmbeddingDimension"]],
+		Negative@Det[TransformationMatrix[tfun]],
+		reorderNodes/@elements,
 		elements
 	];
 	
-	ToElementMesh[
+	head[
 		"Coordinates"->tfun/@mesh["Coordinates"],
 		"MeshElements"->transformedElements
 	]
@@ -130,12 +152,12 @@ MergeMesh::dim="Meshes must have the same \"EmbeddingDimension\".";
 MergeMesh[list_List/;Length[list]>=2]:=Fold[MergeMesh,list]
 
 MergeMesh[mesh1_,mesh2_]:=Module[
-	{meshType,head,c1,c2,newCrds,newElements,elementTypes,elementMarkers,inci1,inci2},
+	{elementType,head,c1,c2,newCrds,newElements,elementTypes,elementMarkers,inci1,inci2},
 	
 	If[mesh1["MeshOrder"]=!=mesh2["MeshOrder"],Message[MergeMesh::order];Return[$Failed]];
 	If[mesh1["EmbeddingDimension"]=!=mesh2["EmbeddingDimension"],Message[MergeMesh::dim];Return[$Failed]];
 		
-	{meshType,head}=If[
+	{elementType,head}=If[
 		mesh1["MeshElements"]===Automatic,
 		{"BoundaryElements",ToBoundaryMesh},
 		{"MeshElements",ToElementMesh}
@@ -144,11 +166,11 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 	c1=mesh1["Coordinates"];
 	c2=mesh2["Coordinates"];
 	newCrds=Join[c1,c2];
-	elementTypes=Join[Head/@mesh1[meshType],Head/@mesh2[meshType]];
-	elementMarkers=ElementMarkers/@{mesh1[meshType],mesh2[meshType]};
+	elementTypes=Join[Head/@mesh1[elementType],Head/@mesh2[elementType]];
+	elementMarkers=ElementMarkers/@{mesh1[elementType],mesh2[elementType]};
 	
-	inci1=ElementIncidents[mesh1[meshType]];
-	inci2=ElementIncidents[mesh2[meshType]]+Length[c1];
+	inci1=ElementIncidents[mesh1[elementType]];
+	inci2=ElementIncidents[mesh2[elementType]]+Length[c1];
 	(* If all elements are of the same type, then this type is specified only once. *)
 	newElements=If[
 		SameQ@@elementTypes,
@@ -158,7 +180,7 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 	
 	head[
 		"Coordinates"->newCrds,
-		meshType->newElements,
+		elementType->newElements,
 		"DeleteDuplicateCoordinates"->True (* already a default option *)
 	]
 ]
