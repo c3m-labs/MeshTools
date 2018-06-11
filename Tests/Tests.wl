@@ -11,11 +11,11 @@ VerificationTest[
 	With[{
 		dir=If[
 			$Notebooks,
-			DirectoryName[$InputFileName]/. ""->NotebookDirectory[],
+			ParentDirectory[DirectoryName[$InputFileName]/. ""->NotebookDirectory[]],
 			Directory[]
 		]
 		},
-		Get["MeshTools.wl",Path->FileNameJoin[{ParentDirectory@dir}]];
+		Get["MeshTools.wl",Path->dir];
 		MemberQ[$Packages,"MeshTools`"]
 	],
 	True,

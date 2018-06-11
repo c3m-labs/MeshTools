@@ -2,11 +2,12 @@
 (* ::Package:: *)
 
 With[{
-	tr=TestReport[FileNameJoin[{Directory[],"Tests.wl"}]]
+	tr=TestReport[FileNameJoin[{Directory[],"Tests","Tests.wl"}]]
 	},
 	
 	Exit@If[
-		tr["AllTestsSucceeded"],
+		TrueQ[tr["AllTestsSucceeded"]],
+		Print["All tests passed!"];
 		0, (* exit code if all test pass *)
 		Print["Tests failed! Indices: ",tr["TestsFailedIndices"]];
 		1
