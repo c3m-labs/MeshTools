@@ -15,7 +15,7 @@ VerificationTest[
 			Directory[]
 		]
 		},
-		Get["MeshTools.wl",Path->FileNameJoin[{dir}]];
+		Get["MeshTools.wl",Path->FileNameJoin[{ParentDirectory@dir}]];
 		MemberQ[$Packages,"MeshTools`"]
 	],
 	True,
