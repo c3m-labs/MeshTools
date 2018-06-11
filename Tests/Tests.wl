@@ -103,14 +103,14 @@ VerificationTest[
 
 
 VerificationTest[
-	Head@SphereMesh[{1,2,3},4,3],
+	Head@SphereMesh[{1,2,3},3,3],
 	ElementMesh,
 	TestID->"SphereMesh_1"
 ]
 
 
 VerificationTest[
-	Head@SphereMesh[4],
+	Head@SphereMesh[3],
 	ElementMesh,
 	TestID->"SphereMesh_2"
 ]
@@ -125,101 +125,176 @@ VerificationTest[
 
 
 (* ::Subsection::Closed:: *)
-(*Mesh measurements*)
+(*MeshElementMeasure*)
 
 
 (* ::Text:: *)
 (*Returns the volume in 3D embedding, area in 2D embedding or length in 1D embedding.*)
 
 
-(* ::Text:: *)
-(*Length*)
-
-
-VerificationTest[
-	mesh=ToElementMesh["Coordinates"->Partition[Range[0.,1.,1/9],1],"MeshElements"->{LineElement[{{1,2},{2,3},{3,4},{4,5},{5,6},{6,7},{7,8},{8,9},{9,10}}]}];
-	MeshElementMeasure[mesh],
-	mesh["MeshElementMeasure"],
-	TestID->"MeshElementMeasure_Line_1"
+(* Length *)
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->Partition[Subdivide[0,1,3],1],
+		"MeshElements"->{LineElement[{{1,2},{2,3},{3,4}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[mesh],	
+		mesh["MeshElementMeasure"],
+		TestID->"MeshElementMeasure_1"
+	]
 ]
 
 
-(* ::Text:: *)
-(*Area*)
-
-
-VerificationTest[
-	mesh=ToElementMesh["Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},"MeshElements"->{TriangleElement[{{1,2,3},{3,4,1}}]}];
-	MeshElementMeasure[mesh],
-	mesh["MeshElementMeasure"],
-	TestID->"MeshElementMeasure_1"
+(* Area *)
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{TriangleElement[{{1,2,3},{3,4,1}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[mesh],	
+		mesh["MeshElementMeasure"],
+		TestID->"MeshElementMeasure_2"
+	]
 ]
 
 
-VerificationTest[
-	mesh=ToElementMesh[Disk[],MaxCellMeasure->1/4,"MeshOrder"->2];
-	MeshElementMeasure[mesh],
-	mesh["MeshElementMeasure"],
-	TestID->"MeshElementMeasure_2",
-	SameTest->(Total[Flatten[#1]]==Total[Flatten[#2]]&)
+(* Area - 2nd order mesh *)
+With[{
+	mesh=ToElementMesh[
+		(* One node is slightly offsed to create curved sides. *)
+		"Coordinates"->{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{0.,0.5},{0.5,0.},{0.6,0.6},{1.,0.5},{0.5,1.}},
+		"MeshElements"->{TriangleElement[{{2,1,3,5,6,7},{3,4,2,8,9,7}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[mesh],
+		mesh["MeshElementMeasure"],
+		TestID->"MeshElementMeasure_3"
+	]
 ]
 
 
-VerificationTest[
-	mesh=ToElementMesh[Disk[],MaxCellMeasure->1/4,"MeshOrder"->1];
-	MeshElementMeasure[mesh],
-	mesh["MeshElementMeasure"],
-	TestID->"MeshElementMeasure_3",
-	SameTest->(Total[Flatten[#1]]==Total[Flatten[#2]]&)
+(* Area - 2nd order mesh *)
+With[{
+	mesh=ToElementMesh[
+		(* One node is slightly offsed to create curved sides. *)
+		"Coordinates"->{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{0.5,0.1},{1.,0.5},{0.5,1.},{0.,0.5}},
+		"MeshElements"->{QuadElement[{{1,3,4,2,5,6,7,8}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[mesh],
+		mesh["MeshElementMeasure"],
+		TestID->"MeshElementMeasure_4"
+	]
 ]
 
 
-(* ::Text:: *)
-(*Volume*)
-
-
-VerificationTest[
-	mesh=ToElementMesh[Ball[],"MeshOrder"->2,MaxCellMeasure->1];
-	MeshElementMeasure[mesh],
-	mesh["MeshElementMeasure"],
-	TestID->"MeshElementMeasure_4",
-	SameTest->(Total[Flatten[#1]]==Total[Flatten[#2]]&)
+(* Volume *)
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
+		"MeshElements"->{TetrahedronElement[{{1,2,8,4},{8,1,6,2},{5,1,6,8},{5,7,1,8},{1,8,7,3},{8,3,1,4}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[mesh],
+		mesh["MeshElementMeasure"],
+		TestID->"MeshElementMeasure_5"
+	]
 ]
 
 
-VerificationTest[
-	mesh=ToElementMesh[Ball[],"MeshOrder"->1];
-	MeshElementMeasure[mesh],
-	mesh["MeshElementMeasure"],
-	TestID->"MeshElementMeasure_5",
-	SameTest->(Total[Flatten[#1]]==Total[Flatten[#2]]&)
+(* Volume *)
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
+		"MeshElements"->{HexahedronElement[{{1,5,7,3,2,6,8,4}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[mesh],
+		mesh["MeshElementMeasure"],
+		TestID->"MeshElementMeasure_6"
+	]
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*BoundaryElementMeasure*)
 
 
 (* ::Text:: *)
 (*Returns the surface of boundary elements in 3D embedding and length of boundary elements in 2D embedding.*)
 
 
-(* ::Text:: *)
+(* ::Subsubsection::Closed:: *)
 (*Perimeter*)
 
 
-VerificationTest[
-	mesh=ToElementMesh[Disk[],"MeshOrder"->2];
-	err=1/10^3;BoundaryElementMeasure[mesh],
-	2 \[Pi],
-	TestID->"BoundaryElementMeasure_Perimeter_1",
-	SameTest->(Abs[(#2-Total[Total[#1]])/Total[Total[#1]]]<err&)
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{TriangleElement[{{1,2,3},{3,4,1}}]}
+	]
+	},
+	VerificationTest[
+		BoundaryElementMeasure[mesh],	
+		{{1.,1.,1.,1.}},
+		TestID->"BoundaryElementMeasure_1"
+	]
 ]
 
 
-VerificationTest[
-	mesh=ToBoundaryMesh[Disk[],"MeshOrder"->2];
-	err=1/10^3;BoundaryElementMeasure[mesh],
-	2 \[Pi],
-	TestID->"BoundaryElementMeasure_Perimeter_2",
-	SameTest->(Abs[(#2-Total[Total[#1]])/Total[Total[#1]]]<err&)
+With[{
+	mesh=ToElementMesh[
+		(* One node is slightly offsed to create curved sides. *)
+		"Coordinates"->{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{0.,0.5},{0.5,0.},{0.6,0.6},{1.,0.5},{0.5,1.}},
+		"MeshElements"->{TriangleElement[{{2,1,3,5,6,7},{3,4,2,8,9,7}}]}
+	]
+	},
+	VerificationTest[
+		BoundaryElementMeasure[mesh],
+		{{1.,1.,1.,1.}},
+		TestID->"BoundaryElementMeasure_2"
+	]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Surface area*)
+
+
+(*With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
+		"MeshElements"->{TetrahedronElement[{{1,2,8,4},{8,1,6,2},{5,1,6,8},{5,7,1,8},{1,8,7,3},{8,3,1,4}}]}
+	]
+	},
+	VerificationTest[
+		BoundaryElementMeasure[mesh],
+		{{1.,1.,1.,1.,1.,1.}},
+		TestID->"BoundaryElementMeasure_3"
+	]
+]*)
+
+
+(*With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
+		"MeshElements"->{HexahedronElement[{{1,5,7,3,2,6,8,4}}]}
+	]
+	},
+	VerificationTest[
+		BoundaryElementMeasure[mesh],
+		{{1.,1.,1.,1.,1.,1.}},
+		TestID->"BoundaryElementMeasure_4"
+	]
+]*)
 
 
 (* ::Subsection::Closed:: *)
