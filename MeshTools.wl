@@ -29,7 +29,8 @@ AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all m
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
-SmoothenMesh::usage"SmoothenMesh[mesh] improves the quality of 2D mesh.";
+SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
+QuadToTriangle::usage="QuadToTriangle[mesh] converts quadrilateral mesh to triangle mesh.";
 
 ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[ mesh ] draws accurately second order 2D mesh.";
 
@@ -275,6 +276,33 @@ SmoothenMesh[mesh_ElementMesh]:=Block[
 		"CheckIncidentsCompletness"->False,
 		"CheckIntersections"->False,
 		"DeleteDuplicateCoordinates"->False
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*QuadToTriangle*)
+
+
+QuadToTriangle::order="Only the first order mesh is currently supported.";
+
+QuadToTriangle[mesh_ElementMesh]:=Module[{
+	elementType,head,conn,triangles
+	},
+	If[mesh["MeshOrder"]=!=1,Message[QuadToTriangle::order];Return[$Failed]];
+	
+	{elementType,head}=If[
+		mesh["MeshElements"]===Automatic,
+		{"BoundaryElements",ToBoundaryMesh},
+		{"MeshElements",ToElementMesh}
+	];
+	
+	conn=ElementIncidents@First@mesh[elementType];
+	triangles=Join[conn[[All,{1,2,3}]],conn[[All,{1,3,4}]]];
+	
+	head[
+		"Coordinates"->mesh["Coordinates"],
+		elementType->{TriangleElement[triangles]}
 	]
 ]
 
