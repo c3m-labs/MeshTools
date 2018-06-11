@@ -134,7 +134,7 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
 	
 	head[
 		"Coordinates"->tfun/@mesh["Coordinates"],
-		"MeshElements"->transformedElements
+		elementsType->transformedElements
 	]
 ]
 
