@@ -29,6 +29,7 @@ AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all m
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
+
 SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
 QuadToTriangle::usage="QuadToTriangle[mesh] converts quadrilateral mesh to triangle mesh.";
 
@@ -37,14 +38,18 @@ ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[ mesh ] draws accu
 MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
 
+StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
+StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
+
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
 
 DiskMesh::usage="DiskMesh[{x,y},r,n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
 SphereMesh::usage="SphereMesh[{x,y,z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
+AnnulusMesh::usage="AnnulusMesh[{x,y},{rIn,rOut},{\[Phi]1,\[Phi]2},{n\[Phi],nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
-StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
-StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
+DiskVoidMesh::usage="DiskVoidMesh[voidRadius,squareSize,noElements] creates a mesh with disk shaped void in square domain.";
+SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius,cuboidSize,noElements] creates a mesh with spherical void in cuboid domain.";
 
 EllipsoidVoidMesh::usage="EllipsoidVoidMesh[radius, noElements] creates a mesh with spherical void.
 EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
@@ -232,6 +237,10 @@ ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=M
 		"MeshElements"->{HexahedronElement[elements3D,markers3D]}
 	]
 ]
+
+
+(* ::Subsubsection:: *)
+(*RotateMesh*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -650,6 +659,46 @@ DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,
 
 
 (* ::Subsubsection::Closed:: *)
+(*AnnulusMesh*)
+
+
+AnnulusMesh[{n\[Phi]_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2Pi},{n\[Phi],nr}]
+
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{\[Phi]1_,\[Phi]2_},{n\[Phi]_Integer,nr_Integer}]:=Module[
+	{raster},
+	raster=N@{
+		Table[rOut*{Cos[fi],Sin[fi]}+{x,y},{fi,\[Phi]1,\[Phi]2,(\[Phi]2-\[Phi]1)/n\[Phi]}],
+		Table[rIn*{Cos[fi],Sin[fi]}+{x,y},{fi,\[Phi]1,\[Phi]2,(\[Phi]2-\[Phi]1)/n\[Phi]}]
+	};
+	StructuredMesh[raster,{n\[Phi],nr}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DiskVoidMesh*)
+
+
+DiskVoidMesh[voidRadius_,squareSize_,noElements_Integer,opts:OptionsPattern[]]:=Module[
+	{r,s,n,raster,half},
+		
+	s=squareSize;
+	r=Clip[voidRadius,{0.01,Infinity}];
+	n=noElements;
+	
+	raster=N@{
+		Table[{s,y},{y,0,s,s/n}],
+		Table[r*{Cos[fi],Sin[fi]},{fi,0,Pi/4,(Pi/4)/n}]
+	};
+	half=StructuredMesh[raster,{n,Ceiling[(s/r/2)*n]}];
+	
+	MergeMesh[{
+		half,
+		TransformMesh[half,ReflectionTransform[{-1,1},{0,0}]]
+	}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*SphereMesh*)
 
 
@@ -735,6 +784,36 @@ SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
 		"Projection",sphereMeshProjection[{x,y,z},r,n]
 	];
 	mesh
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SphericalVoidMesh*)
+
+
+SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern[]]:=Module[
+	{r,s,n,rescale,outerRaster,innerRaster,basicMesh,rt},
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	
+	s=cuboidSize;
+	r=Clip[voidRadius,{0.01,Infinity}];
+	n=noElements;
+	
+	outerRaster=With[
+		{pts=s*N@Subdivide[0,1,n]},
+		Map[Append[s], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	(* This special raster makes all element edges on sphere edge of the same length. *)
+	innerRaster=With[
+		{pts=r*N@Tan@Subdivide[0,Pi/4,n]},
+		Map[rescale@*Append[r], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	(* In "thickness" direction the number of elements is estimated so that their
+	edges have similar length. *)
+	basicMesh=StructuredMesh[{innerRaster,outerRaster},{n,n,Ceiling[n*(s/r/2)]}];
+
+	rt=RotationTransform[#*(2Pi/3),{1,1,1},{0,0,0}]&/@{0,1,2};
+	MergeMesh[TransformMesh[basicMesh,#]&/@rt]
 ]
 
 
