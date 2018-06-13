@@ -32,6 +32,7 @@ ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilater
 
 SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
 QuadToTriangle::usage="QuadToTriangle[mesh] converts quadrilateral mesh to triangle mesh.";
+HexToTetrahedron::usage="HexToTetrahedron[mesh] converts hexahedral mesh to tetrahedral mesh.";
 
 ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[ mesh ] draws accurately second order 2D mesh.";
 
@@ -312,6 +313,39 @@ QuadToTriangle[mesh_ElementMesh]:=Module[{
 	head[
 		"Coordinates"->mesh["Coordinates"],
 		elementType->{TriangleElement[triangles]}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*HexToTetrahedron*)
+
+
+HexToTetrahedron::type="ElementMesh should contain only hexadedral elements.";
+
+HexToTetrahedron[mesh_ElementMesh]:=Module[{
+	nodes,origElms,tetConnect,restructure,newElms
+	},
+	origElms=mesh["MeshElements"];
+	
+	If[Head@First[origElms]=!=HexahedronElement,Message[HexToTetrahedron::type];Return[$Failed]];
+	
+	tetConnect={
+		{4, 1, 2, 5},
+		{7, 5, 2, 6},
+		{4, 2, 3, 7},
+		{4, 5, 2, 7},
+		{4, 5, 7, 8}
+	};
+	restructure=Function[{hexNodes},Part[hexNodes,#]&/@tetConnect];
+	
+	newElms=TetrahedronElement[
+		Flatten[restructure/@First@ElementIncidents[origElms],1]
+	];
+	
+	ToElementMesh[
+		"Coordinates"->mesh["Coordinates"],
+		"MeshElements"->{newElms}
 	]
 ]
 
