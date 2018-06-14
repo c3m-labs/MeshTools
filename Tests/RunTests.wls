@@ -1,6 +1,9 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
+(* This script should be run from Git repository root directory. *)
+Get["MeshTools.wl",Path->Directory[]];
+
 With[{
 	tr=TestReport[FileNameJoin[{Directory[],"Tests","Tests.wl"}]]
 	},

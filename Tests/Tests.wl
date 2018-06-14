@@ -1,25 +1,104 @@
 (* ::Package:: *)
 
+(* ::Subsection::Closed:: *)
+(*Description*)
+
+
+(* ::Text:: *)
+(*These are unit test for "MeshTools" paclet. Each test should normally run fast enough (i.e. < 0.1 second), so that there can be many of them and the whole procedure doesn't take too long.*)
+
+
+(* "MeshTools.wl" must be loaded before running these tests. *)
+If[
+	Not@MemberQ[$Packages,"MeshTools`"],
+	Print["Error: Package is not loaded!"];Abort[];
+];
+
+
 BeginTestSection["Tests"]
 
 
 (* ::Subsection::Closed:: *)
-(*Utility functions*)
+(*TransformMesh*)
 
 
-VerificationTest[
-	With[{
-		dir=If[
-			$Notebooks,
-			ParentDirectory[DirectoryName[$InputFileName]/. ""->NotebookDirectory[]],
-			Directory[]
-		]
-		},
-		Get["MeshTools.wl",Path->dir];
-		MemberQ[$Packages,"MeshTools`"]
-	],
-	True,
-	TestID->"LoadPackage"
+(* ::Subsubsection::Closed:: *)
+(*2D*)
+
+
+With[{
+	(* one element mesh *)
+	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->1],
+	(* Reflection over Y axis *)
+	rt=ReflectionTransform[{1,0},{0,0}]
+	},
+	VerificationTest[
+		TransformMesh[mesh,rt],	
+		ElementMesh[
+			{{0., 0.}, {-1., 0.}, {0., 1.}}, 
+			{TriangleElement[{{2, 1, 3}}]}, 
+			{LineElement[{{1, 3}, {3, 2}, {2, 1}}]}
+		],
+		TestID->"TransformMesh_1"
+	]
+]
+
+
+With[{
+	(* one element mesh *)
+	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->2],
+	(* Reflection over Y axis *)
+	rt=ReflectionTransform[{1,0},{0,0}]
+	},
+	VerificationTest[
+		TransformMesh[mesh,rt],	
+		ElementMesh[
+			{{0., 0.}, {-1., 0.}, {0., 1.}, {-0.5, 0.}, {-0.5, 0.5}, {0., 0.5}}, 
+			{TriangleElement[{{2, 1, 3, 4, 6, 5}}]}, 
+			{LineElement[{{1, 3, 6}, {3, 2, 5}, {2, 1, 4}}]}
+		],
+		TestID->"TransformMesh_2"
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*3D*)
+
+
+With[{
+	(* one element mesh *)
+	mesh=ToElementMesh[Tetrahedron[],MaxCellMeasure->1,"MeshOrder"->1],
+	(* Reflection over Y axis *)
+	rt=ReflectionTransform[{1,0,0},{0,0,0}]
+	},
+	VerificationTest[
+		TransformMesh[mesh,rt],	
+		ElementMesh[
+			{{0., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}}, 
+			{TetrahedronElement[{{4, 1, 2, 3}}]}, 
+			{TriangleElement[{{3, 2, 1}, {3, 4, 2}, {3, 1, 4}, {4, 1, 2}}]}
+		],
+		TestID->"TransformMesh_3"
+	]
+]
+
+
+With[{
+	(* one element mesh *)
+	mesh=ToElementMesh[Tetrahedron[],MaxCellMeasure->1,"MeshOrder"->2],
+	(* Reflection over Y axis *)
+	rt=ReflectionTransform[{1,0,0},{0,0,0}]
+	},
+	VerificationTest[
+		TransformMesh[mesh,rt],	
+		ElementMesh[
+			{{0.,0.,0.},{-1.,0.,0.},{0.,1.,0.},{0.,0.,1.},{-0.5,0.,0.},{0.,0.,0.5},{-0.5,0.,0.5},{0.,0.5,0.},{0.,0.5,0.5},{-0.5,0.5,0.}}, 
+			{TetrahedronElement[{{4, 1, 2, 3, 6, 5, 7, 8, 10, 9}}]}, 
+			{TriangleElement[{{3, 2, 1, 10, 5, 8}, {3, 4, 2, 9, 7, 10}, {3, 1, 4, 8, 6, 9}, {4, 1, 2, 6, 5, 7}}]}
+		],
+		TestID->"TransformMesh_4"
+	]
 ]
 
 

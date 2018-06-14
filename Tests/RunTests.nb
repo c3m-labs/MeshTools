@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      1517,         51]
-NotebookOptionsPosition[      1223,         38]
-NotebookOutlinePosition[      1566,         53]
-CellTagsIndexPosition[      1523,         50]
+NotebookDataLength[      1951,         61]
+NotebookOptionsPosition[      1657,         48]
+NotebookOutlinePosition[      1999,         63]
+CellTagsIndexPosition[      1956,         60]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -28,16 +28,26 @@ Cell[BoxData[
     " ", "results", " ", "to", " ", "this", " ", 
     RowBox[{"notebook", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
   RowBox[{"tr", "=", 
-   RowBox[{"TestReport", "[", 
-    RowBox[{"FileNameJoin", "[", 
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<Tests.wl\>\""}], 
-      "}"}], "]"}], "]"}]}]}]], "Input",ExpressionUUID->"bfa5b4c3-e8ed-4948-\
-b28f-3b6412fdad5d"]
+   RowBox[{"With", "[", 
+    RowBox[{
+     RowBox[{"{", "\n", "\t", 
+      RowBox[{"dir", "=", 
+       RowBox[{"ParentDirectory", "@", 
+        RowBox[{"NotebookDirectory", "[", "]"}]}]}], "\n", "\t", "}"}], ",", 
+     "\n", "\t", 
+     RowBox[{
+      RowBox[{"Get", "[", 
+       RowBox[{"\"\<MeshTools.wl\>\"", ",", 
+        RowBox[{"Path", "->", "dir"}]}], "]"}], ";", "\n", "\t", 
+      RowBox[{"TestReport", "[", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"dir", ",", "\"\<Tests\>\"", ",", "\"\<Tests.wl\>\""}], 
+         "}"}], "]"}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}]], "Code",
+ CellLabel->"In[36]:=",ExpressionUUID->"bfa5b4c3-e8ed-4948-b28f-3b6412fdad5d"]
 },
-WindowSize->{992, 1087},
-WindowMargins->{{Automatic, 418}, {Automatic, 0}},
+WindowSize->{887, 691},
+WindowMargins->{{485, Automatic}, {Automatic, 4}},
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->"Default.nb"
 ]
@@ -52,7 +62,7 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 661, 16, 60, "Input",ExpressionUUID->"bfa5b4c3-e8ed-4948-b28f-3b6412fdad5d"]
+Cell[558, 20, 1095, 26, 203, "Code",ExpressionUUID->"bfa5b4c3-e8ed-4948-b28f-3b6412fdad5d"]
 }
 ]
 *)
