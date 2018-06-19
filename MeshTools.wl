@@ -197,10 +197,10 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 (*ExtrudeMesh*)
 
 
-(* Basics of this function are taken from AceFEM help. *)
 ExtrudeMesh::badType="Only first order 2D quadrilateral mesh is supported.";
+
 ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=Module[{
-	fi=0,stretch=0,rot,n2D,nodes2D,nodes3D,elements2D,elements3D,markers2D,markers3D
+	n,nodes2D,nodes3D,elements2D,elements3D,markers2D,markers3D
 	},
 	If[
 		Or[mesh["MeshOrder"]=!=1,(Head/@mesh["MeshElements"])=!={QuadElement},mesh["EmbeddingDimension"]=!=2],
@@ -210,27 +210,18 @@ ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=M
 	nodes2D=mesh["Coordinates"];
 	elements2D=Join@@ElementIncidents[mesh["MeshElements"]];
 	markers2D=Join@@ElementMarkers[mesh["MeshElements"]];
-	n2D=Length@nodes2D;
+	n=Length[nodes2D];
 	
-	nodes3D=With[{
-		dz=thickness/layers,dfi=fi/layers,dstretch=stretch/layers
-		},
-		Flatten[
-			Table[
-				rot=RotationTransform[(l-1)dfi];
-				Map[Join[(1+(l-1) dstretch) rot[#],{(l-1)dz}]&,nodes2D],
-				{l,layers+1}
-			],
-		1]
+	nodes3D=Join@@Map[
+		(Transpose@Join[Transpose[nodes2D],{ConstantArray[#,n]}])&,
+		Subdivide[0.,thickness,layers]
 	];
-	
-	elements3D=Flatten[
-		Table[
-			Map[Join[n2D*(l-1)+#,n2D*l+#]&,elements2D],
-			{l,layers}
-		],
-	1];
-	
+
+	elements3D=Join@@Table[
+		Map[Join[n*(i-1)+#,n*i+#]&,elements2D],
+		{i,layers}
+	];
+
 	markers3D=Flatten@ConstantArray[markers2D,layers];
 	
 	ToElementMesh[
