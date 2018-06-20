@@ -8,13 +8,14 @@
 (*These are unit test for "MeshTools" paclet. Each test should normally run fast enough (i.e. < 0.1 second), so that there can be many of them and the whole procedure doesn't take too long.*)
 
 
-(* "MeshTools.wl" must be loaded before running these tests. *)
+(* "MeshTools.wl" must be loaded before running these tests, otherwise testing is aborted. *)
 If[
 	Not@MemberQ[$Packages,"MeshTools`"],
 	Print["Error: Package is not loaded!"];Abort[];
 ];
 
 
+(* Currently it is unclear what this line does, it is automatically gnerated during conversion to .wlt *)
 BeginTestSection["Tests"]
 
 
@@ -108,7 +109,7 @@ With[{
 
 With[{
 	mesh=ToElementMesh[
-		"Coordinates"->{{0.`,0.`},{0.`,1.`},{1.`,0.`},{1.`,1.`},{2.`,0.`},{2.`,1.`}},
+		"Coordinates"->{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{2.,0.},{2.,1.}},
 		"MeshElements"->{QuadElement[{{1,3,4,2},{3,5,6,4}},{1,2}]}
 	]
 	},
@@ -122,6 +123,50 @@ With[{
 			{2, 8, 7, 1}, {3, 5, 6, 4}, {10, 12, 11, 9}, {3, 9, 11, 5}, {5, 11, 12, 6}, {6, 12, 10, 4}}]}
 		],
 		TestID->"ExtrudeMesh_1"
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*QuadToTriangle*)
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,3,4}}]}
+	]
+	},
+	VerificationTest[
+		QuadToTriangle[mesh],	
+		ElementMesh[
+			{{0., 0.}, {1., 0.}, {1., 1.}, {0., 1.}}, 
+			{TriangleElement[{{1, 2, 3}, {1, 3, 4}}]}, 
+			{LineElement[{{2, 3}, {1, 2}, {3, 4}, {4, 1}}]}
+		],
+		TestID->"QuadToTriangle_1"
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*HexToTetrahedron*)
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
+		"MeshElements"->{HexahedronElement[{{1,5,7,3,2,6,8,4}}]}
+	]
+	},
+	VerificationTest[
+		HexToTetrahedron[mesh],
+		ElementMesh[
+			{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}}, 
+			{TetrahedronElement[{{3, 1, 5, 2}, {8, 2, 5, 6}, {3, 5, 7, 8}, {3, 2, 5, 8}, {3, 2, 8, 4}}]}, 
+			{TriangleElement[{{2,5,1},{2,1,3},{3,1,5},{6,5,2},{6,8,5},{6,2,8},{8,7,5},{8,3,7},{3,5,7},{4,8,2},{4,3,8},{4,2,3}}]}
+		],
+		TestID->"HexToTetrahedron_1"
 	]
 ]
 
@@ -213,17 +258,10 @@ VerificationTest[
 
 
 VerificationTest[
-	Head@SphereMesh[3],
-	ElementMesh,
-	TestID->"SphereMesh_2"
-]
-
-
-VerificationTest[
 	SphereMesh[1],
 	$Failed,
 	{SphereMesh::noelems},
-	TestID->"SphereMesh_3"
+	TestID->"SphereMesh_2"
 ]
 
 
