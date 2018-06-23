@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     16340,        436]
-NotebookOptionsPosition[      9624,        295]
-NotebookOutlinePosition[     10294,        319]
-CellTagsIndexPosition[     10215,        314]
+NotebookDataLength[     21449,        581]
+NotebookOptionsPosition[     13255,        407]
+NotebookOutlinePosition[     13926,        431]
+CellTagsIndexPosition[     13847,        426]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -200,6 +200,8 @@ Cell["XXXX", "MoreAbout",
  CellID->1665078683,ExpressionUUID->"da58b729-fe57-4dff-85cd-c837439ce2fc"]
 }, Open  ]],
 
+Cell[CellGroupData[{
+
 Cell[BoxData[
  InterpretationBox[GridBox[{
     {
@@ -212,6 +214,116 @@ Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection",
  CellID->880084151,ExpressionUUID->"137d1b9b-5b68-45c1-af31-02acc9c4d767"],
+
+Cell[BoxData[
+ RowBox[{"Needs", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
+ InitializationCell->True,
+ CellID->148073805,ExpressionUUID->"3fe5410f-318d-4ea0-b133-faf90603b28c"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter",ExpressionUUID->
+   "b9dae419-8bbe-43cd-8be0-996a656ae34d"],
+  $Line = 0; Null]], "ExampleDelimiter",
+ CellID->355013631,ExpressionUUID->"83d02ce4-4c13-47b6-b376-d81d217fb1dd"],
+
+Cell[TextData[{
+ "Create a simple mesh on unit ",
+ ButtonBox["Disk",
+  BaseStyle->"Link",
+  ButtonData->"paclet:ref/Disk"],
+ "."
+}], "ExampleText",
+ CellChangeTimes->{{3.738768303498418*^9, 3.738768321873997*^9}},
+ CellID->326662161,ExpressionUUID->"2d729818-939c-4cb9-b970-c036fa61479c"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"mesh", "=", 
+  RowBox[{"ToElementMesh", "[", 
+   RowBox[{"Disk", "[", "]"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.738768194701445*^9, 3.73876820240966*^9}},
+ CellLabel->"In[120]:=",
+ CellID->2093972,ExpressionUUID->"f4aefc4d-3083-4ba5-a916-851ac62a2e6a"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"ElementMesh", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"-", "1.0000000000000067`"}], ",", "1.000000000000007`"}], 
+       "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"-", "1.0000000000000067`"}], ",", "1.0000000000000067`"}], 
+       "}"}]}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"TriangleElement", "[", 
+      RowBox[{
+       StyleBox["\<\"<\"\>",
+        ShowStringCharacters->False], "\[InvisibleSpace]", "504", 
+       "\[InvisibleSpace]", 
+       StyleBox["\<\">\"\>",
+        ShowStringCharacters->False]}], "]"}], "}"}]}], "]"}],
+  False,
+  Editable->False,
+  SelectWithContents->True]], "Output",
+ CellChangeTimes->{3.7387682035579443`*^9},
+ CellLabel->"Out[128]=",
+ CellID->418976545,ExpressionUUID->"49e1ed21-7a81-47f2-9d48-a636cbc25cce"]
+}, Open  ]],
+
+Cell["Calculate area of all elements and sum it together.", "ExampleText",
+ CellChangeTimes->{{3.7387683346200604`*^9, 3.7387683650047903`*^9}},
+ CellID->285041214,ExpressionUUID->"bc957683-2e1e-4ce5-98bc-83512ebf5ae5"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Total", "@", 
+  RowBox[{"Flatten", "@", 
+   RowBox[{"MeshElementMeasure", "[", "mesh", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.738768206211295*^9, 3.738768239854967*^9}},
+ CellLabel->"In[131]:=",
+ CellID->644243064,ExpressionUUID->"db640527-d32e-4ad5-afd5-962a18586cff"],
+
+Cell[BoxData["3.1415906524113932`"], "Output",
+ CellChangeTimes->{{3.738768221055648*^9, 3.7387682411241765`*^9}},
+ CellLabel->"Out[131]=",
+ CellID->138639144,ExpressionUUID->"c05dd974-9408-4ace-a3ff-33e50770c60e"]
+}, Open  ]],
+
+Cell["\<\
+Same result is obtained by asking for \"MeshElementMeasure\" property of \
+ElementMesh object.\
+\>", "ExampleText",
+ CellChangeTimes->{{3.7387683734305525`*^9, 3.7387684114374824`*^9}, {
+  3.738768443467228*^9, 3.738768457168716*^9}},
+ CellID->158141835,ExpressionUUID->"09e3f119-ec05-4432-b9e3-8ec3d08828d4"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Total", "@", 
+  RowBox[{"Flatten", "@", 
+   RowBox[{"mesh", "[", "\"\<MeshElementMeasure\>\"", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.738768278575907*^9, 3.73876828882654*^9}},
+ CellLabel->"In[133]:=",
+ CellID->48562514,ExpressionUUID->"210c21a7-60f0-4f73-b0a2-cf90b13705e3"],
+
+Cell[BoxData["3.1415906524113932`"], "Output",
+ CellChangeTimes->{{3.7387682840614986`*^9, 3.7387682892822523`*^9}},
+ CellLabel->"Out[133]=",
+ CellID->423120282,ExpressionUUID->"db281833-56cb-41f2-8bc8-064d823fd898"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -293,7 +405,7 @@ Cell[BoxData[
  CellID->589267740,ExpressionUUID->"830fef9c-865a-44e7-b1f7-c2bd306df8d8"]
 }, Open  ]]
 },
-WindowSize->{700, 770},
+WindowSize->{947, 966},
 WindowMargins->{{4, Automatic}, {Automatic, 0}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
@@ -306,14 +418,14 @@ StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb",
 (*CellTagsOutline
 CellTagsIndex->{
  "ExtendedExamples"->{
-  Cell[6879, 217, 155, 2, 59, "ExtendedExamplesSection",ExpressionUUID->"8b94b74c-b700-4e45-81b2-129189866fba",
+  Cell[10510, 329, 155, 2, 68, "ExtendedExamplesSection",ExpressionUUID->"8b94b74c-b700-4e45-81b2-129189866fba",
    CellTags->"ExtendedExamples",
    CellID->1854448968]}
  }
 *)
 (*CellTagsIndex
 CellTagsIndex->{
- {"ExtendedExamples", 10022, 307}
+ {"ExtendedExamples", 13653, 419}
  }
 *)
 (*NotebookFileOutline
@@ -409,33 +521,66 @@ Cell[6212, 195, 112, 1, 37, "MoreAboutSection",ExpressionUUID->"f95a53b9-7204-45
 Cell[6327, 198, 101, 1, 19, "MoreAbout",ExpressionUUID->"da58b729-fe57-4dff-85cd-c837439ce2fc",
  CellID->1665078683]
 }, Open  ]],
-Cell[6443, 202, 411, 11, 86, "PrimaryExamplesSection",ExpressionUUID->"137d1b9b-5b68-45c1-af31-02acc9c4d767",
- CellID->880084151],
 Cell[CellGroupData[{
-Cell[6879, 217, 155, 2, 59, "ExtendedExamplesSection",ExpressionUUID->"8b94b74c-b700-4e45-81b2-129189866fba",
+Cell[6465, 204, 411, 11, 86, "PrimaryExamplesSection",ExpressionUUID->"137d1b9b-5b68-45c1-af31-02acc9c4d767",
+ CellID->880084151],
+Cell[6879, 217, 177, 3, 52, "Input",ExpressionUUID->"3fe5410f-318d-4ea0-b133-faf90603b28c",
+ InitializationCell->True,
+ CellID->148073805],
+Cell[CellGroupData[{
+Cell[7081, 224, 242, 5, 19, "ExampleDelimiter",ExpressionUUID->"83d02ce4-4c13-47b6-b376-d81d217fb1dd",
+ CellID->355013631],
+Cell[7326, 231, 288, 8, 26, "ExampleText",ExpressionUUID->"2d729818-939c-4cb9-b970-c036fa61479c",
+ CellID->326662161],
+Cell[CellGroupData[{
+Cell[7639, 243, 282, 6, 32, "Input",ExpressionUUID->"f4aefc4d-3083-4ba5-a916-851ac62a2e6a",
+ CellID->2093972],
+Cell[7924, 251, 871, 27, 31, "Output",ExpressionUUID->"49e1ed21-7a81-47f2-9d48-a636cbc25cce",
+ CellID->418976545]
+}, Open  ]],
+Cell[8810, 281, 219, 2, 26, "ExampleText",ExpressionUUID->"bc957683-2e1e-4ce5-98bc-83512ebf5ae5",
+ CellID->285041214],
+Cell[CellGroupData[{
+Cell[9054, 287, 297, 6, 32, "Input",ExpressionUUID->"db640527-d32e-4ad5-afd5-962a18586cff",
+ CellID->644243064],
+Cell[9354, 295, 214, 3, 31, "Output",ExpressionUUID->"c05dd974-9408-4ace-a3ff-33e50770c60e",
+ CellID->138639144]
+}, Open  ]],
+Cell[9583, 301, 319, 6, 26, "ExampleText",ExpressionUUID->"09e3f119-ec05-4432-b9e3-8ec3d08828d4",
+ CellID->158141835],
+Cell[CellGroupData[{
+Cell[9927, 311, 303, 6, 32, "Input",ExpressionUUID->"210c21a7-60f0-4f73-b0a2-cf90b13705e3",
+ CellID->48562514],
+Cell[10233, 319, 216, 3, 31, "Output",ExpressionUUID->"db281833-56cb-41f2-8bc8-064d823fd898",
+ CellID->423120282]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[10510, 329, 155, 2, 68, "ExtendedExamplesSection",ExpressionUUID->"8b94b74c-b700-4e45-81b2-129189866fba",
  CellTags->"ExtendedExamples",
  CellID->1854448968],
-Cell[7037, 221, 242, 5, 39, "ExampleSection",ExpressionUUID->"6d65e5e8-5eb2-47f0-9b3f-ba7b25916099",
+Cell[10668, 333, 242, 5, 39, "ExampleSection",ExpressionUUID->"6d65e5e8-5eb2-47f0-9b3f-ba7b25916099",
  CellID->1293636265],
-Cell[7282, 228, 265, 5, 23, "ExampleSection",ExpressionUUID->"a9549301-34b9-4ed0-a6ca-84f06071e77a",
+Cell[10913, 340, 265, 5, 23, "ExampleSection",ExpressionUUID->"a9549301-34b9-4ed0-a6ca-84f06071e77a",
  CellID->1020263627],
 Cell[CellGroupData[{
-Cell[7572, 237, 244, 5, 23, "ExampleSection",ExpressionUUID->"16015a21-9da6-4ad4-9119-1df54b56acba",
+Cell[11203, 349, 244, 5, 23, "ExampleSection",ExpressionUUID->"16015a21-9da6-4ad4-9119-1df54b56acba",
  CellID->2061341341],
-Cell[7819, 244, 247, 5, 70, "ExampleSubsection",ExpressionUUID->"00e47989-c6d4-451e-880c-329057e63a1a",
+Cell[11450, 356, 247, 5, 70, "ExampleSubsection",ExpressionUUID->"00e47989-c6d4-451e-880c-329057e63a1a",
  CellID->1757724783],
-Cell[8069, 251, 247, 5, 70, "ExampleSubsection",ExpressionUUID->"04154fe6-29fc-4614-9a5b-71de7e2475f5",
+Cell[11700, 363, 247, 5, 70, "ExampleSubsection",ExpressionUUID->"04154fe6-29fc-4614-9a5b-71de7e2475f5",
  CellID->1295379749]
 }, Closed]],
-Cell[8331, 259, 248, 5, 23, "ExampleSection",ExpressionUUID->"329fff1e-47c9-4f18-8e37-211b34a0375a",
+Cell[11962, 371, 248, 5, 23, "ExampleSection",ExpressionUUID->"329fff1e-47c9-4f18-8e37-211b34a0375a",
  CellID->258228157],
-Cell[8582, 266, 259, 5, 23, "ExampleSection",ExpressionUUID->"a706ed89-dadf-4749-9f0c-a405e7b16b62",
+Cell[12213, 378, 259, 5, 23, "ExampleSection",ExpressionUUID->"a706ed89-dadf-4749-9f0c-a405e7b16b62",
  CellID->2123667759],
-Cell[8844, 273, 252, 5, 23, "ExampleSection",ExpressionUUID->"e9ab719c-1f86-4afb-8412-c3274b831b98",
+Cell[12475, 385, 252, 5, 23, "ExampleSection",ExpressionUUID->"e9ab719c-1f86-4afb-8412-c3274b831b98",
  CellID->1305812373],
-Cell[9099, 280, 257, 5, 23, "ExampleSection",ExpressionUUID->"c56be4b2-d1f5-4f88-967c-6a654e22daf4",
+Cell[12730, 392, 257, 5, 23, "ExampleSection",ExpressionUUID->"c56be4b2-d1f5-4f88-967c-6a654e22daf4",
  CellID->1653164318],
-Cell[9359, 287, 249, 5, 23, "ExampleSection",ExpressionUUID->"830fef9c-865a-44e7-b1f7-c2bd306df8d8",
+Cell[12990, 399, 249, 5, 23, "ExampleSection",ExpressionUUID->"830fef9c-865a-44e7-b1f7-c2bd306df8d8",
  CellID->589267740]
 }, Open  ]]
 }
