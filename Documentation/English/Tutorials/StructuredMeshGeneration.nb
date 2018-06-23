@@ -1,0 +1,280 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10081,        272]
+NotebookOptionsPosition[      5947,        183]
+NotebookOutlinePosition[      6364,        199]
+CellTagsIndexPosition[      6321,        196]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New",ExpressionUUID->"5e990367-a774-4023-a88f-c799cb650083"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified",ExpressionUUID->"8c846c8c-df65-4533-8d54-20e953ced98f"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete",ExpressionUUID->"68baa536-8970-4500-869d-81f2fdb12bc8"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised",ExpressionUUID->"3c617158-5418-418d-956e-146fcfe535da"]
+}], "History",
+ CellID->1247902091,ExpressionUUID->"194816a8-54ef-48dd-b9ad-6f0e468db849"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->1122911449,ExpressionUUID->"21e20ee4-883f-4673-ad57-42a3d9b63abf"],
+
+Cell["Tutorial", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->686433507,ExpressionUUID->"76584b0d-f982-417e-946e-ca1ad0113cb0"],
+
+Cell["MeshTools Package", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->605800465,ExpressionUUID->"493b1c17-c2b6-4b79-b5d3-98206eca06ad"],
+
+Cell["MeshTools`", "Categorization",
+ CellLabel->"Context",
+ CellID->468444828,ExpressionUUID->"d3c517a5-d828-4a40-8eb7-83eae860b64c"],
+
+Cell["MeshTools/tutorial/StructuredMeshGeneration", "Categorization",
+ CellLabel->"URI",ExpressionUUID->"fbf901d5-3f87-4a5d-b7b8-a2dc05f36e74"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->1427428552,ExpressionUUID->"0a4d3111-2cc8-4be0-bcb9-2eaaedd1c00d"],
+
+Cell["XXXX", "Keywords",
+ CellID->1251852827,ExpressionUUID->"c2053f42-bc8b-4885-8ae7-1680aead75e3"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Details", "DetailsSection",
+ CellID->307771771,ExpressionUUID->"3acae335-77ec-417d-8ad2-3d99108d86fe"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Lead",
+ CellID->218895918,ExpressionUUID->"0bb24278-267c-416d-a30b-9f8759c9c0aa"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Developers",
+ CellID->350963985,ExpressionUUID->"2d642b8a-c34c-491f-b944-7c326c25c6a8"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Authors",
+ CellID->795871300,ExpressionUUID->"766f7013-da70-447b-80eb-ba4f02d86e92"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Feature Name",
+ CellID->199739161,ExpressionUUID->"130a4b76-c86f-4dd0-97f6-11413a2b1c59"],
+
+Cell["XXXX", "Details",
+ CellLabel->"QA",
+ CellID->40625308,ExpressionUUID->"a9633f2a-1699-4d2f-93ce-bbd7139c8d56"],
+
+Cell["XXXX", "Details",
+ CellLabel->"DA",
+ CellID->357121918,ExpressionUUID->"0c471870-8baf-444d-a612-75acfc2ebbfc"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Docs",
+ CellID->35949532,ExpressionUUID->"fbbe2852-5d82-4562-b7af-527d476437b1"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Features Page Notes",
+ CellID->929432370,ExpressionUUID->"7a097801-8bf5-4620-b344-ae78a66bbe30"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Comments",
+ CellID->240026365,ExpressionUUID->"333eca64-264b-431c-a5da-300b29e54ffb"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Structured Mesh Generation", "Title",
+ CellChangeTimes->{{3.7383337330687437`*^9, 3.738333735350327*^9}},
+ CellID->509267359,ExpressionUUID->"cece2ff4-56df-432d-bcbe-164a2649d281"],
+
+Cell["\<\
+This tutorial describes procedures to create nice structured ElementMesh \
+objects in 2D and 3D.\
+\>", "Text",
+ CellChangeTimes->{{3.738333740078396*^9, 3.738333772815098*^9}},
+ CellID->1534169418,ExpressionUUID->"5ba7b58b-87d5-4606-bd27-7bbe91e7aba2"],
+
+Cell[BoxData[GridBox[{
+   {"XXXX", Cell[
+    "XXXX", "TableText",ExpressionUUID->
+     "b06ed8d2-7026-40f8-b217-5dde9f534492"]},
+   {"XXXX", Cell[
+    "XXXX", "TableText",ExpressionUUID->
+     "8fac0b4c-7abb-4b8e-9759-14d90902ac5e"]},
+   {"XXXX", Cell[
+    "XXXX", "TableText",ExpressionUUID->
+     "45be9770-8850-45b8-9cb7-4f17026ea1ba"]}
+  }]], "DefinitionBox",
+ CellID->2096742444,ExpressionUUID->"ddf4faf3-b1aa-4ca2-9da0-4b975b11a49e"],
+
+Cell["XXXX.", "Caption",
+ CellID->1891092685,ExpressionUUID->"ee108521-c892-45d3-8046-1cff863044be"],
+
+Cell[CellGroupData[{
+
+Cell["This loads the package:", "MathCaption",
+ CellChangeTimes->{{3.738333649624485*^9, 3.738333655141059*^9}},
+ CellID->836781195,ExpressionUUID->"ce4e0b0a-b1b1-4f79-aac5-fb78d819abd5"],
+
+Cell[BoxData[
+ RowBox[{"Needs", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
+ InitializationCell->True,
+ CellID->287542775,ExpressionUUID->"d4b31905-aad3-4c32-bbbb-7c4cfdfa8525"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["More About", "TutorialMoreAboutSection",
+ CellID->23220180,ExpressionUUID->"803d8475-4ef6-431d-8652-d95bfd34a881"],
+
+Cell["XXXX", "TutorialMoreAbout",
+ CellID->1567025153,ExpressionUUID->"0b92d3cc-a1d6-421e-8817-6eaa4a778949"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Tutorials", "RelatedTutorialsSection",
+ CellID->415694126,ExpressionUUID->"6f3d1b34-3cc0-40a9-a610-74bc9c9c7b59"],
+
+Cell[TextData[ButtonBox["Element Mesh Generation",
+ BaseStyle->"Link",
+ ButtonData->
+  "paclet:FEMDocumentation/tutorial/ElementMeshGeneration"]], \
+"RelatedTutorials",
+ CellChangeTimes->{{3.738333523087947*^9, 3.7383335317026024`*^9}, {
+  3.7383335969291525`*^9, 3.7383336175793495`*^9}},
+ CellID->806871991,ExpressionUUID->"01fe3960-fb73-44ec-a324-25040d7ff3c5"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Wolfram Education Group Courses", "TutorialRelatedLinksSection",
+ CellID->415694148,ExpressionUUID->"9c128bd7-301e-4ff8-8cae-da68b82d8728"],
+
+Cell["XXXX", "TutorialRelatedLinks",
+ CellID->415694149,ExpressionUUID->"c3530b8f-5e81-46cc-af2f-7a333b85dbe8"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1002, 966},
+WindowMargins->{{4, Automatic}, {Automatic, 0}},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "TutorialPageStyles.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 599, 14, 28, "History",ExpressionUUID->"194816a8-54ef-48dd-b9ad-6f0e468db849",
+ CellID->1247902091],
+Cell[CellGroupData[{
+Cell[1182, 38, 123, 1, 35, "CategorizationSection",ExpressionUUID->"21e20ee4-883f-4673-ad57-42a3d9b63abf",
+ CellID->1122911449],
+Cell[1308, 41, 136, 2, 40, "Categorization",ExpressionUUID->"76584b0d-f982-417e-946e-ca1ad0113cb0",
+ CellID->686433507],
+Cell[1447, 45, 145, 2, 40, "Categorization",ExpressionUUID->"493b1c17-c2b6-4b79-b5d3-98206eca06ad",
+ CellID->605800465],
+Cell[1595, 49, 134, 2, 40, "Categorization",ExpressionUUID->"d3c517a5-d828-4a40-8eb7-83eae860b64c",
+ CellID->468444828],
+Cell[1732, 53, 143, 1, 40, "Categorization",ExpressionUUID->"fbf901d5-3f87-4a5d-b7b8-a2dc05f36e74"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1912, 59, 111, 1, 35, "KeywordsSection",ExpressionUUID->"0a4d3111-2cc8-4be0-bcb9-2eaaedd1c00d",
+ CellID->1427428552],
+Cell[2026, 62, 100, 1, 70, "Keywords",ExpressionUUID->"c2053f42-bc8b-4885-8ae7-1680aead75e3",
+ CellID->1251852827]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2163, 68, 108, 1, 22, "DetailsSection",ExpressionUUID->"3acae335-77ec-417d-8ad2-3d99108d86fe",
+ CellID->307771771],
+Cell[2274, 71, 118, 2, 70, "Details",ExpressionUUID->"0bb24278-267c-416d-a30b-9f8759c9c0aa",
+ CellID->218895918],
+Cell[2395, 75, 124, 2, 70, "Details",ExpressionUUID->"2d642b8a-c34c-491f-b944-7c326c25c6a8",
+ CellID->350963985],
+Cell[2522, 79, 121, 2, 70, "Details",ExpressionUUID->"766f7013-da70-447b-80eb-ba4f02d86e92",
+ CellID->795871300],
+Cell[2646, 83, 126, 2, 70, "Details",ExpressionUUID->"130a4b76-c86f-4dd0-97f6-11413a2b1c59",
+ CellID->199739161],
+Cell[2775, 87, 115, 2, 70, "Details",ExpressionUUID->"a9633f2a-1699-4d2f-93ce-bbd7139c8d56",
+ CellID->40625308],
+Cell[2893, 91, 116, 2, 70, "Details",ExpressionUUID->"0c471870-8baf-444d-a612-75acfc2ebbfc",
+ CellID->357121918],
+Cell[3012, 95, 117, 2, 70, "Details",ExpressionUUID->"fbbe2852-5d82-4562-b7af-527d476437b1",
+ CellID->35949532],
+Cell[3132, 99, 133, 2, 70, "Details",ExpressionUUID->"7a097801-8bf5-4620-b344-ae78a66bbe30",
+ CellID->929432370],
+Cell[3268, 103, 122, 2, 70, "Details",ExpressionUUID->"333eca64-264b-431c-a5da-300b29e54ffb",
+ CellID->240026365]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[3427, 110, 186, 2, 113, "Title",ExpressionUUID->"cece2ff4-56df-432d-bcbe-164a2649d281",
+ CellID->509267359],
+Cell[3616, 114, 262, 5, 27, "Text",ExpressionUUID->"5ba7b58b-87d5-4606-bd27-7bbe91e7aba2",
+ CellID->1534169418],
+Cell[3881, 121, 439, 11, 100, "DefinitionBox",ExpressionUUID->"ddf4faf3-b1aa-4ca2-9da0-4b975b11a49e",
+ CellID->2096742444],
+Cell[4323, 134, 100, 1, 35, "Caption",ExpressionUUID->"ee108521-c892-45d3-8046-1cff863044be",
+ CellID->1891092685],
+Cell[CellGroupData[{
+Cell[4448, 139, 187, 2, 44, "MathCaption",ExpressionUUID->"ce4e0b0a-b1b1-4f79-aac5-fb78d819abd5",
+ CellID->836781195],
+Cell[4638, 143, 177, 3, 52, "Input",ExpressionUUID->"d4b31905-aad3-4c32-bbbb-7c4cfdfa8525",
+ InitializationCell->True,
+ CellID->287542775]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4852, 151, 120, 1, 88, "TutorialMoreAboutSection",ExpressionUUID->"803d8475-4ef6-431d-8652-d95bfd34a881",
+ CellID->23220180],
+Cell[4975, 154, 109, 1, 26, "TutorialMoreAbout",ExpressionUUID->"0b92d3cc-a1d6-421e-8817-6eaa4a778949",
+ CellID->1567025153]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5121, 160, 127, 1, 88, "RelatedTutorialsSection",ExpressionUUID->"6f3d1b34-3cc0-40a9-a610-74bc9c9c7b59",
+ CellID->415694126],
+Cell[5251, 163, 364, 7, 26, "RelatedTutorials",ExpressionUUID->"01fe3960-fb73-44ec-a324-25040d7ff3c5",
+ CellID->806871991]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5652, 175, 153, 1, 88, "TutorialRelatedLinksSection",ExpressionUUID->"9c128bd7-301e-4ff8-8cae-da68b82d8728",
+ CellID->415694148],
+Cell[5808, 178, 111, 1, 26, "TutorialRelatedLinks",ExpressionUUID->"c3530b8f-5e81-46cc-af2f-7a333b85dbe8",
+ CellID->415694149]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
