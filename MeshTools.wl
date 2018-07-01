@@ -26,6 +26,8 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 
 AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
+SelectElementsByMarker::usage="SelectElementsByMarker[mesh, marker] creates ElementMesh made only out of elements with selected marker.";
+
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
@@ -90,6 +92,36 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
 	head[
 		"Coordinates"->mesh["Coordinates"],
 		elementType->MapThread[#1[#2,#3]&,{elementTypes,elementIncidents,elementMarkers}]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectElementsByMarker*)
+
+
+SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
+	{elementType,head,elementHeads,connectivity,allMarkers,chosenElements,chosenNodeNum,renumbering},
+	
+	(* TODO: Add check if the marker exists in mesh. *)
+	
+	{elementType,head}=If[
+		mesh["MeshElements"]===Automatic,
+		{"BoundaryElements",ToBoundaryMesh},
+		{"MeshElements",ToElementMesh}
+	];
+	
+	elementHeads=Head/@mesh[elementType];
+	connectivity=ElementIncidents@mesh[elementType];
+	allMarkers=ElementMarkers@mesh[elementType];
+	
+	chosenElements=MapThread[Pick[#1,#2,marker]&,{connectivity,allMarkers}];
+	chosenNodeNum=Union@Flatten@chosenElements;
+	renumbering=Thread[chosenNodeNum->Range@Length@chosenNodeNum];
+
+	head[
+		"Coordinates" -> Part[mesh["Coordinates"],chosenNodeNum],
+		elementType -> MapThread[#1[#2]&,{elementHeads,chosenElements/.renumbering}]
 	]
 ]
 
