@@ -59,7 +59,7 @@ EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void wit
 RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues space used in metal texture analysis.";
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Code*)
 
 
@@ -67,7 +67,7 @@ RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues spac
 Begin["`Private`"];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Mesh operations*)
 
 
@@ -96,16 +96,16 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*SelectElementsByMarker*)
 
+
+SelectElementsByMarker::marker="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
 
 SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
 	{elementType,head,elementHeads,connectivity,allMarkers,chosenElements,chosenNodeNum,renumbering},
 	
-	(* TODO: Add check if the marker exists in mesh. *)
-	
-	{elementType,head}=If[
+		{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
 		{"BoundaryElements",ToBoundaryMesh},
 		{"MeshElements",ToElementMesh}
@@ -114,6 +114,11 @@ SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
 	elementHeads=Head/@mesh[elementType];
 	connectivity=ElementIncidents@mesh[elementType];
 	allMarkers=ElementMarkers@mesh[elementType];
+	
+	If[
+		Not@MemberQ[Union@Flatten@allMarkers,marker],
+		Message[SelectElementsByMarker::marker,marker];Return[mesh]
+	];
 	
 	chosenElements=MapThread[Pick[#1,#2,marker]&,{connectivity,allMarkers}];
 	chosenNodeNum=Union@Flatten@chosenElements;
