@@ -39,9 +39,6 @@ ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[ mesh ] draws accu
 MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
 
-StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
-StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
-
 RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
 
@@ -529,6 +526,11 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
     2
 ]
 
+
+(* This function is kept in private context to avoid shadowing with the same function in
+FEMAddOns paclet (https://github.com/WolframResearch/FEMAddOns). *)
+StructuredMesh::usage="StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.
+StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra.";
 
 StructuredMesh::array="Raster of input points must be full array of numbers with depth of `1`.";
 
