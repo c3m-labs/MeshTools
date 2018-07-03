@@ -128,7 +128,7 @@ With[{
 
 
 (* ::Subsection::Closed:: *)
-(*QuadToTriangle*)
+(*ToTriangleMesh*)
 
 
 With[{
@@ -138,19 +138,19 @@ With[{
 	]
 	},
 	VerificationTest[
-		QuadToTriangle[mesh],	
+		ToTriangleMesh[mesh],	
 		ElementMesh[
 			{{0., 0.}, {1., 0.}, {1., 1.}, {0., 1.}}, 
 			{TriangleElement[{{1, 2, 3}, {1, 3, 4}}]}, 
 			{LineElement[{{2, 3}, {1, 2}, {3, 4}, {4, 1}}]}
 		],
-		TestID->"QuadToTriangle_1"
+		TestID->"ToTriangleMesh_1"
 	]
 ]
 
 
 (* ::Subsection::Closed:: *)
-(*HexToTetrahedron*)
+(*ToTetrahedronMesh*)
 
 
 With[{
@@ -160,13 +160,13 @@ With[{
 	]
 	},
 	VerificationTest[
-		HexToTetrahedron[mesh],
+		ToTetrahedronMesh[mesh],
 		ElementMesh[
 			{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}}, 
 			{TetrahedronElement[{{3, 1, 5, 2}, {8, 2, 5, 6}, {3, 5, 7, 8}, {3, 2, 5, 8}, {3, 2, 8, 4}}]}, 
 			{TriangleElement[{{2,5,1},{2,1,3},{3,1,5},{6,5,2},{6,8,5},{6,2,8},{8,7,5},{8,3,7},{3,5,7},{4,8,2},{4,3,8},{4,2,3}}]}
 		],
-		TestID->"HexToTetrahedron_1"
+		TestID->"ToTetrahedronMesh_1"
 	]
 ]
 

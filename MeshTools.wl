@@ -33,30 +33,30 @@ TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh acco
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
 
 SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
-QuadToTriangle::usage="QuadToTriangle[mesh] converts quadrilateral mesh to triangle mesh.";
-HexToTetrahedron::usage="HexToTetrahedron[mesh] converts hexahedral mesh to tetrahedral mesh.";
+ToTriangleMesh::usage="ToTriangleMesh[mesh] converts quadrilateral mesh to triangle mesh.";
+ToTetrahedronMesh::usage="ToTetrahedronMesh[mesh] converts hexahedral mesh to tetrahedral mesh.";
 
-ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[ mesh ] draws accurately second order 2D mesh.";
+ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[mesh] draws accurately second order 2D mesh.";
 
-MeshElementMeasure::usage="MeshElementMeasure[mesh_ElementMesh] gives the measure of each mesh element.";
-BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh_ElementMesh] gives the measure of each boundary element.";
+MeshElementMeasure::usage="MeshElementMeasure[mesh] gives the measure of each mesh element.";
+BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh] gives the measure of each boundary element.";
 
-RectangleMesh::usage="RectangleMesh[{x1,y1},{x2,y2},{nx,ny}] creates structured mesh on Rectangle.";
-CuboidMesh::usage="CuboidMesh[{x1,y1,z1},{x2,y2,z2},{nx,ny,nz}] creates structured mesh of hexahedra on Cuboid.";
+RectangleMesh::usage="RectangleMesh[{x1, y1},{x2, y2}, {nx, ny}] creates structured mesh on Rectangle.";
+CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 
-DiskMesh::usage="DiskMesh[{x,y},r,n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
-SphereMesh::usage="SphereMesh[{x,y,z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
-AnnulusMesh::usage="AnnulusMesh[{x,y},{rIn,rOut},{\[Phi]1,\[Phi]2},{n\[Phi],nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
+DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
+SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
+AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
-DiskVoidMesh::usage="DiskVoidMesh[voidRadius,squareSize,noElements] creates a mesh with disk shaped void in square domain.";
-SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius,cuboidSize,noElements] creates a mesh with spherical void in cuboid domain.";
+DiskVoidMesh::usage="DiskVoidMesh[voidRadius, squareSize, noElements] creates a mesh with disk shaped void in square domain.";
+SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius, cuboidSize, noElements] creates a mesh with spherical void in cuboid domain.";
 
 EllipsoidVoidMesh::usage="EllipsoidVoidMesh[radius, noElements] creates a mesh with spherical void.
-EllipsoidVoidMesh[{r1,r2,r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
+EllipsoidVoidMesh[{r1, r2, r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
 RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues space used in metal texture analysis.";
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Code*)
 
 
@@ -64,7 +64,7 @@ RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues spac
 Begin["`Private`"];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Mesh operations*)
 
 
@@ -93,7 +93,7 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SelectElementsByMarker*)
 
 
@@ -265,10 +265,6 @@ ExtrudeMesh[mesh_ElementMesh,thickness_/;thickness>0,layers_Integer?Positive]:=M
 ]
 
 
-(* ::Subsubsection:: *)
-(*RotateMesh*)
-
-
 (* ::Subsubsection::Closed:: *)
 (*Mesh smoothing*)
 
@@ -316,15 +312,15 @@ SmoothenMesh[mesh_ElementMesh]:=Block[
 
 
 (* ::Subsubsection::Closed:: *)
-(*QuadToTriangle*)
+(*ToTriangleMesh*)
 
 
-QuadToTriangle::order="Only the first order mesh is currently supported.";
+ToTriangleMesh::order="Only the first order mesh is currently supported.";
 
-QuadToTriangle[mesh_ElementMesh]:=Module[{
+ToTriangleMesh[mesh_ElementMesh]:=Module[{
 	elementType,head,conn,triangles
 	},
-	If[mesh["MeshOrder"]=!=1,Message[QuadToTriangle::order];Return[$Failed]];
+	If[mesh["MeshOrder"]=!=1,Message[ToTriangleMesh::order];Return[$Failed]];
 	
 	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
@@ -343,17 +339,17 @@ QuadToTriangle[mesh_ElementMesh]:=Module[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*HexToTetrahedron*)
+(*ToTetrahedronMesh*)
 
 
-HexToTetrahedron::type="ElementMesh should contain only hexadedral elements.";
+ToTetrahedronMesh::type="ElementMesh should contain only hexadedral elements.";
 
-HexToTetrahedron[mesh_ElementMesh]:=Module[{
+ToTetrahedronMesh[mesh_ElementMesh]:=Module[{
 	nodes,origElms,tetConnect,restructure,newElms
 	},
 	origElms=mesh["MeshElements"];
 	
-	If[Head@First[origElms]=!=HexahedronElement,Message[HexToTetrahedron::type];Return[$Failed]];
+	If[Head@First[origElms]=!=HexahedronElement,Message[ToTetrahedronMesh::type];Return[$Failed]];
 	
 	tetConnect={
 		{4, 1, 2, 5},
