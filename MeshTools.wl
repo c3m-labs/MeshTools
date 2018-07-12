@@ -45,8 +45,11 @@ RectangleMesh::usage="RectangleMesh[{x1, y1},{x2, y2}, {nx, ny}] creates structu
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
-SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
+
+SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
+SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}]";
+BallMesh::usage="BallMesh[{x, y, z}, r, n] creates structured mesh with n elements on Ball of radius r centered at {x,y,z}.";
 
 DiskVoidMesh::usage="DiskVoidMesh[voidRadius, squareSize, noElements] creates a mesh with disk shaped void in square domain.";
 SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius, cuboidSize, noElements] creates a mesh with spherical void in cuboid domain.";
@@ -636,7 +639,7 @@ BoundaryElementMeasure[mesh_ElementMesh,integrationOrder_:3]:=Module[
 
 
 (* ::Subsection::Closed:: *)
-(*Mesh vizualization*)
+(*Mesh visualization*)
 
 
 (* 
@@ -768,8 +771,12 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 ]
 
 
+(* ::Subsection:: *)
+(*Shape meshes 2D*)
+
+
 (* ::Subsection::Closed:: *)
-(*Shape meshes*)
+(*Shape meshes 3D*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -991,6 +998,106 @@ SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
 		"Projection",sphereMeshProjection[{x,y,z},r,n]
 	];
 	mesh
+]
+
+
+(* ::Subsubsection:: *)
+(*SphericalShellMesh*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*BallMesh*)
+
+
+ballMeshBlock//Clear;
+ballMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
+	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,firstOctant},
+	(* Size of internal square. Size is determined to optimize the minimal quality of all elements. *)
+	d=0.2;
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	
+	bottomRaster=With[
+		{pts=d*N@Subdivide[0,1,n]},
+		Map[Append[d], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	
+	(* This special raster makes all element edges on disk edge of the same length. *)
+	topRaster=With[
+		{pts=N@Tan@Subdivide[0,Pi/4,n]},
+		Map[rescale@*Append[1.], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	
+	cubeMesh=CuboidMesh[{0,0,0},d*{1,1,1},{n,n,n}];
+	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,2*n}];
+	
+	rotations=RotationTransform[#,{1,1,1}]&/@({0,1,2}*2Pi/3);
+	
+	firstOctant=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
+	
+	ToElementMesh[
+		"Coordinates" ->Transpose[Transpose[r*firstOctant["Coordinates"]]+{x,y,z}],
+		"MeshElements" -> firstOctant["MeshElements"]
+	]
+]
+
+
+(* 
+Some key ideas for this code come from the answer by "Michael E2" on topic: 
+https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
+*)
+ballMeshProjection//Clear;
+ballMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[{
+	rescale,cuboidMesh,coordinates
+	},
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	(* This special raster makes all element edges on sphere edge of the same length. *)
+	cuboidMesh=With[
+		{pts=N@Tan@Subdivide[0,Pi/4,n]},
+		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
+	];
+	(* If we do order alteration (more than 1st order) before projection, then geometry is
+	more accurate and elements have curved edges. *)
+	(*cuboidMesh=MeshOrderAlteration[cuboidMesh,order];*)
+	
+	coordinates=Transpose[Transpose[r*(rescale/@cuboidMesh["Coordinates"])]+{x,y,z}];
+	
+	ToElementMesh[
+		"Coordinates" -> coordinates,
+		"MeshElements" -> cuboidMesh["MeshElements"]
+	]
+]
+
+
+BallMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 1.";
+BallMesh::method="Method \"`1`\" is not supported.";
+BallMesh//Options={Method->Automatic,"BasicUnit"->False};
+
+BallMesh[n_,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts]
+
+BallMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
+	{order,method,mesh,rotations},
+	If[Not@(TrueQ[n>=1]&&IntegerQ[n]),Message[BallMesh::noelems,n];Return[$Failed]];
+	
+	method=OptionValue[Method]/.Automatic->"Block";
+		
+	If[
+		Not@MemberQ[{"Block","Projection"},method],
+		Message[BallMesh::method,method];Return[$Failed]
+	];
+	(* Mesh is created only in the first octant and returned according to given Option. *)
+	mesh=Switch[method,
+		"Block",ballMeshBlock[{x,y,z},r,n],
+		"Projection",ballMeshProjection[{x,y,z},r,n]
+	];
+	
+	If[TrueQ@OptionValue["BasicUnit"],Return[mesh]];
+	
+	(* 8 rotations, 4 of them are double (composition). *)
+	rotations=Flatten@Map[
+		{#,#@*RotationTransform[Pi/2,{0,0,1}]}&,
+		(RotationTransform[#,{1,0,0}]&/@({0,1,2,3}*Pi/2))
+	];
+	MergeMesh[TransformMesh[mesh,#]&/@rotations]
 ]
 
 
