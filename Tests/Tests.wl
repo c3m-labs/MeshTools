@@ -266,6 +266,17 @@ VerificationTest[
 
 
 (* ::Subsection::Closed:: *)
+(*BallMesh*)
+
+
+VerificationTest[
+	Head@BallMesh[{0,0,0},1,1],
+	ElementMesh,
+	TestID->"BallMesh_1"
+]
+
+
+(* ::Subsection::Closed:: *)
 (*MeshElementMeasure*)
 
 
