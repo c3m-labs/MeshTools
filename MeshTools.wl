@@ -782,7 +782,7 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 
 
 (* Adjusted from documentation page on Triangle and Tetrahedron *)
-symmetricSubdivision[shape_,pl_,k_]/;0<=k<2^Length[pl]:=Module[
+symmetricSubdivision[shape_[pl_],k_]/;0<=k<2^Length[pl]:=Module[
 	{n=Length[pl]-1,i0,bl,pos},
 	
 	i0=DigitCount[k,2,1]; 
@@ -793,9 +793,9 @@ symmetricSubdivision[shape_,pl_,k_]/;0<=k<2^Length[pl]:=Module[
 
 
 (* Adjusted from documentation page on Triangle and Tetrahedron *)
-nestedSymmetricSubdivision[shape_,pl_,level_Integer]/;level==0:=shape[pl]
+nestedSymmetricSubdivision[shape_[pl_],level_Integer]/;level==0:=shape[pl]
 
-nestedSymmetricSubdivision[shape_,pl_,level_Integer]/;level>0:=Flatten[
+nestedSymmetricSubdivision[shape_[pl_],level_Integer]/;level>0:=Flatten[
 	Map[
 		nestedSymmetricSubdivision[symmetricSubdivision[shape[pl],#],level-1]&,
 		Range[0,(shape/.{Triangle->3,Tetrahedron->7})]
@@ -804,7 +804,7 @@ nestedSymmetricSubdivision[shape_,pl_,level_Integer]/;level>0:=Flatten[
 
 
 (* Helper function to check the orientation of nodes used in TriangleElement and TetrahedronElement*)
-ClearAll[reorient]
+
 reorient[{a_,b_,c_}]:=If[
 	Negative@Det[{a-c,b-c}],
 	{a,c,b},
@@ -826,7 +826,7 @@ simplexMesh[shape_,corners_,n_Integer]:=Module[
 	elementType=shape/.{Triangle->TriangleElement,Tetrahedron->TetrahedronElement};
 	divisions=Log[2,n];
 	
-	allCrds=reorient/@(Join@@List@@@nestedSymmetricSubdivision[shape,corners,divisions]);
+	allCrds=reorient/@(Join@@List@@@nestedSymmetricSubdivision[shape[corners],divisions]);
 	nodes=DeleteDuplicates@Flatten[allCrds,1];
 	connectivity=With[
 		{rules=Thread[nodes->Range@Length[nodes]]},
