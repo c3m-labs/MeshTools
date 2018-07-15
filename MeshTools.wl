@@ -778,6 +778,69 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 
 
 (* ::Subsubsection::Closed:: *)
+(*Helper functions for Simplex*)
+
+
+(* Adjusted from documentation page on Triangle and Tetrahedron *)
+symmetricSubdivision[shape_,pl_,k_]/;0<=k<2^Length[pl]:=Module[
+	{n=Length[pl]-1,i0,bl,pos},
+	
+	i0=DigitCount[k,2,1]; 
+	bl=IntegerDigits[k,2,n];
+	pos=FoldList[If[#2==0,#1+{0,1},#1+{1,0}]&,{0,i0},Reverse[bl]];
+	shape@Map[Mean,Extract[pl,#]&/@Map[{#}&,pos+1,{2}]] 
+]
+
+
+(* Adjusted from documentation page on Triangle and Tetrahedron *)
+nestedSymmetricSubdivision[shape_,pl_,level_Integer]/;level==0:=shape[pl]
+
+nestedSymmetricSubdivision[shape_,pl_,level_Integer]/;level>0:=Flatten[
+	Map[
+		nestedSymmetricSubdivision[symmetricSubdivision[shape[pl],#],level-1]&,
+		Range[0,(shape/.{Triangle->3,Tetrahedron->7})]
+	]
+]
+
+
+(* Helper function to check the orientation of nodes used in TriangleElement and TetrahedronElement*)
+ClearAll[reorient]
+reorient[{a_,b_,c_}]:=If[
+	Negative@Det[{a-c,b-c}],
+	{a,c,b},
+	{a,b,c}
+]
+
+reorient[{a_,b_,c_,d_}]:=If[
+	Positive@Det[{a-d,b-d,c-d}],
+	{a,b,d,c},
+	{a,b,c,d}
+]
+
+
+(* TODO: It would be really nice if Triangle and Tetrahedron could be split to arbitrary 
+number of elements per edge.*)
+
+simplexMesh[shape_,corners_,n_Integer]:=Module[
+	{divisions,f,allCrds,nodes,connectivity,elementType},
+	elementType=shape/.{Triangle->TriangleElement,Tetrahedron->TetrahedronElement};
+	divisions=Log[2,n];
+	
+	allCrds=reorient/@(Join@@List@@@nestedSymmetricSubdivision[shape,corners,divisions]);
+	nodes=DeleteDuplicates@Flatten[allCrds,1];
+	connectivity=With[
+		{rules=Thread[nodes->Range@Length[nodes]]},
+		Replace[allCrds,rules,{2}]
+	];
+	
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{elementType[connectivity]}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*RectangleMesh*)
 
 
@@ -791,52 +854,12 @@ RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_,ny_}]:=StructuredMesh[{
 (*TriangleMesh*)
 
 
-(* From documentation page on Triangle *)
-symmetricSubdivision[Triangle[pl_],k_]/;0<=k<2^Length[pl]:=Module[
-	{n=Length[pl]-1,i0,bl,pos},
-	
-	i0=DigitCount[k,2,1]; 
-	bl=IntegerDigits[k,2,n];
-	pos=FoldList[If[#2==0,#1+{0,1},#1+{1,0}]&,{0,i0},Reverse[bl]];
-	Triangle@Map[Mean,Extract[pl,#]&/@Map[{#}&,pos+1,{2}]] 
-]
-
-
-(* From documentation page on Triangle *)
-nestedSymmetricSubdivision[Triangle[pl_],level_Integer]/;level==0:=Triangle[pl]
-
-nestedSymmetricSubdivision[Triangle[pl_],level_Integer]/;level>0:=Flatten[
-	nestedSymmetricSubdivision[symmetricSubdivision[Triangle[pl],#],level-1]&/@Range[0,3],
-	1
-]
-
-
-(* Helper function to check the orientation of nodes used in Triangle *)
-reorientQ[{a_,b_,c_}]:=Negative@Det[{a-c,b-c}]
-
-
 TriangleMesh::noelms="Currently only 2, 4, 8, 16 or 32 elements per edge are allowed.";
 
-(* TODO: It would be really nice if Triangle could be split to arbitrary 
-number of elements per edge.*)
-TriangleMesh[pts_,n_Integer]:=Module[
-	{divisions,f,allCrds,nodes,connectivity},
-	
-	If[Not@MemberQ[{2,4,8,16,32},n],Message[TriangleMesh::noelms];Return[$Failed]];
-	
-	divisions=Log[2,n];
-	f=If[reorientQ[#],#[[{1,3,2}]],#]&;
-	allCrds=f/@(Join@@List@@@nestedSymmetricSubdivision[Triangle[pts],divisions]);
-	nodes=DeleteDuplicates@Flatten[allCrds,1];
-	connectivity=With[
-		{rules=Thread[nodes->Range@Length[nodes]]},
-		Replace[allCrds,rules,{2}]
-	];
-	
-	ToElementMesh[
-		"Coordinates"->nodes,
-		"MeshElements"->{TriangleElement[connectivity]}
-	]
+TriangleMesh[corners_,n_Integer]:=If[
+	MemberQ[{2,4,8,16,32},n],
+	simplexMesh[Triangle,corners,n],
+	Message[TriangleMesh::noelms];$Failed
 ]
 
 
@@ -1244,51 +1267,12 @@ EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 (*TetrahedronMesh*)
 
 
-(* From documentation page on Tetrahedron *)
-symmetricSubdivision[Tetrahedron[pl_],k_]/;0<=k<2^Length[pl]:=Module[
-	{n=Length[pl]-1,i0,bl,pos},
-	
-	i0=DigitCount[k,2,1]; 
-	bl=IntegerDigits[k,2,n];
-	pos=FoldList[If[#2==0,#1+{0,1},#1+{1,0}]&,{0,i0},Reverse[bl]];
-	Tetrahedron@Map[Mean,Extract[pl,#]&/@Map[{#}&,pos+1,{2}]] 
-]
+TetrahedronMesh::noelms="Currently only 2, 4, 8, or 16 elements per edge are allowed.";
 
-
-(* From documentation page on Tetrahedron *)
-nestedSymmetricSubdivision[Tetrahedron[pl_],level_Integer]/;level==0:=Tetrahedron[pl]
-
-nestedSymmetricSubdivision[Tetrahedron[pl_],level_Integer]/;level>0:=Flatten[
-	nestedSymmetricSubdivision[symmetricSubdivision[Tetrahedron[pl],#],level-1]&/@Range[0,7]
-]
-
-
-(* Helper function to check the orientation of nodes used in TetrahedronElement *)
-reorientQ[{a_,b_,c_,d_}]:=Positive@Det[{a-d,b-d,c-d}]
-
-
-TetrahedronMesh::noelms="Currently only 2, 4, 8, 16 or 32 elements per edge are allowed.";
-
-(* TODO: It would be really nice if tetrahedron could be split to arbitrary 
-number of elements per edge.*)
-TetrahedronMesh[pts_,n_Integer]:=Module[
-	{divisions,f,allCrds,nodes,connectivity},
-	
-	If[Not@MemberQ[{2,4,8,16,32},n],Message[TetrahedronMesh::noelms];Return[$Failed]];
-	
-	divisions=Log[2,n];
-	f=If[reorientQ[#],#[[{1,2,4,3}]],#]&;
-	allCrds=f/@(Join@@List@@@nestedSymmetricSubdivision[Tetrahedron[pts],divisions]);
-	nodes=DeleteDuplicates@Flatten[allCrds,1];
-	connectivity=With[
-		{rules=Thread[nodes->Range@Length[nodes]]},
-		Replace[allCrds,rules,{2}]
-	];
-	
-	ToElementMesh[
-		"Coordinates"->nodes,
-		"MeshElements"->{TetrahedronElement[connectivity]}
-	]
+TetrahedronMesh[corners_,n_Integer]:=If[
+	MemberQ[{2,4,8,16},n],
+	simplexMesh[Tetrahedron,corners,n],
+	Message[TetrahedronMesh::noelms];$Failed
 ]
 
 
