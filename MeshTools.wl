@@ -43,6 +43,7 @@ BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh] gives the measure of
 
 RectangleMesh::usage="RectangleMesh[{x1, y1},{x2, y2}, {nx, ny}] creates structured mesh on Rectangle.";
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
+TriangleMesh::usage="Triangle[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
 
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
 AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
@@ -784,6 +785,59 @@ RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_,ny_}]:=StructuredMesh[{
 	{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
 	{nx,ny}
 ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*TriangleMesh*)
+
+
+(* From documentation page on Triangle *)
+symmetricSubdivision[Triangle[pl_],k_]/;0<=k<2^Length[pl]:=Module[
+	{n=Length[pl]-1,i0,bl,pos},
+	
+	i0=DigitCount[k,2,1]; 
+	bl=IntegerDigits[k,2,n];
+	pos=FoldList[If[#2==0,#1+{0,1},#1+{1,0}]&,{0,i0},Reverse[bl]];
+	Triangle@Map[Mean,Extract[pl,#]&/@Map[{#}&,pos+1,{2}]] 
+]
+
+
+(* From documentation page on Triangle *)
+nestedSymmetricSubdivision[Triangle[pl_],level_Integer]/;level==0:=Triangle[pl]
+
+nestedSymmetricSubdivision[Triangle[pl_],level_Integer]/;level>0:=Flatten[
+	nestedSymmetricSubdivision[symmetricSubdivision[Triangle[pl],#],level-1]&/@Range[0,3],
+	1
+]
+
+
+(* Helper function to check the orientation of nodes used in Triangle *)
+reorientQ[{a_,b_,c_}]:=Negative@Det[{a-c,b-c}]
+
+
+TriangleMesh::noelms="Currently only 2, 4, 8, 16 or 32 elements per edge are allowed.";
+
+(* TODO: It would be really nice if Triangle could be split to arbitrary 
+number of elements per edge.*)
+TriangleMesh[pts_,n_Integer]:=Module[
+	{divisions,f,allCrds,nodes,connectivity},
+	
+	If[Not@MemberQ[{2,4,8,16,32},n],Message[TriangleMesh::noelms];Return[$Failed]];
+	
+	divisions=Log[2,n];
+	f=If[reorientQ[#],#[[{1,3,2}]],#]&;
+	allCrds=f/@(Join@@List@@@nestedSymmetricSubdivision[Triangle[pts],divisions]);
+	nodes=DeleteDuplicates@Flatten[allCrds,1];
+	connectivity=With[
+		{rules=Thread[nodes->Range@Length[nodes]]},
+		Replace[allCrds,rules,{2}]
+	];
+	
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{TriangleElement[connectivity]}
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)

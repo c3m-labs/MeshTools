@@ -247,6 +247,29 @@ VerificationTest[
 
 
 (* ::Subsection::Closed:: *)
+(*TriangleMesh*)
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},2],
+	ElementMesh[
+		{{0., 0.}, {0.5, 0.}, {0., 0.5}, {1., 0.}, {0.5, 0.5}, {0., 1.}}, 
+		{TriangleElement[{{1, 2, 3}, {2, 4, 5}, {2, 5, 3}, {3, 5, 6}}]},
+		{LineElement[{{3, 1}, {1, 2}, {4, 5}, {2, 4}, {5, 6}, {6, 3}}]}
+	],
+	TestID->"TriangleMesh_1"
+]
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},1],
+	$Failed,
+	{TriangleMesh::noelms},
+	TestID->"TriangleMesh_2"
+]
+
+
+(* ::Subsection::Closed:: *)
 (*SphereMesh*)
 
 
@@ -273,6 +296,29 @@ VerificationTest[
 	Head@BallMesh[{0,0,0},1,1],
 	ElementMesh,
 	TestID->"BallMesh_1"
+]
+
+
+(* ::Subsection::Closed:: *)
+(*TetrahedronMesh*)
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2],
+	ElementMesh[
+		{{0., 0., 0.}, {0.5, 0., 0.}, {0., 0.5, 0.}, {0., 0., 0.5}, {1., 0., 0.}, {0.5, 0.5, 0.}, {0.5, 0., 0.5}, {0., 1., 0.}, {0., 0.5, 0.5}, {0., 0., 1.}}, 
+		{TetrahedronElement[{{1, 2, 3, 4}, {2, 5, 6, 7}, {2, 3, 7, 6}, {3, 6, 8, 9}, {2, 3, 4, 7}, {3, 6, 9, 7}, {3, 4, 7, 9}, {4, 7, 9, 10}}]},
+		{TriangleElement[{{4, 1, 3}, {4, 2, 1}, {1, 2, 3}, {7, 6, 5}, {7, 5, 2}, {2, 5, 6}, {6, 3, 2}, {9, 8, 6}, {9, 3, 8}, {3, 6, 8}, {7, 2, 4}, {7, 9, 6}, {9, 4, 3}, {10, 9, 7}, {10, 4, 9}, {10, 7, 4}}]}
+	],
+	TestID->"TetrahedronMesh_1"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1],
+	$Failed,
+	{TetrahedronMesh::noelms},
+	TestID->"TetrahedronMesh_2"
 ]
 
 
