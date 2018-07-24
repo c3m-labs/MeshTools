@@ -274,9 +274,10 @@ VerificationTest[
 
 
 VerificationTest[
-	Head@SphereMesh[{1,2,3},3,3],
-	ElementMesh,
-	TestID->"SphereMesh_1"
+	SphereMesh[{1,2,3},3,3],
+	_ElementMesh,
+	TestID->"SphereMesh_1",
+	SameTest->MatchQ
 ]
 
 
@@ -285,6 +286,37 @@ VerificationTest[
 	$Failed,
 	{SphereMesh::noelems},
 	TestID->"SphereMesh_2"
+]
+
+
+(* ::Subsection::Closed:: *)
+(*SphericalShellMesh*)
+
+
+(* Test default SphericalShell with default "MeshOrder" *)
+VerificationTest[
+	SphericalShellMesh[{4,2}],
+	_ElementMesh,
+	TestID->"SphericalShellMesh_1",
+	SameTest->MatchQ
+]
+
+
+(* Test default SphericalShell with "MeshOrder"->2 *)
+VerificationTest[
+	SphericalShellMesh[{4,1},"MeshOrder"->2],
+	_ElementMesh,
+	TestID->"SphericalShellMesh_2",
+	SameTest->MatchQ
+]
+
+
+(* Test SphericalShell with arbitrary position and size. *)
+VerificationTest[
+	SphericalShellMesh[{1,2,3},{2,3},{6,2}],
+	_ElementMesh,
+	TestID->"SphericalShellMesh_3",
+	SameTest->MatchQ
 ]
 
 

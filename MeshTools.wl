@@ -994,93 +994,87 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 (*SphereMesh*)
 
 
-sphereMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[
-	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitCube},
-	(* Size of internal square. Size is determined to optimize the minimal quality of all elements. *)
-	d=0.2;
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	
-	bottomRaster=With[
-		{pts=d*N@Subdivide[-1,1,n]},
-		Map[Append[d], Outer[Reverse@*List,pts,pts], {2}]
-	];
-	
-	(* This special raster makes all element edges on disk edge of the same length. *)
-	topRaster=With[
-		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
-		Map[rescale@*Append[1.], Outer[Reverse@*List,pts,pts], {2}]
-	];
-	
-	cubeMesh=CuboidMesh[-d*{1,1,1},d*{1,1,1},{n,n,n}];
-	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,n}];
-	
-	rotations=Join[
-		RotationTransform[#,{1,0,0}]&/@(Range[4]*Pi/2),
-		RotationTransform[#,{0,1,0}]&/@{Pi/2,3Pi/2}
-	];
-	
-	unitCube=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
-	
-	ToElementMesh[
-		"Coordinates" ->Transpose[Transpose[r*unitCube["Coordinates"]]+{x,y,z}],
-		"MeshElements" -> unitCube["MeshElements"]
-	]
-]
-
-
 (* 
 Some key ideas for this code come from the answer by "Michael E2" on topic: 
 https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
 *)
-sphereMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=2)]:=Module[{
-	rescale,cuboidMesh,coordinates
-	},
+
+SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+
+SphereMesh//Options={"MeshOrder"->Automatic};
+
+SphereMesh[n_,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
+
+SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
+	{order,rescale,cuboid,cuboidShell,coordinates},
+	If[TrueQ[n<2]||Not@IntegerQ[n],Message[SphereMesh::noelems,n];Return[$Failed]];
+	order=OptionValue["MeshOrder"]/.Automatic->1;
+	If[Not@MatchQ[order,1|2],Message[ToElementMesh::femmonv,order,1];Return[$Failed]];
+	
 	rescale=(Max[Abs@#]*Normalize[#])&;
 	(* This special raster makes all element edges on sphere edge of the same length. *)
-	cuboidMesh=With[
+	cuboid=With[
 		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
 		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
 	];
 	(* If we do order alteration (more than 1st order) before projection, then geometry is
 	more accurate and elements have curved edges. *)
-	(*cuboidMesh=MeshOrderAlteration[cuboidMesh,order];*)
+	cuboidShell=MeshOrderAlteration[
+		ToBoundaryMesh[cuboid],
+		order
+	];
 	
-	coordinates=Transpose[Transpose[rescale/@cuboidMesh["Coordinates"]]+{x,y,z}];
+	coordinates=Transpose[Transpose[rescale/@cuboidShell["Coordinates"]]+{x,y,z}];
 	
-	ToElementMesh[
+	ToBoundaryMesh[
 		"Coordinates" -> coordinates,
-		"MeshElements" -> cuboidMesh["MeshElements"]
+		"BoundaryElements" -> cuboidShell["BoundaryElements"]
 	]
 ]
 
 
-SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
-SphereMesh::method="Method \"`1`\" is not supported.";
-SphereMesh//Options={Method->Automatic};
-
-SphereMesh[n_,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
-
-SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
-	{order,method,mesh},
-	If[TrueQ[n<2]||Not@IntegerQ[n],Message[SphereMesh::noelems,n];Return[$Failed]];
-	
-	method=OptionValue[Method]/.Automatic->"Block";
-		
-	If[
-		Not@MemberQ[{"Block","Projection"},method],
-		Message[SphereMesh::method,method];Return[$Failed]
-	];
-	
-	mesh=Switch[method,
-		"Block",sphereMeshBlock[{x,y,z},r,n],
-		"Projection",sphereMeshProjection[{x,y,z},r,n]
-	];
-	mesh
-]
-
-
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SphericalShellMesh*)
+
+
+SphericalShellMesh//Options={"MeshOrder"->Automatic};
+
+SphericalShellMesh[{n\[Phi]_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{n\[Phi],nr},opts]
+
+SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_,nr_},opts:OptionsPattern[]]:=Module[
+	{order,rescale,innerRaster,outerRaster,rotations,flatMesh,curvedMesh},
+	
+	order=OptionValue["MeshOrder"]/.Automatic->1;
+	If[Not@MatchQ[order,1|2],Message[ToElementMesh::femmonv,order,1];Return[$Failed]];
+	
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	
+	(* This special raster makes all element edges on disk edge of the same length. *)
+	innerRaster=With[
+		{pts=rIn*N@Tan@Subdivide[-Pi/4,Pi/4,n\[Phi]]},
+		Map[Append[rIn], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	outerRaster=With[
+		{pts=rOut*N@Tan@Subdivide[-Pi/4,Pi/4,n\[Phi]]},
+		Map[Append[rOut], Outer[Reverse@*List,pts,pts], {2}]
+	];
+	
+	flatMesh=MeshOrderAlteration[
+		StructuredMesh[{innerRaster,outerRaster},{n\[Phi],n\[Phi],nr}],
+		order
+	];
+	curvedMesh=ToElementMesh[
+		"Coordinates" ->Transpose[Transpose[rescale/@flatMesh["Coordinates"]]+{x,y,z}],
+		"MeshElements" -> flatMesh["MeshElements"]
+	];
+	
+	rotations=Join[
+		RotationTransform[#,{1,0,0},{x,y,z}]&/@(Range[4]*Pi/2),
+		RotationTransform[#,{0,1,0},{x,y,z}]&/@{Pi/2,3Pi/2}
+	];
+		
+	MergeMesh@(TransformMesh[curvedMesh,#]&/@rotations)
+]
 
 
 (* ::Subsubsection::Closed:: *)
