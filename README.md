@@ -26,6 +26,15 @@ To update the documentation it may be necessary to restart Mathematica.
 
 ## Usage
 
+After you have installed the paclet, load it to Mathematica session with `Get`. Then you can, for example, make a `ElementMesh` object from basic geometric shape and visualise it.
+
+    Get["MeshTools`"]
+    
+    mesh = AnnulusMesh[{0, 0}, {2/3, 1}, {0, 3 Pi/2}, {24, 4}];
+    mesh["Wireframe"["MeshElementStyle" -> FaceForm[Green]]]
+    
+![screenshot](https://i.imgur.com/1AdzyFH.png)
+
 To access the documentation, open the notebook interface help viewer and search for MeshTools. 
 The first hit will be a summary page enumerating the most commonly used functions in MeshTools that enable you to perform the following tasks:
 
