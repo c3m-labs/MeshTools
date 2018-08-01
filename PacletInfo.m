@@ -3,7 +3,7 @@
 (* Paclet Info File *)
 Paclet[
 	Name -> "MeshTools",
-	Version -> "0.2.0",
+	Version -> "0.3.0",
 	WolframVersion -> "11.+",
 	Description -> "Utilities for creating and manipulating ElementMesh objects.",
 	Creator -> "C3M d.o.o. (info@c3m.si)",
