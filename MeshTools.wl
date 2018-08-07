@@ -320,6 +320,9 @@ SmoothenMesh[mesh_ElementMesh]:=Block[
 (*ToTriangleMesh*)
 
 
+(* TODO: Add "smart" method of splitting triangles, where diagonal is chosen according to better quality of
+ resulting triangle. *)
+
 ToTriangleMesh::order="Only the first order mesh is currently supported.";
 
 ToTriangleMesh[mesh_ElementMesh]:=Module[{
@@ -854,12 +857,45 @@ RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_,ny_}]:=StructuredMesh[{
 (*TriangleMesh*)
 
 
-TriangleMesh::noelms="Currently only 2, 4, 8, 16 or 32 elements per edge are allowed.";
+splitTriangleToQuads[{p1_,p2_,p3_},n_Integer]:=Module[
+	{x,connectivity},
+	x=Join[{p1,p2,p3},Mean/@{{p1,p2},{p2,p3},{p3,p1},{p1,p2,p3}}];
+	connectivity={
+		{{x[[1]],x[[4]]},{x[[6]],x[[7]]}},
+		{{x[[4]],x[[2]]},{x[[7]],x[[5]]}},
+		{{x[[6]],x[[7]]},{x[[3]],x[[5]]}}
+	};
+	MergeMesh@Map[
+		StructuredMesh[#,{n,n}]&,
+		connectivity
+	]
+]
 
-TriangleMesh[corners_,n_Integer]:=If[
-	MemberQ[{2,4,8,16,32},n],
-	simplexMesh[Triangle,corners,n],
-	Message[TriangleMesh::noelms];$Failed
+
+TriangleMesh::trielms="Only 2, 4, 8, 16 or 32 elements per edge are supported for \"MeshElementType\"->TriangleElement.";
+TriangleMesh::quadelms="Only even number of elements per edge is allowed for \"MeshElementType\"->QuadElement.";
+TriangleMesh::badtype="Unknown option value for \"MeshElementType\"->`1`.";
+
+TriangleMesh//Options={"MeshElementType"->QuadElement};
+TriangleMesh[{p1_,p2_,p3_},n_Integer,opts:OptionsPattern[]]:=Module[
+	{type},
+	type=OptionValue["MeshElementType"];
+	
+	If[
+		(type===TriangleElement)&&Not@MemberQ[{2,4,8,16,32},n],
+		Message[TriangleMesh::trielms];Return[$Failed]
+	];
+	
+	If[
+		(type===QuadElement)&&OddQ[n],
+		Message[TriangleMesh::quadelms];Return[$Failed]
+	];
+	
+	Switch[type,
+		TriangleElement,simplexMesh[Triangle,{p1,p2,p3},n],
+		QuadElement,splitTriangleToQuads[{p1,p2,p3},n/2],
+		_,Message[TriangleMesh::badtype,type];$Failed
+	]
 ]
 
 

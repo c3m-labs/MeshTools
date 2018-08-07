@@ -251,7 +251,7 @@ VerificationTest[
 
 
 VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},2],
+	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->TriangleElement],
 	ElementMesh[
 		{{0., 0.}, {0.5, 0.}, {0., 0.5}, {1., 0.}, {0.5, 0.5}, {0., 1.}}, 
 		{TriangleElement[{{1, 2, 3}, {2, 4, 5}, {2, 5, 3}, {3, 5, 6}}]},
@@ -262,10 +262,29 @@ VerificationTest[
 
 
 VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->QuadElement],
+	ElementMesh[
+		{{0., 0.}, {0.5, 0.}, {0., 0.5}, {0.3333333333333333, 0.3333333333333333}, {1., 0.}, {0.5, 0.5}, {0., 1.}},
+		{QuadElement[{{1, 2, 4, 3}, {2, 5, 6, 4}, {3, 4, 6, 7}}, {0, 0, 0}]}, 
+		{LineElement[{{1, 2}, {3, 1}, {2, 5}, {5, 6}, {6, 7}, {7, 3}}]}
+	],
+	TestID->"TriangleMesh_2"
+]
+
+
+VerificationTest[
 	TriangleMesh[{{0,0},{1,0},{0,1}},1],
 	$Failed,
-	{TriangleMesh::noelms},
-	TestID->"TriangleMesh_2"
+	{TriangleMesh::quadelms},
+	TestID->"TriangleMesh_3"
+]
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->"BadValue"],
+	$Failed,
+	{TriangleMesh::badtype},
+	TestID->"TriangleMesh_4"
 ]
 
 
