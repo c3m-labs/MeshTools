@@ -6,8 +6,9 @@ Paclet[
 	Version -> "0.3.0",
 	WolframVersion -> "11.+",
 	Description -> "Utilities for creating and manipulating ElementMesh objects.",
-	Creator -> "C3M d.o.o. (info@c3m.si)",
+	Creator -> "C3M d.o.o.",
 	URL -> "https://github.com/c3m-labs/MeshTools",
+	Thumbnail->"Icon.png",
 	Extensions -> {
 		{"Kernel",
 			Root -> ".",
