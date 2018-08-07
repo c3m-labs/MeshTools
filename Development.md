@@ -1,8 +1,19 @@
+## Testing
+
+It is considered good practice that every (public) function in this package inclues its own set of unit tests. A bunch of them is collected in `Tests/Tests.wl` file, using the Mathematica testing [framework](https://reference.wolfram.com/language/guide/SystematicTestingAndVerification.html). It is strongly reccomended that tests are run periodically during development and especially before every commit. 
+
+#### Integration of test in Git hook
+
+Unit test can be run automatically before every commit via Git client-side [hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks). File `pre-commit` should contain call to `Tests/RunTests.wls` script, which exits with value 0 if all tests pass and aborts the commit otherwise. Minimal example of `pre-commit` file content is:
+
+    #!/bin/sh
+    ./Tests/RunTests.wls
+
 ## How to build MeshTools
 
 #### Prerequisites
 * Version 11.3 or greater of Mathematica
-* Wolfram Workbench
+* [Wolfram Workbench](https://www.wolfram.com/workbench/)
 
 #### Building MeshTools 
 First, import MeshTools in Workbench:
