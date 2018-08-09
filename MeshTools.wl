@@ -42,16 +42,16 @@ MeshElementMeasure::usage="MeshElementMeasure[mesh] gives the measure of each me
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh] gives the measure of each boundary element.";
 
 RectangleMesh::usage="RectangleMesh[{x1, y1},{x2, y2}, {nx, ny}] creates structured mesh on Rectangle.";
-CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
-TriangleMesh::usage="Triangle[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
-
+TriangleMesh::usage="TriangleMesh[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
 AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
-SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
-SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}]";
-BallMesh::usage="BallMesh[{x, y, z}, r, n] creates structured mesh with n elements on Ball of radius r centered at {x,y,z}.";
+CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
+SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
+SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell,
+ with n\[Phi] elements in circumferential direction and nr elements in radial direction.";
+BallMesh::usage="BallMesh[{x, y, z}, r, n] creates structured mesh with n elements on Ball of radius r centered at {x,y,z}.";
 
 DiskVoidMesh::usage="DiskVoidMesh[voidRadius, squareSize, noElements] creates a mesh with disk shaped void in square domain.";
 SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius, cuboidSize, noElements] creates a mesh with spherical void in cuboid domain.";
@@ -777,7 +777,7 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 
 
 (* ::Subsection::Closed:: *)
-(*Shape meshes 2D*)
+(*Named meshes 2D*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1011,7 +1011,7 @@ DiskVoidMesh[voidRadius_,squareSize_,noElements_Integer,opts:OptionsPattern[]]:=
 
 
 (* ::Subsection::Closed:: *)
-(*Shape meshes 3D*)
+(*Named meshes 3D*)
 
 
 (* ::Subsubsection::Closed:: *)
