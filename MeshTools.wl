@@ -27,6 +27,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
 SelectElementsByMarker::usage="SelectElementsByMarker[mesh, marker] creates ElementMesh made only out of elements with selected marker.";
+SelectElements::usage="SelectElements[mesh, fun] creates ElementMesh made only out of nodes which match function fun."
 
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
@@ -129,6 +130,41 @@ SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
 	head[
 		"Coordinates" -> Part[mesh["Coordinates"],chosenNodeNum],
 		elementType -> MapThread[#1[#2]&,{elementHeads,chosenElements/.renumbering}]
+	]
+]
+
+
+SelectElements[mesh_ElementMesh,fun_Function]:=Module[
+	{elementType,head,elementHeads,connectivity,markers,renumbering,selectedNodes,selectedElementNumbers,selectedElements,selectedMarkers},
+	
+	{elementType,head}=If[
+		mesh["MeshElements"]===Automatic,
+		{"BoundaryElements",ToBoundaryMesh},
+		{"MeshElements",ToElementMesh}
+	];
+	
+	elementHeads=Head/@mesh[elementType];
+	connectivity=ElementIncidents@mesh[elementType];
+	markers=ElementMarkers@mesh[elementType];
+	
+	selectedNodes=MapIndexed[
+		If[Apply[fun][#1],First[#2],Nothing]&,
+		mesh["Coordinates"]
+	];
+	renumbering=Thread[selectedNodes->Range@Length@selectedNodes];
+	
+	selectedElementNumbers=MapIndexed[
+		If[ContainsAll[selectedNodes,#1],Last@#2,Nothing]&,
+		connectivity,
+		{2}
+	];
+	
+	selectedElements=MapThread[Part,{connectivity,selectedElementNumbers}]/.renumbering;
+	selectedMarkers=MapThread[Part,{markers,selectedElementNumbers}];
+
+	head[
+		"Coordinates" -> Part[mesh["Coordinates"],selectedNodes],
+		elementType -> MapThread[#1[#2,#3]&,{elementHeads,selectedElements,selectedMarkers}]
 	]
 ]
 
