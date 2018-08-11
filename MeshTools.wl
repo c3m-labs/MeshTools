@@ -966,8 +966,9 @@ squareMesh[{x_,y_},r_,n_]:=StructuredMesh[
 
 diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	{square,sideMesh,d,raster,rotations},
-	(* Size of internal square. Value is chosen to optimize minimal element quality. *)
-	d=0.2*r;
+	(* Size of internal square. Optimial minimal element quality is obtained at 0.2.
+	Value of 0.3 creates nicer element size distribution. *)
+	d=0.3*r;
 	square=squareMesh[{x,y},d,n];
 	
 	raster={
@@ -1155,32 +1156,36 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_,nr_},opts:OptionsPattern[]]
 
 ballMeshBlock//Clear;
 ballMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
-	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,firstOctant},
+	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitBall},
 	(* Size of internal square. Size is determined to optimize the minimal quality of all elements. *)
 	d=0.2;
 	rescale=(Max[Abs@#]*Normalize[#])&;
 	
 	bottomRaster=With[
-		{pts=d*N@Subdivide[0,1,n]},
+		{pts=d*N@Subdivide[-1,1,n]},
 		Map[Append[d], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	
 	(* This special raster makes all element edges on disk edge of the same length. *)
 	topRaster=With[
-		{pts=N@Tan@Subdivide[0,Pi/4,n]},
+		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
 		Map[rescale@*Append[1.], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	
-	cubeMesh=CuboidMesh[{0,0,0},d*{1,1,1},{n,n,n}];
-	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,2*n}];
+	cubeMesh=CuboidMesh[-d*{1,1,1},d*{1,1,1},{n,n,n}];
+	(* TODO: Figure out how many elements should be in radial direction. *)
+	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,n}];
 	
-	rotations=RotationTransform[#,{1,1,1}]&/@({0,1,2}*2Pi/3);
+	rotations=Join[
+		RotationTransform[#,{0,1,0}]&/@({0,1,2,3}*Pi/2),
+		RotationTransform[#,{1,0,0}]&/@({1,3}*Pi/2)
+	];
 	
-	firstOctant=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
+	unitBall=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
 	
 	ToElementMesh[
-		"Coordinates" ->Transpose[Transpose[r*firstOctant["Coordinates"]]+{x,y,z}],
-		"MeshElements" -> firstOctant["MeshElements"]
+		"Coordinates" ->Transpose[Transpose[r*unitBall["Coordinates"]]+{x,y,z}],
+		"MeshElements" -> unitBall["MeshElements"]
 	]
 ]
 
@@ -1196,7 +1201,7 @@ ballMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[{
 	rescale=(Max[Abs@#]*Normalize[#])&;
 	(* This special raster makes all element edges on sphere edge of the same length. *)
 	cuboidMesh=With[
-		{pts=N@Tan@Subdivide[0,Pi/4,n]},
+		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
 		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
 	];
 	(* If we do order alteration (more than 1st order) before projection, then geometry is
@@ -1214,34 +1219,21 @@ ballMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[{
 
 BallMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 1.";
 BallMesh::method="Method \"`1`\" is not supported.";
-BallMesh//Options={Method->Automatic,"BasicUnit"->False};
+BallMesh//Options={Method->Automatic};
 
 BallMesh[n_,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts]
 
 BallMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
-	{order,method,mesh,rotations},
+	{order,method},
 	If[Not@(TrueQ[n>=1]&&IntegerQ[n]),Message[BallMesh::noelems,n];Return[$Failed]];
 	
 	method=OptionValue[Method]/.Automatic->"Block";
-		
-	If[
-		Not@MemberQ[{"Block","Projection"},method],
-		Message[BallMesh::method,method];Return[$Failed]
-	];
-	(* Mesh is created only in the first octant and returned according to given Option. *)
-	mesh=Switch[method,
+	
+	Switch[method,
 		"Block",ballMeshBlock[{x,y,z},r,n],
-		"Projection",ballMeshProjection[{x,y,z},r,n]
-	];
-	
-	If[TrueQ@OptionValue["BasicUnit"],Return[mesh]];
-	
-	(* 8 rotations, 4 of them are double (composition). *)
-	rotations=Flatten@Map[
-		{#,#@*RotationTransform[Pi/2,{0,0,1}]}&,
-		(RotationTransform[#,{1,0,0}]&/@({0,1,2,3}*Pi/2))
-	];
-	MergeMesh[TransformMesh[mesh,#]&/@rotations]
+		"Projection",ballMeshProjection[{x,y,z},r,n],
+		_,Message[BallMesh::method,method];$Failed
+	]
 ]
 
 
