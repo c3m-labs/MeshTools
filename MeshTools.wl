@@ -27,7 +27,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
 SelectElementsByMarker::usage="SelectElementsByMarker[mesh, marker] creates ElementMesh made only out of elements with selected marker.";
-SelectElements::usage="SelectElements[mesh, fun] creates ElementMesh made only out of nodes which match function fun."
+SelectElements::usage="SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."
 
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
@@ -42,7 +42,8 @@ ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[mesh] draws accura
 MeshElementMeasure::usage="MeshElementMeasure[mesh] gives the measure of each mesh element.";
 BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh] gives the measure of each boundary element.";
 
-RectangleMesh::usage="RectangleMesh[{x1, y1},{x2, y2}, {nx, ny}] creates structured mesh on Rectangle.";
+RectangleMesh::usage="RectangleMesh[{xMin, yMin},{xMax, yMax},{nx, ny}] creates structured mesh on axis-aligned Rectangle with corners {xMin,yMin} and {xMax,yMax}.
+RectangleMesh[n] creates structured mesh on unit square with n elements per edge.";
 TriangleMesh::usage="TriangleMesh[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
 AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
@@ -100,7 +101,7 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*SelectElementsByMarker*)
+(*SelectElements*)
 
 
 SelectElementsByMarker::marker="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
@@ -134,8 +135,18 @@ SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
 ]
 
 
-SelectElements[mesh_ElementMesh,fun_Function]:=Module[
-	{elementType,head,elementHeads,connectivity,markers,renumbering,selectedNodes,selectedElementNumbers,selectedElements,selectedMarkers},
+SelectElements::noelms="No elements in ElementMesh match the criterion.";
+SelectElements::funslots="Criterion Function has too many Slots for ElementMesh with \"EmbeddingDimension\"==`1`.";
+
+SelectElements[mesh_ElementMesh,crit_Function]:=Module[
+	{elementType,head,elementHeads,connectivity,markers,renumbering,
+	selectedNodes,selectedElementNumbers,selectedElements,selectedMarkers},
+	
+	(* Test for appropriate number of Slots in crit Function, otherwise problems occur at Apply[crit]... *)
+	With[
+		{dim=mesh["EmbeddingDimension"]},
+		If[ Count[crit,_Slot,Infinity]>dim, Message[SelectElements::funslots,dim];Return[$Failed] ]
+	];
 	
 	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
@@ -148,7 +159,7 @@ SelectElements[mesh_ElementMesh,fun_Function]:=Module[
 	markers=ElementMarkers@mesh[elementType];
 	
 	selectedNodes=MapIndexed[
-		If[Apply[fun][#1],First[#2],Nothing]&,
+		If[Apply[crit][#1],First[#2],Nothing]&,
 		mesh["Coordinates"]
 	];
 	renumbering=Thread[selectedNodes->Range@Length@selectedNodes];
@@ -158,6 +169,8 @@ SelectElements[mesh_ElementMesh,fun_Function]:=Module[
 		connectivity,
 		{2}
 	];
+	(* This catches majority of bad crit Function(s), since no elements are selected. *)
+	If[selectedElementNumbers==={{}},Message[SelectElements::noelms];Return[$Failed]];
 	
 	selectedElements=MapThread[Part,{connectivity,selectedElementNumbers}]/.renumbering;
 	selectedMarkers=MapThread[Part,{markers,selectedElementNumbers}];
@@ -882,6 +895,8 @@ simplexMesh[shape_,corners_,n_Integer]:=Module[
 (* ::Subsubsection::Closed:: *)
 (*RectangleMesh*)
 
+
+RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}]
 
 RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_,ny_}]:=StructuredMesh[{
 	{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},

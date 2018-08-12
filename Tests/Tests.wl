@@ -104,6 +104,61 @@ With[{
 
 
 (* ::Subsection::Closed:: *)
+(*SelectElements*)
+
+
+With[{
+	mesh=ToElementMesh[
+		Rectangle[],
+		MaxCellMeasure->1/2,
+		"MeshOrder"->1
+	]
+	},
+	VerificationTest[
+		SelectElements[mesh,#1>=0.5&&#2>=0.5&],	
+		ElementMesh[
+			{{0.5, 0.5}, {0.5, 1.}, {1., 0.5}, {1., 1.}},
+			{QuadElement[{{1, 3, 4, 2}}, {0}]},
+			{LineElement[{{1, 3}, {3, 4}, {4, 2}, {2, 1}}]}
+		],
+		TestID->"SelectElements_1"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		Rectangle[],
+		MaxCellMeasure->1/2,
+		"MeshOrder"->1
+	]
+	},
+	VerificationTest[
+		SelectElements[mesh,#1>=2&],	
+		$Failed,
+		{SelectElements::noelms},
+		TestID->"SelectElements_2"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		Rectangle[],
+		MaxCellMeasure->1/2,
+		"MeshOrder"->1
+	]
+	},
+	VerificationTest[
+		SelectElements[mesh,#1>=0.5&&#2>=0.5&&#3>=0.5&],	
+		$Failed,
+		{SelectElements::funslots},
+		TestID->"SelectElements_3"
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
 (*ExtrudeMesh*)
 
 
