@@ -106,10 +106,10 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[{
 
 SelectElementsByMarker::marker="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
 
-SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
-	{elementType,head,elementHeads,connectivity,allMarkers,chosenElements,chosenNodeNum,renumbering},
+SelectElementsByMarker[mesh_ElementMesh,int_Integer]:=Module[
+	{elementType,head,elementHeads,connectivity,markers,selectedElements,selectedNodes,renumbering},
 	
-		{elementType,head}=If[
+	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
 		{"BoundaryElements",ToBoundaryMesh},
 		{"MeshElements",ToElementMesh}
@@ -117,20 +117,20 @@ SelectElementsByMarker[mesh_ElementMesh,marker_Integer]:=Module[
 	
 	elementHeads=Head/@mesh[elementType];
 	connectivity=ElementIncidents@mesh[elementType];
-	allMarkers=ElementMarkers@mesh[elementType];
+	markers=ElementMarkers@mesh[elementType];
 	
 	If[
-		Not@MemberQ[Union@Flatten@allMarkers,marker],
-		Message[SelectElementsByMarker::marker,marker];Return[mesh]
+		Not@MemberQ[Union@Flatten@markers,int],
+		Message[SelectElementsByMarker::marker,int];Return[mesh]
 	];
 	
-	chosenElements=MapThread[Pick[#1,#2,marker]&,{connectivity,allMarkers}];
-	chosenNodeNum=Union@Flatten@chosenElements;
-	renumbering=Thread[chosenNodeNum->Range@Length@chosenNodeNum];
+	selectedElements=MapThread[Pick[#1,#2,int]&,{connectivity,markers}];
+	selectedNodes=Union@Flatten@selectedElements;
+	renumbering=MapIndexed[#1->First[#2]&,selectedNodes];
 
 	head[
-		"Coordinates" -> Part[mesh["Coordinates"],chosenNodeNum],
-		elementType -> MapThread[#1[#2]&,{elementHeads,chosenElements/.renumbering}]
+		"Coordinates" -> Part[mesh["Coordinates"],selectedNodes],
+		elementType -> MapThread[#1[#2]&,{elementHeads,selectedElements/.renumbering}]
 	]
 ]
 
@@ -162,7 +162,7 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 		If[Apply[crit][#1],First[#2],Nothing]&,
 		mesh["Coordinates"]
 	];
-	renumbering=Thread[selectedNodes->Range@Length@selectedNodes];
+	renumbering=MapIndexed[#1->First[#2]&,selectedNodes];
 	
 	selectedElementNumbers=MapIndexed[
 		If[ContainsAll[selectedNodes,#1],Last@#2,Nothing]&,

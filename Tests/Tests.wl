@@ -107,6 +107,75 @@ With[{
 (*SelectElements*)
 
 
+(* ::Subsubsection::Closed:: *)
+(*SelectElementsByMarker*)
+
+
+With[{
+	(* A mesh with mixed element types. *)
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
+		"MeshElements"->{
+			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
+			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
+		}]
+	},
+	VerificationTest[
+		SelectElementsByMarker[mesh,1],	
+		ElementMesh[
+			{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.}},
+			{TriangleElement[{{3,4,7},{4,8,7}}],QuadElement[{{1,2,6,5},{2,3,7,6}}]},
+			{LineElement[{{3,4},{8,7},{4,8},{1,2},{6,5},{5,1},{2,3},{7,6}}]}
+		],
+		TestID->"SelectElementsByMarker_1"
+	]
+]
+
+
+With[{
+	(* A mesh with mixed element types. *)
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
+		"MeshElements"->{
+			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
+			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
+		}]
+	},
+	VerificationTest[
+		SelectElementsByMarker[mesh,2],	
+		ElementMesh[
+			{{0., 1.}, {1., 1.}, {2., 1.}, {3., 1.}, {2.5, 1.5}, {0., 2.},{1., 2.}, {2., 2.}},
+			{TriangleElement[{{3, 5, 8}, {3, 4, 5}}],QuadElement[{{1, 2, 7, 6}, {2, 3, 8, 7}}]},
+			{LineElement[{{5, 8}, {4, 5}, {3, 4}, {1, 2}, {7, 6}, {6, 1}, {2, 3}, {8, 7}}]
+		}],
+		TestID->"SelectElementsByMarker_2"
+	]
+]
+
+
+With[{
+	(* A mesh with mixed element types. *)
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
+		"MeshElements"->{
+			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
+			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
+		}]
+	},
+	VerificationTest[
+		SelectElementsByMarker[mesh,0],	
+		_ElementMesh,
+		{SelectElementsByMarker::marker},
+		SameTest->MatchQ,
+		TestID->"SelectElementsByMarker_3"
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectElements*)
+
+
 With[{
 	mesh=ToElementMesh[
 		Rectangle[],
