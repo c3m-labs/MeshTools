@@ -908,8 +908,11 @@ RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_,ny_}]:=StructuredMesh[{
 
 
 splitTriangleToQuads[{p1_,p2_,p3_},n_Integer]:=Module[
-	{x,connectivity},
-	x=Join[{p1,p2,p3},Mean/@{{p1,p2},{p2,p3},{p3,p1},{p1,p2,p3}}];
+	{n1,n2,n3,x,connectivity},
+	(* Renumber triangle to be consistent with TriangleElement *)
+	{n1,n2,n3}=reorientSimplex[{p1,p2,p3}];
+	
+	x=Join[{n1,n2,n3},Mean/@{{n1,n2},{n2,n3},{n3,n1},{n1,n2,n3}}];
 	connectivity={
 		{{x[[1]],x[[4]]},{x[[6]],x[[7]]}},
 		{{x[[4]],x[[2]]},{x[[7]],x[[5]]}},
