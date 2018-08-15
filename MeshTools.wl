@@ -856,14 +856,13 @@ nestedSymmetricSubdivision[shape_[pl_],level_Integer]/;level>0:=Flatten[
 
 
 (* Helper function to check the orientation of nodes used in TriangleElement and TetrahedronElement*)
-
-reorient[{a_,b_,c_}]:=If[
+reorientSimplex[{a_,b_,c_}]:=If[
 	Negative@Det[{a-c,b-c}],
 	{a,c,b},
 	{a,b,c}
 ]
 
-reorient[{a_,b_,c_,d_}]:=If[
+reorientSimplex[{a_,b_,c_,d_}]:=If[
 	Positive@Det[{a-d,b-d,c-d}],
 	{a,b,d,c},
 	{a,b,c,d}
@@ -878,7 +877,7 @@ simplexMesh[shape_,corners_,n_Integer]:=Module[
 	elementType=shape/.{Triangle->TriangleElement,Tetrahedron->TetrahedronElement};
 	divisions=Log[2,n];
 	
-	allCrds=reorient/@(Join@@List@@@nestedSymmetricSubdivision[shape[corners],divisions]);
+	allCrds=reorientSimplex/@(Join@@List@@@nestedSymmetricSubdivision[shape[corners],divisions]);
 	nodes=DeleteDuplicates@Flatten[allCrds,1];
 	connectivity=With[
 		{rules=Thread[nodes->Range@Length[nodes]]},
@@ -1340,12 +1339,68 @@ EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 (*TetrahedronMesh*)
 
 
-TetrahedronMesh::noelms="Currently only 2, 4, 8, or 16 elements per edge are allowed.";
+splitTetrahedronToHexahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
+	{n1,n2,n3,n4,x,connectivity},
+	(* Make ordering of nodes consistent with TetrahedronElement *)
+	{n1,n2,n3,n4}=reorientSimplex[{p1,p2,p3,p4}];
+	
+	x=Join[{n1,n2,n3,n4},Mean/@{
+		{n1,n2},{n2,n3},{n3,n1},{n2,n4},{n3,n4},{n1,n4},
+		{n4,n3,n2},{n4,n1,n3},{n4,n2,n1},{n1,n2,n3},
+		{n1,n2,n3,n4}
+		}
+	];
+	
+	connectivity={
+		{
+			{{x[[1]],x[[5]]},{x[[7]],x[[14]]}},
+			{{x[[10]],x[[13]]},{x[[12]],x[[15]]}}
+		},
+		{
+			{{x[[5]],x[[2]]},{x[[14]],x[[6]]}},
+			{{x[[13]],x[[8]]},{x[[15]],x[[11]]}}
+		},
+		{
+			{{x[[7]],x[[14]]},{x[[3]],x[[6]]}},
+			{{x[[12]],x[[15]]},{x[[9]],x[[11]]}}
+		},
+		{
+			{{x[[10]],x[[13]]},{x[[12]],x[[15]]}},
+			{{x[[4]],x[[8]]},{x[[9]],x[[11]]}}
+		}
+	};
+	MergeMesh@Map[
+		StructuredMesh[#,{n,n,n}]&,
+		connectivity
+	]
+]
 
-TetrahedronMesh[corners_,n_Integer]:=If[
-	MemberQ[{2,4,8,16},n],
-	simplexMesh[Tetrahedron,corners,n],
-	Message[TetrahedronMesh::noelms];$Failed
+
+TetrahedronMesh::tetelems="Only 2, 4, 8 or 16 elements per edge is allowed for tetrahedral mesh.";
+TetrahedronMesh::hexelems="Only even number of elements per edge is allowed for hexahedral mesh.";
+TetrahedronMesh::badtype="Unknown value `1` for option \"MeshElementType\".";
+
+TetrahedronMesh//Options={"MeshElementType"->HexahedronElement};
+
+TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
+	{type},
+	type=OptionValue["MeshElementType"];
+	
+	If[
+		(type===TetrahedronElement)&&Not@MemberQ[{2,4,8,16},n],
+		Message[TetrahedronMesh::tetelms];Return[$Failed]
+	];
+	
+	If[
+		(type===HexahedronElement)&&OddQ[n],
+		Message[TetrahedronMesh::hexelms];Return[$Failed]
+	];
+	
+	Switch[type,
+		TetrahedronElement,simplexMesh[Tetrahedron,{p1,p2,p3,p4},n],
+		HexahedronElement,splitTetrahedronToHexahedra[{p1,p2,p3,p4},n/2],
+		_,Message[TetrahedronMesh::badtype,type];$Failed
+	]
 ]
 
 
@@ -1353,42 +1408,45 @@ TetrahedronMesh[corners_,n_Integer]:=If[
 (*RodriguesSpaceMesh*)
 
 
-RodriguesSpaceMesh::noelms="Currently only 2, 4, 8 or 16 elements per edge are allowed.";
-RodriguesSpaceMesh[n_Integer]:=Module[
-	{a,b,divisions,sideBasicMesh,basicRotations,sideMesh,sideRotations,allSidesMesh,cornerMesh,cornerRotations,allCornersMesh},
+RodriguesSpaceMesh::tetelems=TetrahedronMesh::tetelems;
+RodriguesSpaceMesh::hexelems=TetrahedronMesh::hexelems;
+RodriguesSpaceMesh::badtype=TetrahedronMesh::badtype;
+
+RodriguesSpaceMesh//Options={"MeshElementType"->TetrahedronElement};
+
+RodriguesSpaceMesh[n_Integer,opts:OptionsPattern[]]:=Module[
+	{type,a,b,divisions,sideBasicMesh,basicRotations,sideMesh,sideRotations,allSidesMesh,cornerMesh,cornerRotations,allCornersMesh},
 	a=N@Tan[Pi/8];
 	b=N@(1-2a);
+	type=(OptionValue["MeshElementType"]);
 	
-	If[Not@MemberQ[{2,4,8,16},n],Message[RodriguesSpaceMesh::noelms];Return[$Failed]];
-	divisions=Log[2,n];
-	sideBasicMesh=TetrahedronMesh[{{a,0,0},{a,b,a},{a,-b,a},{0,0,0}},divisions];
+	Switch[type,
+		TetrahedronElement,
+		If[Not@MemberQ[{2,4,8,16},n],Message[RodriguesSpaceMesh::tetelems];Return[$Failed]],
+		HexahedronElement,
+		If[OddQ[n],Message[RodriguesSpaceMesh::hexelms];Return[$Failed]],
+		_,Message[RodriguesSpaceMesh::badtype,type];Return[$Failed]
+	];
+	
+	sideBasicMesh=TetrahedronMesh[{{a,0,0},{a,b,a},{a,-b,a},{0,0,0}},n,opts];
 	
 	basicRotations=N@RotationTransform[#,{1,0,0}]&/@(Most@Subdivide[0,2Pi,8]);
-	sideMesh=Fold[
-		MergeMesh[#1,#2]&,
-		TransformMesh[sideBasicMesh,#]&/@basicRotations
-	];
+	sideMesh=MergeMesh[ TransformMesh[sideBasicMesh,#]&/@basicRotations ];
 	
 	sideRotations=N@Join[
 		RotationTransform[#,{0,0,1}]&/@{0,Pi/2,Pi,3Pi/2},
 		RotationTransform[#,{0,1,0}]&/@{Pi/2,3Pi/2}
 	];
-	allSidesMesh=Fold[
-		MergeMesh[#1,#2]&,
-		TransformMesh[sideMesh,#]&/@sideRotations
-	];
+	allSidesMesh=MergeMesh[ TransformMesh[sideMesh,#]&/@sideRotations ];
 	
-	cornerMesh=TetrahedronMesh[{{a,a,b},{b,a,a},{a,b,a},{0,0,0}},divisions];
+	cornerMesh=TetrahedronMesh[{{a,a,b},{b,a,a},{a,b,a},{0,0,0}},n,opts];
 	cornerRotations=N@Join[
 		RotationTransform[#,{0,0,1}]&/@{0,Pi/2,Pi,3Pi/2},
 		(RotationTransform[#,{0,0,1}]@*RotationTransform[Pi,{1,1,0}])&/@{0,Pi/2,Pi,3Pi/2}
 	];
-	allCornersMesh=Fold[
-		MergeMesh[#1,#2]&,
-		TransformMesh[cornerMesh,#]&/@cornerRotations
-	];
+	allCornersMesh=MergeMesh[ TransformMesh[cornerMesh,#]&/@cornerRotations ];
 	
-	MergeMesh[allSidesMesh,allCornersMesh]
+	MergeMesh[{allSidesMesh,allCornersMesh}]
 ]
 
 

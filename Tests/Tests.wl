@@ -479,7 +479,7 @@ VerificationTest[
 
 
 VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2],
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->TetrahedronElement],
 	ElementMesh[
 		{{0., 0., 0.}, {0.5, 0., 0.}, {0., 0.5, 0.}, {0., 0., 0.5}, {1., 0., 0.}, {0.5, 0.5, 0.}, {0.5, 0., 0.5}, {0., 1., 0.}, {0., 0.5, 0.5}, {0., 0., 1.}}, 
 		{TetrahedronElement[{{1, 2, 3, 4}, {2, 5, 6, 7}, {2, 3, 7, 6}, {3, 6, 8, 9}, {2, 3, 4, 7}, {3, 6, 9, 7}, {3, 4, 7, 9}, {4, 7, 9, 10}}]},
@@ -490,10 +490,29 @@ VerificationTest[
 
 
 VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1],
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->TetrahedronElement],
 	$Failed,
-	{TetrahedronMesh::noelms},
+	{TetrahedronMesh::tetelms},
 	TestID->"TetrahedronMesh_2"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->HexahedronElement],
+	ElementMesh[
+		{{0.,0.,0.},{0.5, 0., 0.},{0.,0.5,0.},{1/3,1/3,0.},{0.,0.,0.5},{1/3,0., 1/3},{0.,1/3,1/3},{0.25,0.25,0.25},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{1/3,1/3,1/3},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
+		{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
+		{QuadElement[{{1,2,4,3},{1,5,6,2},{3,7,5,1},{2,9,10,4},{2,6,11,9},{9,11,12,10},{3,4,10,13},{10,12,14,13},{13,14,7,3},{14,12,11,15},{5,15,11,6},{7,14,15,5}}]}
+	],
+	TestID->"TetrahedronMesh_3"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->HexahedronElement],
+	$Failed,
+	{TetrahedronMesh::hexelms},
+	TestID->"TetrahedronMesh_4"
 ]
 
 
