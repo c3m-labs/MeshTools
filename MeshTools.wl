@@ -6,11 +6,11 @@
 
 (* :Title: MeshTools *)
 (* :Context: MeshTools` *)
-(* :Author: Pintar M, C3M, Slovenia *)
+(* :Author: Matevz Pintar *)
 (* :Summary: Utilities for generating and manipulating ElementMesh objects. *)
-(* :Copyright: C3M d.o.o., 2018 *)
+(* :Copyright: C3M d.o.o., Slovenia, 2018 *)
 
-(* :Acknowledgements: *)
+(* :Acknowledgements: Jan Tomec, Joze Korelc, Oliver Ruebenkoenig *)
 
 
 (* ::Section::Closed:: *)
@@ -34,8 +34,8 @@ TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh acco
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
 
 SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
-ToTriangleMesh::usage="ToTriangleMesh[mesh] converts quadrilateral mesh to triangle mesh.";
-ToTetrahedronMesh::usage="ToTetrahedronMesh[mesh] converts hexahedral mesh to tetrahedral mesh.";
+QuadToTriangleMesh::usage="QuadToTriangleMesh[mesh] converts quadrilateral mesh to triangular mesh.";
+HexToTetrahedronMesh::usage="HexToTetrahedronMesh[mesh] converts hexahedral mesh to tetrahedral mesh.";
 
 ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[mesh] draws accurately second order 2D mesh.";
 
@@ -366,18 +366,18 @@ SmoothenMesh[mesh_ElementMesh]:=Block[
 
 
 (* ::Subsubsection::Closed:: *)
-(*ToTriangleMesh*)
+(*QuadToTriangleMesh*)
 
 
 (* TODO: Add "smart" method of splitting triangles, where diagonal is chosen according to better quality of
  resulting triangle. *)
 
-ToTriangleMesh::order="Only the first order mesh is currently supported.";
+QuadToTriangleMesh::order="Only the first order mesh is currently supported.";
 
-ToTriangleMesh[mesh_ElementMesh]:=Module[{
+QuadToTriangleMesh[mesh_ElementMesh]:=Module[{
 	elementType,head,conn,triangles
 	},
-	If[mesh["MeshOrder"]=!=1,Message[ToTriangleMesh::order];Return[$Failed]];
+	If[mesh["MeshOrder"]=!=1,Message[QuadToTriangleMesh::order];Return[$Failed]];
 	
 	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
@@ -396,17 +396,17 @@ ToTriangleMesh[mesh_ElementMesh]:=Module[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*ToTetrahedronMesh*)
+(*HexToTetrahedronMesh*)
 
 
-ToTetrahedronMesh::type="ElementMesh should contain only hexadedral elements.";
+HexToTetrahedronMesh::type="ElementMesh should contain only hexadedral elements.";
 
-ToTetrahedronMesh[mesh_ElementMesh]:=Module[{
+HexToTetrahedronMesh[mesh_ElementMesh]:=Module[{
 	nodes,origElms,tetConnect,restructure,newElms
 	},
 	origElms=mesh["MeshElements"];
 	
-	If[Head@First[origElms]=!=HexahedronElement,Message[ToTetrahedronMesh::type];Return[$Failed]];
+	If[Head@First[origElms]=!=HexahedronElement,Message[HexToTetrahedronMesh::type];Return[$Failed]];
 	
 	tetConnect={
 		{4, 1, 2, 5},
@@ -429,7 +429,7 @@ ToTetrahedronMesh[mesh_ElementMesh]:=Module[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*ToQuadMesh*)
+(*TriangleToQuadMesh*)
 
 
 (*
@@ -444,11 +444,11 @@ Original implementation is by Prof. Joze Korelc taken from AceFEM package
 have been improved by Oliver Ruebenkoenig from WRI.
 *)
 
-(* Currently ToQuadMesh function is kept in the private context to avoid shadowing with
+(* Currently TriangleToQuadMesh function is kept in the private context to avoid shadowing with
 the same function in FEMAddOns paclet from WRI. *)
-ToQuadMesh::usage="ToQuadMesh[mesh] converts triangular mesh to quadrilateral mesh.";
+TriangleToQuadMesh::usage="TriangleToQuadMesh[mesh] converts triangular mesh to quadrilateral mesh.";
 
-ToQuadMesh::elmtype = "Only conversion of pure triangular meshes is supported."
+TriangleToQuadMesh::elmtype = "Only conversion of pure triangular meshes is supported."
 
 distortion := distortion = Compile[
 		{{n1, _Real, 1}, {n2, _Real, 1}, {n3, _Real, 1}, {n4, _Real, 1}},
@@ -461,7 +461,7 @@ distortion := distortion = Compile[
 			]
 	];
 
-ToQuadMesh[meshIn_] /; ElementMeshQ[meshIn] && !BoundaryElementMeshQ[meshIn] &&
+TriangleToQuadMesh[meshIn_] /; ElementMeshQ[meshIn] && !BoundaryElementMeshQ[meshIn] &&
 	meshIn["EmbeddingDimension"] === 2 :=
 Module[
 	{coor, econn, elem, dist, ncoor, taken, quad, triag, edge, nc, allquads, 
@@ -474,7 +474,7 @@ Module[
 		increaseOrderQ = True;
 
 	If[ Union[Head /@ mesh["MeshElements"]] =!= {TriangleElement},
-		Message[ToQuadMesh::elmtype]; Return[$Failed, Module]
+		Message[TriangleToQuadMesh::elmtype]; Return[$Failed, Module]
 	];
 
 	coor = mesh["Coordinates"];
