@@ -1174,8 +1174,9 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_,nr_},opts:OptionsPattern[]]
 ballMeshBlock//Clear;
 ballMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
 	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitBall},
-	(* Size of internal square. Size is determined to optimize the minimal quality of all elements. *)
-	d=0.2;
+	(* Size of internal square. Optimial minimal element quality is obtained at 0.2.
+	Value of 0.3 creates nicer element size distribution. *)
+	d=0.3;
 	rescale=(Max[Abs@#]*Normalize[#])&;
 	
 	bottomRaster=With[
@@ -1379,8 +1380,8 @@ splitTetrahedronToHexahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
 ]
 
 
-TetrahedronMesh::tetelems="Only 2, 4, 8 or 16 elements per edge is allowed for tetrahedral mesh.";
-TetrahedronMesh::hexelems="Only even number of elements per edge is allowed for hexahedral mesh.";
+TetrahedronMesh::tetelms="Only 2, 4, 8 or 16 elements per edge is allowed for tetrahedral mesh.";
+TetrahedronMesh::hexelms="Only even number of elements per edge is allowed for hexahedral mesh.";
 TetrahedronMesh::badtype="Unknown value `1` for option \"MeshElementType\".";
 
 TetrahedronMesh//Options={"MeshElementType"->HexahedronElement};
@@ -1411,8 +1412,8 @@ TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
 (*RodriguesSpaceMesh*)
 
 
-RodriguesSpaceMesh::tetelems=TetrahedronMesh::tetelems;
-RodriguesSpaceMesh::hexelems=TetrahedronMesh::hexelems;
+RodriguesSpaceMesh::tetelms=TetrahedronMesh::tetelms;
+RodriguesSpaceMesh::hexelms=TetrahedronMesh::hexelms;
 RodriguesSpaceMesh::badtype=TetrahedronMesh::badtype;
 
 RodriguesSpaceMesh//Options={"MeshElementType"->TetrahedronElement};
