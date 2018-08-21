@@ -228,6 +228,81 @@ With[{
 
 
 (* ::Subsection::Closed:: *)
+(*MergeMesh*)
+
+
+With[{
+	m1=AddMeshMarkers[RectangleMesh[1],1],
+	m2=AddMeshMarkers[RectangleMesh[1],2]
+	},
+	VerificationTest[
+		MergeMesh[m1,m2],	
+		ElementMesh[
+			{{0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}}, 
+			{QuadElement[{{1, 2, 4, 3}, {1, 2, 4, 3}}, {1, 2}]}, 
+			{LineElement[{{1, 2}, {2, 4}, {4, 3}, {3, 1}}]}
+		],
+		TestID->"MergeMesh_1"
+	]
+]
+
+
+With[{
+	m1=AddMeshMarkers[RectangleMesh[1],1],
+	m2=AddMeshMarkers[RectangleMesh[1],2]
+	},
+	VerificationTest[
+		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->True],	
+		ElementMesh[
+			{{0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}}, 
+			{QuadElement[{{1, 2, 4, 3}, {1, 2, 4, 3}}, {1, 2}]}, 
+			{LineElement[{{1, 2}, {2, 4}, {4, 3}, {3, 1}}]}
+		],
+		TestID->"MergeMesh_2"
+	]
+]
+
+
+With[{
+	m1=AddMeshMarkers[RectangleMesh[1],1],
+	m2=AddMeshMarkers[RectangleMesh[1],2]
+	},
+	(* For some weird reason direct comparison of ElementMesh objects doesn't work here. *)
+	VerificationTest[
+		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->False]["Coordinates"],
+		{{0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}, {0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}},
+		TestID->"MergeMesh_3"
+	]
+]
+
+
+With[{
+	m1=RectangleMesh[1],
+	m2=MeshOrderAlteration[RectangleMesh[1],2]
+	},
+	VerificationTest[
+		MergeMesh[{m1,m2}],
+		$Failed,
+		{MergeMesh::order},
+		TestID->"MergeMesh_4"
+	]
+]
+
+
+With[{
+	m1=RectangleMesh[1],
+	m2=CuboidMesh[1]
+	},
+	VerificationTest[
+		MergeMesh[{m1,m2}],
+		$Failed,
+		{MergeMesh::dim},
+		TestID->"MergeMesh_5"
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
 (*ExtrudeMesh*)
 
 
@@ -528,6 +603,42 @@ VerificationTest[
 	$Failed,
 	{TetrahedronMesh::hexelms},
 	TestID->"TetrahedronMesh_4"
+]
+
+
+(* ::Subsection::Closed:: *)
+(*RodriguesSpaceMesh*)
+
+
+VerificationTest[
+	RodriguesSpaceMesh[1],
+	$Failed,
+	{RodriguesSpaceMesh::tetelms},
+	TestID->"RodriguesSpaceMesh_1"
+]
+
+
+VerificationTest[
+	RodriguesSpaceMesh[1,"MeshElementType"->HexahedronElement],
+	$Failed,
+	{RodriguesSpaceMesh::hexelms},
+	TestID->"RodriguesSpaceMesh_2"
+]
+
+
+VerificationTest[
+	RodriguesSpaceMesh[1,"MeshElementType"->"badValue"],
+	$Failed,
+	{RodriguesSpaceMesh::badtype},
+	TestID->"RodriguesSpaceMesh_3"
+]
+
+
+VerificationTest[
+	RodriguesSpaceMesh[2,"MeshElementType"->HexahedronElement],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"RodriguesSpaceMesh_4"
 ]
 
 

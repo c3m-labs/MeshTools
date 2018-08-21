@@ -244,9 +244,11 @@ https://mathematica.stackexchange.com/questions/156445/automatically-generating-
 MergeMesh::order="Meshes must have the same \"MeshOrder\".";
 MergeMesh::dim="Meshes must have the same \"EmbeddingDimension\".";
 
-MergeMesh[list_List/;Length[list]>=2]:=Fold[MergeMesh,list]
+MergeMesh//Options={"DeleteDuplicateCoordinates"->True};
 
-MergeMesh[mesh1_,mesh2_]:=Module[
+MergeMesh[list_List/;Length[list]>=2,opts:OptionsPattern[]]:=Fold[MergeMesh[#1,#2,opts]&,list]
+
+MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
 	{elementType,head,c1,c2,newCrds,newElements,elementTypes,elementMarkers,inci1,inci2},
 	
 	If[mesh1["MeshOrder"]=!=mesh2["MeshOrder"],Message[MergeMesh::order];Return[$Failed]];
@@ -276,7 +278,7 @@ MergeMesh[mesh1_,mesh2_]:=Module[
 	head[
 		"Coordinates"->newCrds,
 		elementType->newElements,
-		"DeleteDuplicateCoordinates"->True (* already a default option *)
+		FilterRules[{opts},Options@ElementMesh]
 	]
 ]
 
@@ -1072,6 +1074,8 @@ DiskVoidMesh[voidRadius_,squareSize_,noElements_Integer,opts:OptionsPattern[]]:=
 (*CuboidMesh*)
 
 
+CuboidMesh[n_Integer]:=CuboidMesh[{0,0,0},{1,1,1},{n,n,n}]
+
 CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 	{{{x1,y1,z1},{x2,y1,z1}},{{x1,y2,z1},{x2,y2,z1}}},
 	{{{x1,y1,z2},{x2,y1,z2}},{{x1,y2,z2},{x2,y2,z2}}}
@@ -1426,7 +1430,7 @@ RodriguesSpaceMesh[n_Integer,opts:OptionsPattern[]]:=Module[
 	
 	Switch[type,
 		TetrahedronElement,
-		If[Not@MemberQ[{2,4,8,16},n],Message[RodriguesSpaceMesh::tetelems];Return[$Failed]],
+		If[Not@MemberQ[{2,4,8,16},n],Message[RodriguesSpaceMesh::tetelms];Return[$Failed]],
 		HexahedronElement,
 		If[OddQ[n],Message[RodriguesSpaceMesh::hexelms];Return[$Failed]],
 		_,Message[RodriguesSpaceMesh::badtype,type];Return[$Failed]
