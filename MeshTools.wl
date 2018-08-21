@@ -207,7 +207,9 @@ reorderNodes[elements_]:=Module[
 ]
 
 
-TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
+TransformMesh//Options=Options@ElementMesh;
+
+TransformMesh[mesh_ElementMesh,tfun_TransformationFunction,opts:OptionsPattern[]]:=Module[{
 	elementsType,head,elements,transformedElements,reflectionQ
 	},
 	
@@ -228,7 +230,8 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction]:=Module[{
 	
 	head[
 		"Coordinates"->tfun/@mesh["Coordinates"],
-		elementsType->transformedElements
+		elementsType->transformedElements,
+		FilterRules[{opts},Options@ElementMesh]
 	]
 ]
 
@@ -244,7 +247,7 @@ https://mathematica.stackexchange.com/questions/156445/automatically-generating-
 MergeMesh::order="Meshes must have the same \"MeshOrder\".";
 MergeMesh::dim="Meshes must have the same \"EmbeddingDimension\".";
 
-MergeMesh//Options={"DeleteDuplicateCoordinates"->True};
+MergeMesh//Options=Options@ElementMesh;
 
 MergeMesh[list_List/;Length[list]>=2,opts:OptionsPattern[]]:=Fold[MergeMesh[#1,#2,opts]&,list]
 

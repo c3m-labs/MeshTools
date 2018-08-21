@@ -302,6 +302,34 @@ With[{
 ]
 
 
+(* Check special options that are needed for correct merging of boundary meshes. *)
+Module[
+	{basic,m1,m2,bMesh,toBoundaryMesh},
+	toBoundaryMesh=Function[mesh,
+		ToBoundaryMesh[
+			"Coordinates"->Append[0.]/@mesh["Coordinates"],
+			"BoundaryElements"->mesh["MeshElements"]
+		]
+	];
+	basic=RectangleMesh[1];
+	m1=toBoundaryMesh@AddMeshMarkers[basic,1];
+	m2=toBoundaryMesh@AddMeshMarkers[basic,2];
+	(* ElementMesh is not inert head and sometimes reorders expression 
+	therefore option "CheckIntersections" is needed. *)
+	VerificationTest[
+		MergeMesh[{m1,m2},"CheckIntersections"->False],
+		ElementMesh[
+			{{0., 0., 0.}, {1., 0., 0.}, {0., 1., 0.}, {1., 1., 0.}}, 
+			Automatic, 
+			{QuadElement[{{1, 2, 4, 3}, {1, 2, 4, 3}}, {1, 2}]}, 
+			{PointElement[{{1}, {2}, {3}, {4}}]},
+			"CheckIntersections"->False
+		],
+		TestID->"MergeMesh_6"
+	]
+]
+
+
 (* ::Subsection::Closed:: *)
 (*ExtrudeMesh*)
 
