@@ -27,7 +27,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
 SelectElementsByMarker::usage="SelectElementsByMarker[mesh, marker] creates ElementMesh made only out of elements with selected marker.";
-SelectElements::usage="SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."
+SelectElements::usage="SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit.";
 
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
@@ -50,6 +50,7 @@ AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi
 
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
+CylinderMesh::usage="CylinderMesh[{{x1, y1, z1}, {x2, y2, z2}}, r, {nr,nz}] creates structured mesh on Cylinder.";
 SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell,
  with n\[Phi] elements in circumferential direction and nr elements in radial direction.";
@@ -1085,6 +1086,33 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 	},
 	{nx,ny,nz}
 ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*CylinderMesh*)
+
+
+CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+
+CylinderMesh//Options={"MeshOrder"->Automatic};
+
+CylinderMesh[{nr_,nz_},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts]
+
+CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_,nz_},opts:OptionsPattern[]]:=Module[
+	{order,diskMesh,unitCylinder,gt},
+	If[TrueQ[nr<2]||Not@IntegerQ[nr],Message[CylinderMesh::noelems,nr];Return[$Failed]];
+	order=OptionValue["MeshOrder"]/.Automatic->1;
+	If[Not@MatchQ[order,1|2],Message[ToElementMesh::femmonv,order,1];Return[$Failed]];
+	
+	diskMesh=DiskMesh[{0,0},1,nr,FilterRules[{opts},Options@DiskMesh]];
+	unitCylinder=ExtrudeMesh[diskMesh,1,nz];
+	gt=Last@FindGeometricTransform[{{0,0,0},{0,0,1}},{{x1,y1,z1},{x2,y2,z2}}];
+	
+	ToElementMesh[
+		"Coordinates" -> (gt@unitCylinder["Coordinates"]),
+		"MeshElements" -> unitCylinder["MeshElements"]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
