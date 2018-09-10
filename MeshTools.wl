@@ -50,6 +50,7 @@ AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi
 
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
+PrismMesh::usage="PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism.";
 SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell,
  with n\[Phi] elements in circumferential direction and nr elements in radial direction.";
@@ -1411,6 +1412,57 @@ TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
 		TetrahedronElement,simplexMesh[Tetrahedron,{p1,p2,p3,p4},n],
 		HexahedronElement,splitTetrahedronToHexahedra[{p1,p2,p3,p4},n/2],
 		_,Message[TetrahedronMesh::badtype,type];$Failed
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PrismMesh*)
+
+
+(* Helper function to determine if points given as Prism corners need reordering. *)
+reorientPrismQ[pts_]:=With[{
+	a=pts[[2]]-pts[[1]],
+	b=pts[[3]]-pts[[1]],
+	c=pts[[4]]-pts[[1]]
+	},
+	Negative[Cross[a,b].c]
+]
+
+
+PrismMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+PrismMesh::alignerr="Warning! Corner alignment error `1` is larger than tolerance.";
+
+PrismMesh//Options={};
+
+PrismMesh[{n1_,n2_}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}]
+
+PrismMesh[corners_List,{n1_,n2_}]:=Module[
+	{pts,error,triangleMesh,standardPrism,tf},
+	If[TrueQ[n1<2]||Not@IntegerQ[n1],Message[PrismMesh::noelems,n1];Return[$Failed]];
+	
+	pts=If[
+		reorientPrismQ[corners],
+		Join@@Reverse@TakeDrop[corners,3],
+		corners
+	];
+	(* Smoothing TriangleMesh before extrusion seems to even worsen the quality of hex mesh. *)
+	triangleMesh=TriangleMesh[{{0,0},{1,0},{0,1}},n1,"MeshElementType"->QuadElement];
+	standardPrism=ExtrudeMesh[triangleMesh,1,n2];
+	(* Find TransformationFunction between standard and arbitrary prism. "Linear" method
+	is much faster than others. *)
+	{error,tf}=FindGeometricTransform[
+		pts,
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},
+		Method->"Linear"
+	];
+	(* Alignment error is non-zero in case of non-homogenous transformation. 
+	Currently the tolerance is chosen arbitrarily. *)
+	If[error>10^-4,Message[PrismMesh::alignerr,ScientificForm[error,4]]];
+		
+	ToElementMesh[
+		"Coordinates" ->(tf@standardPrism["Coordinates"]),
+		"MeshElements" -> standardPrism["MeshElements"]
 	]
 ]
 
