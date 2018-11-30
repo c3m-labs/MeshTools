@@ -1,69 +1,150 @@
-(* Content-type: application/vnd.wolfram.mathematica *)
-
-(*** Wolfram Notebook File ***)
-(* http://www.wolfram.com/nb *)
-
-(* CreatedBy='Mathematica 11.3' *)
-
-(*CacheID: 234*)
-(* Internal cache information:
-NotebookFileLineBreakTest
-NotebookFileLineBreakTest
-NotebookDataPosition[       158,          7]
-NotebookDataLength[      1951,         61]
-NotebookOptionsPosition[      1657,         48]
-NotebookOutlinePosition[      1999,         63]
-CellTagsIndexPosition[      1956,         60]
-WindowFrame->Normal*)
-
-(* Beginning of Notebook Content *)
 Notebook[{
+Cell["\<\
+This is just a helper notebook to run tests. Do not save test results to this \
+notebook.\
+\>", "Text",ExpressionUUID->"6a3b57c0-20b7-4e78-9225-c3615d9b98eb"],
+
+Cell[CellGroupData[{
+
+Cell["Functions", \
+"Subsubsection",ExpressionUUID->"78c3fb70-9591-4371-989c-ee9d061526e3"],
+
 Cell[BoxData[
  RowBox[{
-  RowBox[{"(*", " ", 
+  RowBox[{"getTestResults", "[", "tr_TestReportObject", "]"}], ":=", 
+  RowBox[{"Module", "[", "\[IndentingNewLine]", "\t", 
    RowBox[{
-   "This", " ", "is", " ", "just", " ", "a", " ", "helper", " ", "notebook", 
-    " ", "to", " ", "run", " ", 
-    RowBox[{"tests", ".", " ", "Do"}], " ", "not", " ", "save", " ", "test", 
-    " ", "results", " ", "to", " ", "this", " ", 
-    RowBox[{"notebook", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"tr", "=", 
-   RowBox[{"With", "[", 
-    RowBox[{
-     RowBox[{"{", "\n", "\t", 
-      RowBox[{"dir", "=", 
-       RowBox[{"ParentDirectory", "@", 
-        RowBox[{"NotebookDirectory", "[", "]"}]}]}], "\n", "\t", "}"}], ",", 
-     "\n", "\t", 
+    RowBox[{"{", 
+     RowBox[{"fields", ",", "results", ",", "abbreviations"}], "}"}], ",", 
+    "\n", "\t", 
+    RowBox[{"(*", " ", 
      RowBox[{
-      RowBox[{"Get", "[", 
-       RowBox[{"\"\<MeshTools.wl\>\"", ",", 
-        RowBox[{"Path", "->", "dir"}]}], "]"}], ";", "\n", "\t", 
-      RowBox[{"TestReport", "[", 
-       RowBox[{"FileNameJoin", "[", 
+     "Add", " ", "other", " ", "querries", " ", "to", " ", "this", " ", 
+      RowBox[{"list", "."}]}], " ", "*)"}], "\n", "\t", 
+    RowBox[{
+     RowBox[{"fields", "=", 
+      RowBox[{"{", 
+       RowBox[{
+       "\"\<TestIndex\>\"", ",", "\"\<Outcome\>\"", ",", 
+        "\"\<AbsoluteTimeUsed\>\"", ",", "\"\<MemoryUsed\>\"", ",", 
+        "\"\<TestID\>\""}], "}"}]}], ";", "\[IndentingNewLine]", "\t", 
+     RowBox[{"abbreviations", "=", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"\"\<TestIndex\>\"", "\[Rule]", "\"\<Idx\>\""}], ",", 
+        RowBox[{"\"\<AbsoluteTimeUsed\>\"", "\[Rule]", "\"\<Time [s]\>\""}]}],
+        "}"}]}], ";", "\n", "\t", "\n", "\t", 
+     RowBox[{"results", "=", 
+      RowBox[{"ReplaceRepeated", "[", "\n", "\t\t", 
+       RowBox[{
+        RowBox[{"Outer", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"#1", "[", "#2", "]"}], "&"}], ",", 
+          RowBox[{"Values", "[", 
+           RowBox[{"tr", "[", "\"\<TestResults\>\"", "]"}], "]"}], ",", 
+          "fields"}], "]"}], ",", "\n", "\t\t", 
         RowBox[{"{", 
-         RowBox[{"dir", ",", "\"\<Tests\>\"", ",", "\"\<Tests.wl\>\""}], 
-         "}"}], "]"}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}]], "Code",
- CellLabel->"In[36]:=",ExpressionUUID->"bfa5b4c3-e8ed-4948-b28f-3b6412fdad5d"]
+         RowBox[{
+          RowBox[{"x_Quantity", "\[RuleDelayed]", 
+           RowBox[{"QuantityMagnitude", "[", "x", "]"}]}], ",", 
+          RowBox[{"x_Real", "\[RuleDelayed]", 
+           RowBox[{"Round", "[", 
+            RowBox[{"x", ",", "0.001"}], "]"}]}]}], "}"}]}], "\n", "\t", 
+       "]"}]}], ";", "\n", "\t", "\n", "\t", 
+     RowBox[{"Join", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"fields", "/.", "abbreviations"}], "}"}], ",", "results"}], 
+      "]"}]}]}], "\[IndentingNewLine]", 
+   "]"}]}]], "Code",ExpressionUUID->"caf045cf-24c3-446d-8735-b8212fbf614a"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"printTestResults", "[", "list_", "]"}], ":=", 
+  RowBox[{"With", "[", 
+   RowBox[{
+    RowBox[{"{", "\[IndentingNewLine]", "\t", 
+     RowBox[{"indx", "=", 
+      RowBox[{"MapIndexed", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"MemberQ", "[", 
+            RowBox[{"#1", ",", 
+             RowBox[{
+             "\"\<Failure\>\"", "|", "\"\<MessagesFailure\>\"", "|", 
+              "\"\<Error\>\""}]}], "]"}], ",", 
+           RowBox[{"First", "@", "#2"}], ",", "Nothing"}], "]"}], "&"}], ",", 
+        "list"}], "]"}]}], "\n", "\t", "}"}], ",", "\[IndentingNewLine]", 
+    "\t", 
+    RowBox[{"Grid", "[", 
+     RowBox[{"list", ",", "\n", "\t\t", 
+      RowBox[{"Alignment", "\[Rule]", "Left"}], ",", "\n", "\t\t", 
+      RowBox[{"Dividers", "\[Rule]", 
+       RowBox[{"{", 
+        RowBox[{"None", ",", 
+         RowBox[{"{", 
+          RowBox[{"2", "\[Rule]", "True"}], "}"}]}], "}"}]}], ",", "\n", 
+      "\t\t", 
+      RowBox[{"Background", "\[Rule]", 
+       RowBox[{"{", 
+        RowBox[{"None", ",", 
+         RowBox[{"Thread", "[", 
+          RowBox[{"indx", "\[Rule]", "Pink"}], "]"}]}], "}"}]}]}], "\n", "\t",
+      "]"}]}], "\[IndentingNewLine]", 
+   "]"}]}]], "Code",ExpressionUUID->"0f7168c5-7285-4299-83ba-1805253c69db"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Run tests", \
+"Subsubsection",ExpressionUUID->"7dd4e5d4-8528-48cb-a96d-8d3aa5bf8484"],
+
+Cell[BoxData[
+ RowBox[{"PacletDirectoryAdd", "@", 
+  RowBox[{"ParentDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], 
+   "]"}]}]], "Input",ExpressionUUID->"be743a64-43fa-44ce-9fa5-3bfd6d2ab364"],
+
+Cell[BoxData[
+ RowBox[{"Get", "[", "\"\<MeshTools`\>\"", 
+  "]"}]], "Input",ExpressionUUID->"a8589388-f439-4697-90da-cdbabd65b1d9"],
+
+Cell[BoxData[
+ RowBox[{"Module", "[", "\n", "\t", 
+  RowBox[{
+   RowBox[{"{", "time", "}"}], ",", "\n", "\t", 
+   RowBox[{
+    RowBox[{"$testReport", "=", 
+     RowBox[{"TestReport", "[", 
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<Tests.wl\>\""}], 
+        "}"}], "]"}], "]"}]}], ";", "\n", "\t", 
+    RowBox[{"time", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"Round", "[", 
+        RowBox[{"#", ",", "0.01"}], "]"}], "&"}], "@", 
+      RowBox[{"QuantityMagnitude", "[", 
+       RowBox[{"$testReport", "[", "\"\<TimeElapsed\>\"", "]"}], "]"}]}]}], 
+    ";", "\n", "\t", "\n", "\t", 
+    RowBox[{"Print", "[", 
+     RowBox[{
+     "\"\<Total elapsed time [s]: \>\"", ",", "time", ",", "\"\<\\n\>\""}], 
+     "]"}], ";", "\n", "\t", 
+    RowBox[{"printTestResults", "@", 
+     RowBox[{"getTestResults", "[", "$testReport", "]"}]}]}]}], "\n", 
+  "]"}]], "Code",ExpressionUUID->"61b309ae-4270-48e7-a594-60b30fba6fa2"]
+}, Open  ]]
 },
-WindowSize->{887, 691},
-WindowMargins->{{485, Automatic}, {Automatic, 4}},
+WindowSize->{958, 1086},
+WindowMargins->{{Automatic, -8}, {Automatic, 0}},
+PrivateNotebookOptions->{"FileOutlineCache"->False},
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->"Default.nb"
 ]
-(* End of Notebook Content *)
-
-(* Internal cache information *)
-(*CellTagsOutline
-CellTagsIndex->{}
-*)
-(*CellTagsIndex
-CellTagsIndex->{}
-*)
-(*NotebookFileOutline
-Notebook[{
-Cell[558, 20, 1095, 26, 203, "Code",ExpressionUUID->"bfa5b4c3-e8ed-4948-b28f-3b6412fdad5d"]
-}
-]
-*)
 
