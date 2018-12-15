@@ -1,6 +1,6 @@
 Notebook[{
 Cell["\<\
-This is just a helper notebook to run tests. Do not save test results to this \
+This is a helper notebook to run tests. Do not save test results to this \
 notebook.\
 \>", "Text",ExpressionUUID->"6a3b57c0-20b7-4e78-9225-c3615d9b98eb"],
 
@@ -56,8 +56,8 @@ Cell[BoxData[
       RowBox[{
        RowBox[{"{", 
         RowBox[{"fields", "/.", "abbreviations"}], "}"}], ",", "results"}], 
-      "]"}]}]}], "\[IndentingNewLine]", 
-   "]"}]}]], "Code",ExpressionUUID->"caf045cf-24c3-446d-8735-b8212fbf614a"],
+      "]"}]}]}], "\[IndentingNewLine]", "]"}]}]], "Code",
+ CellLabel->"In[14]:=",ExpressionUUID->"caf045cf-24c3-446d-8735-b8212fbf614a"],
 
 Cell[BoxData[
  RowBox[{
@@ -93,8 +93,8 @@ Cell[BoxData[
         RowBox[{"None", ",", 
          RowBox[{"Thread", "[", 
           RowBox[{"indx", "\[Rule]", "Pink"}], "]"}]}], "}"}]}]}], "\n", "\t",
-      "]"}]}], "\[IndentingNewLine]", 
-   "]"}]}]], "Code",ExpressionUUID->"0f7168c5-7285-4299-83ba-1805253c69db"]
+      "]"}]}], "\[IndentingNewLine]", "]"}]}]], "Code",
+ CellLabel->"In[15]:=",ExpressionUUID->"0f7168c5-7285-4299-83ba-1805253c69db"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -103,14 +103,21 @@ Cell["Run tests", \
 "Subsubsection",ExpressionUUID->"7dd4e5d4-8528-48cb-a96d-8d3aa5bf8484"],
 
 Cell[BoxData[
- RowBox[{"PacletDirectoryAdd", "@", 
-  RowBox[{"ParentDirectory", "[", 
-   RowBox[{"NotebookDirectory", "[", "]"}], 
-   "]"}]}]], "Input",ExpressionUUID->"be743a64-43fa-44ce-9fa5-3bfd6d2ab364"],
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+   "This", " ", "makes", " ", "sure", " ", "code", " ", "from", " ", 
+    "development", " ", "folder", " ", "is", " ", "loaded", " ", "with", " ", 
+    RowBox[{"Get", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{"PacletDirectoryAdd", "@", 
+   RowBox[{"ParentDirectory", "[", 
+    RowBox[{"NotebookDirectory", "[", "]"}], 
+    "]"}]}]}]], \
+"Input",ExpressionUUID->"be743a64-43fa-44ce-9fa5-3bfd6d2ab364"],
 
 Cell[BoxData[
- RowBox[{"Get", "[", "\"\<MeshTools`\>\"", 
-  "]"}]], "Input",ExpressionUUID->"a8589388-f439-4697-90da-cdbabd65b1d9"],
+ RowBox[{"Get", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
+ CellLabel->"In[17]:=",ExpressionUUID->"a8589388-f439-4697-90da-cdbabd65b1d9"],
 
 Cell[BoxData[
  RowBox[{"Module", "[", "\n", "\t", 
@@ -138,10 +145,12 @@ Cell[BoxData[
      "]"}], ";", "\n", "\t", 
     RowBox[{"printTestResults", "@", 
      RowBox[{"getTestResults", "[", "$testReport", "]"}]}]}]}], "\n", 
-  "]"}]], "Code",ExpressionUUID->"61b309ae-4270-48e7-a594-60b30fba6fa2"]
+  "]"}]], "Code",
+ InitializationCell->False,
+ CellLabel->"In[18]:=",ExpressionUUID->"61b309ae-4270-48e7-a594-60b30fba6fa2"]
 }, Open  ]]
 },
-WindowSize->{958, 1086},
+WindowSize->{958, 1008},
 WindowMargins->{{Automatic, -8}, {Automatic, 0}},
 PrivateNotebookOptions->{"FileOutlineCache"->False},
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
