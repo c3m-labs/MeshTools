@@ -1,39 +1,62 @@
 # MeshTools
 Utilities for creating and manipulating Mathematica `ElementMesh` objects. 
 
-![screenshot](https://i.imgur.com/Uy7AV3X.png)
+![example1](Graphics/ExampleMeshes.png)
 
 
 ## Installation
 
-The MeshTools release comes in the form of a `.paclet` file, which contains the entire package and its documentation. 
-Download the latest release from the [Github repo's releases page](https://github.com/c3m-labs/MeshTools/releases). 
-To install, run the following command in the Wolfram Language:
+The following description is for people who just want to use the package functionality and 
+are not interested in package development. 
+To use _MeshTools_ package you need Mathematica version 11. or later.
 
-    PacletInstall["/full/path/to/MeshTools-X.Y.Z.paclet"]
+_MeshTools_ package is released in the `.paclet` file format, which contains code, 
+documentation and other necesseary resources. 
+Download the latest `.paclet` file from the [repository "releases" page](https://github.com/c3m-labs/MeshTools/releases) 
+to your computer and install it by evaluating the following command in the Mathematica:
 
-This will permanently install the MeshTools paclet. The Wolfram Language will always use the latest installed version of MeshTools. 
-Installed versions can be enumerated using the command:
+```mathematica
+(* This is ussualy loaded automatically at kernel startup. *)
+Needs["PacletManager`"] 
 
-    PacletFind["MeshTools"]
+(* Download .paclet file from repository "releases" page. *)
+PacletInstall["full/path/to/MeshTools-X.Y.Z.paclet"] 
+```
 
-And all versions can be uninstalled using the command:
+This will permanently install the _MeshTools_ package to `$UserBasePacletsDirectory`. 
+To update the documentation it may be necessary to restart Mathematica. 
+Mathematica will always use the latest installed version of package and all installed versions 
+can be enumerated by evaluating `PacletFind["MeshTools"]`.
+You can get more detailed information about the package with `PacletInformation["MeshTools"]`.
+All versions can be uninstalled with:
 
-    PacletUninstall["MeshTools"]
+```mathematica
+PacletUninstall["MeshTools"]
+```
 
-To update the documentation it may be necessary to restart Mathematica.
 
 
 ## Usage
 
-After you have installed the paclet, load it to Mathematica session with `Get`. Then you can, for example, make a `ElementMesh` object from basic geometric shape and visualise it.
+After you have installed the paclet, load it to Mathematica session with `Get`. 
+Then you can, for example, make a `ElementMesh` object from basic geometric shape and visualise it.
 
-    Get["MeshTools`"]
+```mathematica
+Get["MeshTools`"]
     
-    mesh = AnnulusMesh[{0, 0}, {2/3, 1}, {0, 3 Pi/2}, {24, 4}];
-    mesh["Wireframe"["MeshElementStyle" -> FaceForm[Green]]]
+outerMesh = AnnulusMesh[{0, 0}, {2/3, 1}, {0, 3 Pi/2}, {24, 4}];
+innerMesh = AnnulusMesh[{0, 0}, {1/2, 2/3}, {0, 3 Pi/2}, {24, 2}];
+mesh = MergeMesh[{
+    AddMeshMarkers[outerMesh, 1],
+    AddMeshMarkers[innerMesh, 2]
+}];
+
+mesh["Wireframe"[
+    "MeshElementStyle" -> FaceForm /@ {ColorData[112, 3], ColorData[112, 2]}]
+]
+```
     
-![screenshot](https://i.imgur.com/1AdzyFH.png)
+![screenshot](Graphics/DoubleAnnulus.png )
 
 To access the documentation, open the notebook interface help viewer and search for MeshTools. 
 The first hit will be a summary page enumerating the most commonly used functions in MeshTools that enable you to perform the following tasks:
@@ -47,5 +70,6 @@ The first hit will be a summary page enumerating the most commonly used function
 
 Please use the repository [issues](https://github.com/c3m-labs/MeshTools/issues) page to submit bugs or feature ideas. 
 
-Contributions to this repository are very welcome. Guidelines on how to build paclet file from source code can be found in [Development.md]( Development.md ) file.
+Contributions to this repository are very welcome. 
+Guidelines on how to build paclet file from source code can be found in [Development.md]( Development.md ) file.
 
