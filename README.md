@@ -1,3 +1,6 @@
+[![releases](https://img.shields.io/github/release-pre/c3m-labs/MeshTools.svg)](https://github.com/c3m-labs/MeshTools/releases)
+[![SemVer 2.0.0](http://img.shields.io/badge/SemVer-2.0.0-brightgreen.svg)](http://semver.org/spec/v2.0.0.html)
+
 # MeshTools
 Utilities for creating and manipulating Mathematica `ElementMesh` objects. 
 
