@@ -50,7 +50,10 @@ AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi
 
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
-PrismMesh::usage="PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism.";
+PrismMesh::usage=(
+	"PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge."<>"\n"<>
+	"PrismMesh[{n1, n2}] creates structured mesh on unit Prism."
+);
 SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell,
  with n\[Phi] elements in circumferential direction and nr elements in radial direction.";
@@ -1430,7 +1433,7 @@ reorientPrismQ[pts_]:=With[{
 ]
 
 
-PrismMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+PrismMesh::noelems="Specificaton of elements `1` must be even integer equal or larger than 2.";
 PrismMesh::alignerr="Warning! Corner alignment error `1` is larger than tolerance.";
 
 PrismMesh//Options={};
@@ -1439,7 +1442,10 @@ PrismMesh[{n1_,n2_}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}
 
 PrismMesh[corners_List,{n1_,n2_}]:=Module[
 	{pts,error,triangleMesh,standardPrism,tf},
-	If[TrueQ[n1<2]||Not@IntegerQ[n1],Message[PrismMesh::noelems,n1];Return[$Failed]];
+	If[
+		Not@(TrueQ[n1>=2]&&EvenQ[n1]),
+		Message[PrismMesh::noelems,n1];Return[$Failed]
+	];
 	
 	pts=If[
 		reorientPrismQ[corners],
