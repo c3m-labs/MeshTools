@@ -27,7 +27,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
 SelectElementsByMarker::usage="SelectElementsByMarker[mesh, marker] creates ElementMesh made only out of elements with selected marker.";
-SelectElements::usage="SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."
+SelectElements::usage="SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit.";
 
 MergeMesh::usage="MergeMesh[list] merges a list of ElementMesh objects with the same embedding dimension.";
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
@@ -49,6 +49,7 @@ DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements 
 AnnulusMesh::usage="AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
+HexahedronMesh::usage="HexahedronMesh[{p1, p2, ..., p8}, {nx, ny, nz}] creates structured mesh on Hexahedron.";
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
 PrismMesh::usage=(
 	"PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge."<>"\n"<>
@@ -1089,6 +1090,28 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 	},
 	{nx,ny,nz}
 ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*HexahedronMesh*)
+
+
+HexahedronMesh::ordering="Warning! Ordering of corners may be incorrect.";
+
+HexahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
+
+HexahedronMesh[{nx_,ny_,nz_}]:=HexahedronMesh[{{0,0,0},{0,1,0},{1,1,0},{1,0,0},{0,0,1},{0,1,1},{1,1,1},{1,0,1}},{nx,ny,nz}]
+
+HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_,ny_,nz_}]:=Module[
+	{mesh},
+	Check[
+		mesh=StructuredMesh[
+			{{{p1,p2},{p4,p3}},{{p5,p6},{p8,p7}}},
+			{nx,ny,nz}
+		],
+		Message[HexahedronMesh::ordering];mesh
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
