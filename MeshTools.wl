@@ -1094,23 +1094,25 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 
 CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-CylinderMesh//Options={"MeshOrder"->Automatic};
+CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 
 CylinderMesh[{nr_,nz_},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts]
 
 CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_,nz_},opts:OptionsPattern[]]:=Module[
-	{order,diskMesh,unitCylinder,gt},
-	If[TrueQ[nr<2]||Not@IntegerQ[nr],Message[CylinderMesh::noelems,nr];Return[$Failed]];
-	order=OptionValue["MeshOrder"]/.Automatic->1;
-	If[Not@MatchQ[order,1|2],Message[ToElementMesh::femmonv,order,1];Return[$Failed]];
-	
-	diskMesh=DiskMesh[{0,0},1,nr,FilterRules[{opts},Options@DiskMesh]];
-	unitCylinder=ExtrudeMesh[diskMesh,1,nz];
-	gt=Last@FindGeometricTransform[{{0,0,0},{0,0,1}},{{x1,y1,z1},{x2,y2,z2}}];
+	{order,diskMesh,length,alignedCylinder,tf},
+	If[
+		TrueQ[nr<2]||Not@IntegerQ[nr],
+		Message[CylinderMesh::noelems,nr];Return[$Failed]
+	];
+
+	length=Norm[{x2,y2,z2}-{x1,y1,z1}];
+	diskMesh=DiskMesh[{0,0},r,nr,FilterRules[{opts},Options@DiskMesh]];
+	alignedCylinder=ExtrudeMesh[diskMesh,length,nz];
+	tf=Last@FindGeometricTransform[{{x1,y1,z1},{x2,y2,z2}},{{0,0,0},{0,0,length}}];
 	
 	ToElementMesh[
-		"Coordinates" -> (gt@unitCylinder["Coordinates"]),
-		"MeshElements" -> unitCylinder["MeshElements"]
+		"Coordinates" -> (tf@alignedCylinder["Coordinates"]),
+		"MeshElements" -> alignedCylinder["MeshElements"]
 	]
 ]
 
