@@ -55,6 +55,7 @@ PrismMesh::usage=(
 	"PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge."<>"\n"<>
 	"PrismMesh[{n1, n2}] creates structured mesh on unit Prism."
 );
+CylinderMesh::usage="CylinderMesh[{{x1, y1, z1}, {x2, y2, z2}}, r, {nr,nz}] creates structured mesh on Cylinder.";
 SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell,
  with n\[Phi] elements in circumferential direction and nr elements in radial direction.";
@@ -1110,6 +1111,35 @@ HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_,ny_,nz_}]:=Module[
 			{nx,ny,nz}
 		],
 		Message[HexahedronMesh::ordering];mesh
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CylinderMesh*)
+
+
+CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+
+CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
+
+CylinderMesh[{nr_,nz_},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts]
+
+CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_,nz_},opts:OptionsPattern[]]:=Module[
+	{order,diskMesh,length,alignedCylinder,tf},
+	If[
+		TrueQ[nr<2]||Not@IntegerQ[nr],
+		Message[CylinderMesh::noelems,nr];Return[$Failed]
+	];
+
+	length=Norm[{x2,y2,z2}-{x1,y1,z1}];
+	diskMesh=DiskMesh[{0,0},r,nr,FilterRules[{opts},Options@DiskMesh]];
+	alignedCylinder=ExtrudeMesh[diskMesh,length,nz];
+	tf=Last@FindGeometricTransform[{{x1,y1,z1},{x2,y2,z2}},{{0,0,0},{0,0,length}}];
+	
+	ToElementMesh[
+		"Coordinates" -> (tf@alignedCylinder["Coordinates"]),
+		"MeshElements" -> alignedCylinder["MeshElements"]
 	]
 ]
 
