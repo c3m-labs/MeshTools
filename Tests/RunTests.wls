@@ -13,7 +13,7 @@ If[
 ];
 
 
-Print["  Running \"MeshTools\" tests..."];
+Print["  Running \"MeshTools\" tests...","\n"];
 
 (* Modify paths depending from which directory the script is started.
 By default we assume script is started from git root directory. *)
@@ -21,17 +21,22 @@ PacletDirectoryAdd@Directory[];
 Get["MeshTools`"];
 
 Module[
-	{tr,time},
-	tr=TestReport[FileNameJoin[{Directory[],"Tests","Tests.wl"}]];
-	time=QuantityMagnitude@tr["TimeElapsed"];
+	{report,time,results},
+	report=TestReport[FileNameJoin[{Directory[],"Tests","Tests.wl"}]];
+	time=QuantityMagnitude@report["TimeElapsed"];
+	results=report["TestResults"];
 	
 	If[
-		TrueQ@tr["AllTestsSucceeded"]
+		TrueQ@report["AllTestsSucceeded"]
 		,
-		Print["\n","  All tests passed in ",ToString@time," seconds."];
+		Print["  All tests passed in ",ToString@time," seconds."];
 		Quit[0] (* exit code if all test pass *)
 		,
-		Print["\n","  Tests failed! IDs: ",tr["TestsFailedIndices"]];
+		Print["  Tests failed!"];
+		Do[
+			Print["  ",i," / ",results[i]["Outcome"]," / ",results[i]["TestID"]],
+			{i,report["TestsFailedIndices"]}
+		];
 		Quit[1] (* exit code if any test fails *)
 	]
 ]
