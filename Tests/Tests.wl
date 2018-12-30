@@ -20,11 +20,33 @@ BeginTestSection["Tests"]
 
 
 (* ::Subsection::Closed:: *)
-(*TransformMesh*)
+(*Mesh operations*)
 
 
 (* ::Subsubsection::Closed:: *)
-(*2D*)
+(*AddMeshMarkers*)
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,3,4}}]}
+	]
+	},
+	VerificationTest[
+		AddMeshMarkers[mesh,1],	
+		ElementMesh[
+			{{0., 0.}, {1., 0.}, {1., 1.}, {0., 1.}},
+			{QuadElement[{{1, 2, 3, 4}}, {1}]},
+			{LineElement[{{1, 2}, {2, 3}, {3, 4}, {4, 1}}]}
+		],
+		TestID->"AddMeshMarkers_1"
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TransformMesh*)
 
 
 With[{
@@ -40,7 +62,7 @@ With[{
 			{TriangleElement[{{2, 1, 3}}]}, 
 			{LineElement[{{1, 3}, {3, 2}, {2, 1}}]}
 		],
-		TestID->"TransformMesh_1"
+		TestID->"TransformMesh_2D-order=1"
 	]
 ]
 
@@ -58,13 +80,9 @@ With[{
 			{TriangleElement[{{2, 1, 3, 4, 6, 5}}]}, 
 			{LineElement[{{1, 3, 6}, {3, 2, 5}, {2, 1, 4}}]}
 		],
-		TestID->"TransformMesh_2"
+		TestID->"TransformMesh_2D-order=2"
 	]
 ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*3D*)
 
 
 With[{
@@ -80,7 +98,7 @@ With[{
 			{TetrahedronElement[{{4, 1, 2, 3}}]}, 
 			{TriangleElement[{{3, 2, 1}, {3, 4, 2}, {3, 1, 4}, {4, 1, 2}}]}
 		],
-		TestID->"TransformMesh_3"
+		TestID->"TransformMesh_3D-order=1"
 	]
 ]
 
@@ -108,13 +126,9 @@ With[{
 			{TriangleElement[{{3,2,1,10,5,8},{3,4,2,9,7,10},{3,1,4,8,6,9},{4,1,2,6,5,7}}]}
 		]
 		],
-		TestID->"TransformMesh_4"
+		TestID->"TransformMesh_3D-order=2"
 	]
 ]
-
-
-(* ::Subsection::Closed:: *)
-(*SelectElements*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -177,7 +191,7 @@ With[{
 		_ElementMesh,
 		{SelectElementsByMarker::marker},
 		SameTest->MatchQ,
-		TestID->"SelectElementsByMarker_3"
+		TestID->"SelectElementsByMarker_nonexistent-marker"
 	]
 ]
 
@@ -200,7 +214,7 @@ With[{
 			{QuadElement[{{1, 3, 4, 2}}, {0}]},
 			{LineElement[{{1, 3}, {3, 4}, {4, 2}, {2, 1}}]}
 		],
-		TestID->"SelectElements_1"
+		TestID->"SelectElements_2D-1"
 	]
 ]
 
@@ -216,7 +230,7 @@ With[{
 		SelectElements[mesh,#1>=2&],	
 		$Failed,
 		{SelectElements::noelms},
-		TestID->"SelectElements_2"
+		TestID->"SelectElements_no-elements"
 	]
 ]
 
@@ -232,12 +246,12 @@ With[{
 		SelectElements[mesh,#1>=0.5&&#2>=0.5&&#3>=0.5&],	
 		$Failed,
 		{SelectElements::funslots},
-		TestID->"SelectElements_3"
+		TestID->"SelectElements_wrong-criterion"
 	]
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*MergeMesh*)
 
 
@@ -248,11 +262,11 @@ With[{
 	VerificationTest[
 		MergeMesh[m1,m2],	
 		ElementMesh[
-			{{0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}}, 
-			{QuadElement[{{1, 2, 4, 3}, {1, 2, 4, 3}}, {1, 2}]}, 
-			{LineElement[{{1, 2}, {2, 4}, {4, 3}, {3, 1}}]}
+			{{0.,0.}, {1.,0.},{0.,1.},{1.,1.}},
+			{QuadElement[{{1,2,4,3},{1,2,4,3}},{1,2}]},
+			{LineElement[{{1,2},{2,4},{4,3},{3,1}}]}
 		],
-		TestID->"MergeMesh_1"
+		TestID->"MergeMesh_normal-1"
 	]
 ]
 
@@ -264,11 +278,11 @@ With[{
 	VerificationTest[
 		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->True],	
 		ElementMesh[
-			{{0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}}, 
-			{QuadElement[{{1, 2, 4, 3}, {1, 2, 4, 3}}, {1, 2}]}, 
-			{LineElement[{{1, 2}, {2, 4}, {4, 3}, {3, 1}}]}
+			{{0.,0.},{1.,0.},{0.,1.},{1.,1.}},
+			{QuadElement[{{1,2,4,3},{1,2,4,3}},{1,2}]},
+			{LineElement[{{1,2},{2,4},{4,3},{3,1}}]}
 		],
-		TestID->"MergeMesh_2"
+		TestID->"MergeMesh_normal-2"
 	]
 ]
 
@@ -280,8 +294,8 @@ With[{
 	(* For some weird reason direct comparison of ElementMesh objects doesn't work here. *)
 	VerificationTest[
 		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->False]["Coordinates"],
-		{{0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}, {0., 0.}, {1., 0.}, {0., 1.}, {1., 1.}},
-		TestID->"MergeMesh_3"
+		{{0.,0.},{1.,0.},{0.,1.},{1.,1.},{0.,0.},{1.,0.},{0.,1.},{1.,1.}},
+		TestID->"MergeMesh_option-DeleteDuplicateCoordinates"
 	]
 ]
 
@@ -294,7 +308,7 @@ With[{
 		MergeMesh[{m1,m2}],
 		$Failed,
 		{MergeMesh::order},
-		TestID->"MergeMesh_4"
+		TestID->"MergeMesh_incompatible-order"
 	]
 ]
 
@@ -307,7 +321,7 @@ With[{
 		MergeMesh[{m1,m2}],
 		$Failed,
 		{MergeMesh::dim},
-		TestID->"MergeMesh_5"
+		TestID->"MergeMesh_incompatible-dimensions"
 	]
 ]
 
@@ -329,18 +343,18 @@ Module[
 	VerificationTest[
 		MergeMesh[{m1,m2},"CheckIntersections"->False],
 		ElementMesh[
-			{{0., 0., 0.}, {1., 0., 0.}, {0., 1., 0.}, {1., 1., 0.}}, 
-			Automatic, 
-			{QuadElement[{{1, 2, 4, 3}, {1, 2, 4, 3}}, {1, 2}]}, 
-			{PointElement[{{1}, {2}, {3}, {4}}]},
+			{{0.,0.,0.},{1.,0.,0.},{0.,1.,0.},{1.,1.,0.}},
+			Automatic,
+			{QuadElement[{{1,2,4,3},{1,2,4,3}},{1,2}]},
+			{PointElement[{{1},{2},{3},{4}}]},
 			"CheckIntersections"->False
 		],
-		TestID->"MergeMesh_6"
+		TestID->"MergeMesh_boundary-mesh-1"
 	]
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*ExtrudeMesh*)
 
 
@@ -353,18 +367,18 @@ With[{
 	VerificationTest[
 		ExtrudeMesh[mesh,1,1],	
 		ElementMesh[
-			{{0., 0., 0.}, {0., 1., 0.}, {1., 0., 0.}, {1., 1., 0.}, {2., 0., 0.}, {2., 1., 0.}, 
-			{0., 0., 1.}, {0., 1., 1.}, {1., 0., 1.},  {1., 1., 1.}, {2., 0., 1.}, {2., 1., 1.}},
-			{HexahedronElement[{{1, 3, 4, 2, 7, 9, 10, 8}, {3, 5, 6, 4, 9, 11, 12, 10}}, {1, 2}]},
-			{QuadElement[{{1, 3, 4, 2}, {8, 10, 9, 7}, {1, 7, 9, 3}, {3, 9, 10, 4}, {4, 10, 8, 2}, 
-			{2, 8, 7, 1}, {3, 5, 6, 4}, {10, 12, 11, 9}, {3, 9, 11, 5}, {5, 11, 12, 6}, {6, 12, 10, 4}}]}
+			{{0.,0.,0.},{0.,1.,0.},{1.,0.,0.},{1.,1.,0.},{2.,0.,0.},{2.,1.,0.},
+			{0.,0.,1.},{0.,1.,1.},{1.,0.,1.}, {1.,1.,1.},{2.,0.,1.},{2.,1.,1.}},
+			{HexahedronElement[{{1,3,4,2,7,9,10,8},{3,5,6,4,9,11,12,10}},{1,2}]},
+			{QuadElement[{{1,3,4,2},{8,10,9,7},{1,7,9,3},{3,9,10,4},{4,10,8,2},
+			{2,8,7,1},{3,5,6,4},{10,12,11,9},{3,9,11,5},{5,11,12,6},{6,12,10,4}}]}
 		],
-		TestID->"ExtrudeMesh_1"
+		TestID->"ExtrudeMesh_normal-1"
 	]
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*QuadToTriangleMesh*)
 
 
@@ -377,16 +391,56 @@ With[{
 	VerificationTest[
 		QuadToTriangleMesh[mesh],	
 		ElementMesh[
-			{{0., 0.}, {1., 0.}, {1., 1.}, {0., 1.}}, 
-			{TriangleElement[{{1, 2, 3}, {1, 3, 4}}]}, 
-			{LineElement[{{2, 3}, {1, 2}, {3, 4}, {4, 1}}]}
+			{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
+			{TriangleElement[{{1,2,3},{1,3,4}}]},
+			{LineElement[{{2,3},{1,2},{3,4},{4,1}}]}
 		],
-		TestID->"QuadToTriangleMesh_1"
+		TestID->"QuadToTriangleMesh_normal-1"
 	]
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
+(*TriangleToQuadMesh*)
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}},
+		"MeshElements"->{TriangleElement[{{2, 1, 3}, {3, 4, 2}}]}
+	]
+	},
+	VerificationTest[
+		TriangleToQuadMesh[mesh],	
+		ElementMesh[
+			{{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}, {0., 0.5}, {0.5,0.}, {1., 0.5}, {0.5, 1.}, {0.5, 0.5}},
+			{QuadElement[{{2, 5, 9, 8}, {5, 1, 6, 9}, {9, 6, 3, 7}, {8, 9, 7, 4}}]},
+			{LineElement[{{2, 5}, {8, 2}, {5, 1}, {1, 6}, {6, 3}, {3, 7}, {7, 4}, {4, 8}}]}
+		],
+		TestID->"TriangleToQuadMesh_normal"
+	]
+]
+
+
+With[{
+	(* A mesh with mixed element types. *)
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
+		"MeshElements"->{
+			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
+			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
+		}]
+	},
+	VerificationTest[
+		TriangleToQuadMesh[mesh],	
+		$Failed,
+		{TriangleToQuadMesh::elmtype},
+		TestID->"TriangleToQuadMesh_mixed-element-type"
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*HexToTetrahedronMesh*)
 
 
@@ -399,363 +453,21 @@ With[{
 	VerificationTest[
 		HexToTetrahedronMesh[mesh],
 		ElementMesh[
-			{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}}, 
-			{TetrahedronElement[{{3, 1, 5, 2}, {8, 2, 5, 6}, {3, 5, 7, 8}, {3, 2, 5, 8}, {3, 2, 8, 4}}]}, 
+			{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
+			{TetrahedronElement[{{3,1,5,2},{8,2,5,6},{3,5,7,8},{3,2,5,8},{3,2,8,4}}]},
 			{TriangleElement[{{2,5,1},{2,1,3},{3,1,5},{6,5,2},{6,8,5},{6,2,8},{8,7,5},{8,3,7},{3,5,7},{4,8,2},{4,3,8},{4,2,3}}]}
 		],
-		TestID->"HexToTetrahedronMesh_1"
+		TestID->"HexToTetrahedronMesh_normal-1"
 	]
 ]
 
 
-(* ::Subsection:: *)
-(*StructuredMesh*)
-
-
-VerificationTest[
-	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{2,1}],
-	ElementMesh[
-		{{0.,0.},{1.,0.},{2.,0.},{0.,1.},{1.,1.},{2.,1.}},
-		{QuadElement[{{1,2,5,4},{2,3,6,5}}]},
-		{LineElement[{{1,2},{5,4},{4,1},{2,3},{3,6},{6,5}}]}
-	],
-	TestID->"StructuredMesh_2D_1"
-]
-
-
-VerificationTest[
-	StructuredMesh[{{{0,0,0},{2,0,0}},{{0,1,0},{2,1,0}}},{2,1}],
-	ElementMesh[
-		{{0.,0.,0.},{1.,0.,0.},{2.,0.,0.},{0.,1.,0.},{1.,1.,0.},{2.,1.,0.}},
-		Automatic,
-		{QuadElement[{{1,2,5,4},{2,3,6,5}},{1,1}]},
-		{PointElement[{{1},{2},{3},{4},{5},{6}}]}
-	],
-	TestID->"StructuredMesh_3D_1"
-]
-
-
-VerificationTest[
-	With[
-		{a=3,b=2,c=1},
-		StructuredMesh[{{{{0,0,0},{a,0,0}},{{0,b,0},{a,b,0}}},{{{0,0,c},{a,0,c}},{{0,b,c},{a,b,c}}}},{3,2,1}]
-	],
-	ElementMesh[
-		{{0.,0.,0.},{1.,0.,0.},{2.,0.,0.},{3.,0.,0.},{0.,1.,0.},{1.,1.,0.},{2.,1.,0.},{3.,1.,0.},{0.,2.,0.},{1.,2.,0.},{2.,2.,0.},{3.,2.,0.},{0.,0.,1.},{1.,0.,1.},{2.,0.,1.},{3.,0.,1.},{0.,1.,1.},{1.,1.,1.},{2.,1.,1.},{3.,1.,1.},{0.,2.,1.},{1.,2.,1.},{2.,2.,1.},{3.,2.,1.}},
-		{HexahedronElement[{{1,2,6,5,13,14,18,17},{2,3,7,6,14,15,19,18},{3,4,8,7,15,16,20,19},{5,6,10,9,17,18,22,21},{6,7,11,10,18,19,23,22},{7,8,12,11,19,20,24,23}}]},
-		{QuadElement[{{1,2,6,5},{17,18,14,13},{1,13,14,2},{5,17,13,1},{2,3,7,6},{18,19,15,14},{2,14,15,3},{3,4,8,7},{19,20,16,15},{3,15,16,4},{4,16,20,8},{5,6,10,9},{21,22,18,17},{10,22,21,9},{9,21,17,5},{6,7,11,10},{22,23,19,18},{11,23,22,10},{7,8,12,11},{23,24,20,19},{8,20,24,12},{12,24,23,11}}]}
-	],
-	TestID->"StructuredMesh_3D_2"
-]
-
-
 (* ::Subsection::Closed:: *)
-(*DiskMesh*)
+(*Mesh measurements*)
 
 
-VerificationTest[
-	DiskMesh[1],
-	DiskMesh[1],
-	{DiskMesh::noelems},
-	TestID->"DiskMesh_1"
-]
-
-
-VerificationTest[
-	DiskMesh[2,Method->"unknown"],
-	$Failed,
-	{DiskMesh::method},
-	TestID->"DiskMesh_2"
-]
-
-
-VerificationTest[
-	DiskMesh[2,Method->"Projection"],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"DiskMesh_3"
-]
-
-
-VerificationTest[
-	DiskMesh[2,Method->"Block"],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"DiskMesh_4"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*TriangleMesh*)
-
-
-VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->TriangleElement],
-	ElementMesh[
-		{{0., 0.}, {0.5, 0.}, {0., 0.5}, {1., 0.}, {0.5, 0.5}, {0., 1.}}, 
-		{TriangleElement[{{1, 2, 3}, {2, 4, 5}, {2, 5, 3}, {3, 5, 6}}]},
-		{LineElement[{{3, 1}, {1, 2}, {4, 5}, {2, 4}, {5, 6}, {6, 3}}]}
-	],
-	TestID->"TriangleMesh_1"
-]
-
-
-VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->QuadElement],
-	ElementMesh[
-		{{0., 0.}, {0.5, 0.}, {0., 0.5}, {1/3, 1/3}, {1., 0.}, {0.5, 0.5}, {0., 1.}},
-		{QuadElement[{{1, 2, 4, 3}, {2, 5, 6, 4}, {3, 4, 6, 7}}, {0, 0, 0}]}, 
-		{LineElement[{{1, 2}, {3, 1}, {2, 5}, {5, 6}, {6, 7}, {7, 3}}]}
-	],
-	TestID->"TriangleMesh_2"
-]
-
-
-VerificationTest[
-	(* Nodes are given in wrong order for TriangleElement *)
-	TriangleMesh[{{0,0},{0,1},{1,0}},2,"MeshElementType"->QuadElement],
-	ElementMesh[
-		{{0., 0.}, {0.5, 0.}, {0., 0.5}, {1/3, 1/3}, {1., 0.}, {0.5, 0.5}, {0., 1.}},
-		{QuadElement[{{1, 2, 4, 3}, {2, 5, 6, 4}, {3, 4, 6, 7}}, {0, 0, 0}]}, 
-		{LineElement[{{1, 2}, {3, 1}, {2, 5}, {5, 6}, {6, 7}, {7, 3}}]}
-	],
-	TestID->"TriangleMesh_3"
-]
-
-
-VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},1],
-	$Failed,
-	{TriangleMesh::quadelms},
-	TestID->"TriangleMesh_4"
-]
-
-
-VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->"BadValue"],
-	$Failed,
-	{TriangleMesh::badtype},
-	TestID->"TriangleMesh_5"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*HexahedronMesh*)
-
-
-VerificationTest[
-	HexahedronMesh[
-		{{0,0,0},{1,0,0},{2,1,0},{1,1,0},{0,0,1},{1,0,1},{2,1,1},{1,1,1}},
-		{1,2,2}
-	],
-	ElementMesh[
-		{{0.,0.,0.},{1.,0.,0.},{0.5,0.5,0.},{1.5,0.5,0.},{1.,1.,0.},{2.,1.,0.},{0.,0.,0.5},{1.,0.,0.5},{0.5,0.5,0.5},{1.5,0.5,0.5},{1.,1.,0.5},{2.,1.,0.5},{0.,0.,1.},{1.,0.,1.},{0.5,0.5,1.},{1.5,0.5,1.},{1.,1.,1.},{2.,1.,1.}},
-		{HexahedronElement[{{1,2,4,3,7,8,10,9},{3,4,6,5,9,10,12,11},{7,8,10,9,13,14,16,15},{9,10,12,11,15,16,18,17}}]},
-		{QuadElement[{{1,2,4,3},{1,7,8,2},{2,8,10,4},{3,9,7,1},{3,4,6,5},{4,10,12,6},{6,12,11,5},{5,11,9,3},{15,16,14,13},{7,13,14,8},{8,14,16,10},{9,15,13,7},{17,18,16,15},{10,16,18,12},{12,18,17,11},{11,17,15,9}}]}
-	],
-	TestID->"HexahedronMesh_1"
-]
-
-
-(* The last two points in Hexahedron are switched. *)
-VerificationTest[
-	HexahedronMesh[
-		{{0,0,0},{1,0,0},{2,1,0},{1,1,0},{0,0,1},{1,0,1},{1,1,1},{2,1,1}},
-		{1,2,3}
-	],
-	_ElementMesh,
-	{ToElementMesh::femimq,HexahedronMesh::ordering},
-	SameTest->MatchQ,
-	TestID->"HexahedronMesh_2"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*SphereMesh*)
-
-
-VerificationTest[
-	SphereMesh[{1,2,3},3,3],
-	_ElementMesh,
-	TestID->"SphereMesh_1",
-	SameTest->MatchQ
-]
-
-
-VerificationTest[
-	SphereMesh[1],
-	$Failed,
-	{SphereMesh::noelems},
-	TestID->"SphereMesh_2"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*SphericalShellMesh*)
-
-
-(* Test default SphericalShell with default "MeshOrder" *)
-VerificationTest[
-	SphericalShellMesh[{4,2}],
-	_ElementMesh,
-	TestID->"SphericalShellMesh_1",
-	SameTest->MatchQ
-]
-
-
-(* Test default SphericalShell with "MeshOrder"->2 *)
-VerificationTest[
-	SphericalShellMesh[{4,1},"MeshOrder"->2],
-	_ElementMesh,
-	TestID->"SphericalShellMesh_2",
-	SameTest->MatchQ
-]
-
-
-(* Test SphericalShell with arbitrary position and size. *)
-VerificationTest[
-	SphericalShellMesh[{1,2,3},{2,3},{6,2}],
-	_ElementMesh,
-	TestID->"SphericalShellMesh_3",
-	SameTest->MatchQ
-]
-
-
-(* ::Subsection::Closed:: *)
-(*BallMesh*)
-
-
-VerificationTest[
-	BallMesh[{0,0,0},1,1],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"BallMesh_1"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*TetrahedronMesh*)
-
-
-VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->TetrahedronElement],
-	ElementMesh[
-		{{0., 0., 0.}, {0.5, 0., 0.}, {0., 0.5, 0.}, {0., 0., 0.5}, {1., 0., 0.}, {0.5, 0.5, 0.}, {0.5, 0., 0.5}, {0., 1., 0.}, {0., 0.5, 0.5}, {0., 0., 1.}}, 
-		{TetrahedronElement[{{1, 2, 3, 4}, {2, 5, 6, 7}, {2, 3, 7, 6}, {3, 6, 8, 9}, {2, 3, 4, 7}, {3, 6, 9, 7}, {3, 4, 7, 9}, {4, 7, 9, 10}}]},
-		{TriangleElement[{{4, 1, 3}, {4, 2, 1}, {1, 2, 3}, {7, 6, 5}, {7, 5, 2}, {2, 5, 6}, {6, 3, 2}, {9, 8, 6}, {9, 3, 8}, {3, 6, 8}, {7, 2, 4}, {7, 9, 6}, {9, 4, 3}, {10, 9, 7}, {10, 4, 9}, {10, 7, 4}}]}
-	],
-	TestID->"TetrahedronMesh_1"
-]
-
-
-VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->TetrahedronElement],
-	$Failed,
-	{TetrahedronMesh::tetelms},
-	TestID->"TetrahedronMesh_2"
-]
-
-
-VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->HexahedronElement],
-	ElementMesh[
-		{{0.,0.,0.},{0.5, 0., 0.},{0.,0.5,0.},{1/3,1/3,0.},{0.,0.,0.5},{1/3,0., 1/3},{0.,1/3,1/3},{0.25,0.25,0.25},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{1/3,1/3,1/3},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
-		{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
-		{QuadElement[{{1,2,4,3},{1,5,6,2},{3,7,5,1},{2,9,10,4},{2,6,11,9},{9,11,12,10},{3,4,10,13},{10,12,14,13},{13,14,7,3},{14,12,11,15},{5,15,11,6},{7,14,15,5}}]}
-	],
-	TestID->"TetrahedronMesh_3"
-]
-
-
-VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->HexahedronElement],
-	$Failed,
-	{TetrahedronMesh::hexelms},
-	TestID->"TetrahedronMesh_4"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*PrismMesh*)
-
-
-VerificationTest[
-	PrismMesh[{2,2}]["Coordinates"],
-	{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{0.3333,0.3333,0.},{1.,0.,0.},{0.5,0.5,0.},{0.,1.,0.},{0.,0.,0.5},{0.5,0.,0.5},{0.,0.5,0.5},{0.3333,0.3333,0.5},{1.,0.,0.5},{0.5,0.5,0.5},{0.,1.,0.5},{0.,0.,1.},{0.5,0.,1.},{0.,0.5,1.},{0.3333,0.3333,1.},{1.,0.,1.},{0.5,0.5,1.},{0.,1.,1.}},
-	SameTest->(Norm@Abs[#1-#2]<10^-3&),
-	TestID->"PrismMesh_1"
-]
-
-
-VerificationTest[
-	PrismMesh[{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0}},{2,1}]["Coordinates"],
-	{{1.,2.,1.},{0.5,2.,0.5},{1.5,2.,0.5},{1.,2.,0.3333},{0.,2.,0.},{1.,2.,0.},{2.,2.,0.},{1.,0.,1.},{0.5,0.,0.5},{1.5,0.,0.5},{1.,0.,0.3333},{0.,0.,0.},{1.,0.,0.},{2.,0.,0.}},
-	SameTest->(Norm@Abs[#1-#2]<10^-3&),
-	TestID->"PrismMesh_2"
-]
-
-
-(* Wrong number of elements on triangular face edge. *)
-VerificationTest[
-	PrismMesh[{3,1}],
-	$Failed,
-	{PrismMesh::noelems},
-	TestID->"PrismMesh_3"
-]
-
-
-(* Prism with non-coplanar triangular faces. *)
-VerificationTest[
-	PrismMesh[{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0.1}},{2,1}]["Coordinates"],
-	{{1.,1.99844,1.01246},{0.503507,1.99922,0.515978},{1.4961,2.,0.541342},{0.99948,2.,0.367135},{0.00624025,2.,0.0187207},{0.999219,2.00078,0.0437158},{1.99375,2.00156,0.06875},{1.,0.00157729,0.987382},{0.497238,0.000789266,0.484609},{1.50237,0.,0.510269},{0.999473,0.,0.33386},{-0.00631912,0.,-0.0189573},{0.999209,-0.000790514,0.00632411},{2.00633,-0.00158228,0.0316456}},
-	{PrismMesh::alignerr},
-	SameTest->(Norm@Abs[#1-#2]<10^-3&),
-	TestID->"PrismMesh_4"
-]
-
-
-(* ::Subsection::Closed:: *)
-(*RodriguesSpaceMesh*)
-
-
-VerificationTest[
-	RodriguesSpaceMesh[1],
-	$Failed,
-	{RodriguesSpaceMesh::tetelms},
-	TestID->"RodriguesSpaceMesh_1"
-]
-
-
-VerificationTest[
-	RodriguesSpaceMesh[1,"MeshElementType"->HexahedronElement],
-	$Failed,
-	{RodriguesSpaceMesh::hexelms},
-	TestID->"RodriguesSpaceMesh_2"
-]
-
-
-VerificationTest[
-	RodriguesSpaceMesh[1,"MeshElementType"->"badValue"],
-	$Failed,
-	{RodriguesSpaceMesh::badtype},
-	TestID->"RodriguesSpaceMesh_3"
-]
-
-
-VerificationTest[
-	RodriguesSpaceMesh[2,"MeshElementType"->HexahedronElement],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"RodriguesSpaceMesh_4"
-]
-
-
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*MeshElementMeasure*)
-
-
-(* ::Text:: *)
-(*Returns the volume in 3D embedding, area in 2D embedding or length in 1D embedding.*)
 
 
 (* Length *)
@@ -768,7 +480,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],	
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_1"
+		TestID->"MeshElementMeasure_1D-length"
 	]
 ]
 
@@ -783,7 +495,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],	
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_2"
+		TestID->"MeshElementMeasure_2D"
 	]
 ]
 
@@ -799,7 +511,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_3"
+		TestID->"MeshElementMeasure_triangle-order=2"
 	]
 ]
 
@@ -815,7 +527,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_4"
+		TestID->"MeshElementMeasure_quad-order=2"
 	]
 ]
 
@@ -830,7 +542,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_5"
+		TestID->"MeshElementMeasure_tetrahedron"
 	]
 ]
 
@@ -845,21 +557,13 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_6"
+		TestID->"MeshElementMeasure_hexahedron"
 	]
 ]
 
 
-(* ::Subsection::Closed:: *)
-(*BoundaryElementMeasure*)
-
-
-(* ::Text:: *)
-(*Returns the surface of boundary elements in 3D embedding and length of boundary elements in 2D embedding.*)
-
-
 (* ::Subsubsection::Closed:: *)
-(*Perimeter*)
+(*BoundaryElementMeasure*)
 
 
 With[{
@@ -871,7 +575,7 @@ With[{
 	VerificationTest[
 		BoundaryElementMeasure[mesh],	
 		{{1.,1.,1.,1.}},
-		TestID->"BoundaryElementMeasure_1"
+		TestID->"BoundaryElementMeasure_triangle"
 	]
 ]
 
@@ -886,41 +590,470 @@ With[{
 	VerificationTest[
 		BoundaryElementMeasure[mesh],
 		{{1.,1.,1.,1.}},
-		TestID->"BoundaryElementMeasure_2"
+		TestID->"BoundaryElementMeasure_triangle-order=2"
 	]
 ]
 
 
+(* ::Subsection::Closed:: *)
+(*Structured mesh*)
+
+
 (* ::Subsubsection::Closed:: *)
-(*Surface area*)
+(*StructuredMesh*)
 
 
-(*With[{
-	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
-		"MeshElements"->{TetrahedronElement[{{1,2,8,4},{8,1,6,2},{5,1,6,8},{5,7,1,8},{1,8,7,3},{8,3,1,4}}]}
-	]
-	},
-	VerificationTest[
-		BoundaryElementMeasure[mesh],
-		{{1.,1.,1.,1.,1.,1.}},
-		TestID->"BoundaryElementMeasure_3"
-	]
-]*)
+VerificationTest[
+	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{2,1}],
+	ElementMesh[
+		{{0.,0.},{1.,0.},{2.,0.},{0.,1.},{1.,1.},{2.,1.}},
+		{QuadElement[{{1,2,5,4},{2,3,6,5}}]},
+		{LineElement[{{1,2},{5,4},{4,1},{2,3},{3,6},{6,5}}]}
+	],
+	TestID->"StructuredMesh_2D-1"
+]
 
 
-(*With[{
-	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{0.,1.,1.},{1.,0.,0.},{1.,0.,1.},{1.,1.,0.},{1.,1.,1.}},
-		"MeshElements"->{HexahedronElement[{{1,5,7,3,2,6,8,4}}]}
-	]
-	},
-	VerificationTest[
-		BoundaryElementMeasure[mesh],
-		{{1.,1.,1.,1.,1.,1.}},
-		TestID->"BoundaryElementMeasure_4"
-	]
-]*)
+VerificationTest[
+	StructuredMesh[{{{0,0,0},{2,0,0}},{{0,1,0},{2,1,0}}},{2,1}],
+	ElementMesh[
+		{{0.,0.,0.},{1.,0.,0.},{2.,0.,0.},{0.,1.,0.},{1.,1.,0.},{2.,1.,0.}},
+		Automatic,
+		{QuadElement[{{1,2,5,4},{2,3,6,5}},{1,1}]},
+		{PointElement[{{1},{2},{3},{4},{5},{6}}]}
+	],
+	TestID->"StructuredMesh_3D-1"
+]
+
+
+VerificationTest[
+	With[
+		{a=3,b=2,c=1},
+		StructuredMesh[{{{{0,0,0},{a,0,0}},{{0,b,0},{a,b,0}}},{{{0,0,c},{a,0,c}},{{0,b,c},{a,b,c}}}},{3,2,1}]
+	],
+	ElementMesh[
+		{{0.,0.,0.},{1.,0.,0.},{2.,0.,0.},{3.,0.,0.},{0.,1.,0.},{1.,1.,0.},{2.,1.,0.},{3.,1.,0.},{0.,2.,0.},{1.,2.,0.},{2.,2.,0.},{3.,2.,0.},{0.,0.,1.},{1.,0.,1.},{2.,0.,1.},{3.,0.,1.},{0.,1.,1.},{1.,1.,1.},{2.,1.,1.},{3.,1.,1.},{0.,2.,1.},{1.,2.,1.},{2.,2.,1.},{3.,2.,1.}},
+		{HexahedronElement[{{1,2,6,5,13,14,18,17},{2,3,7,6,14,15,19,18},{3,4,8,7,15,16,20,19},{5,6,10,9,17,18,22,21},{6,7,11,10,18,19,23,22},{7,8,12,11,19,20,24,23}}]},
+		{QuadElement[{{1,2,6,5},{17,18,14,13},{1,13,14,2},{5,17,13,1},{2,3,7,6},{18,19,15,14},{2,14,15,3},{3,4,8,7},{19,20,16,15},{3,15,16,4},{4,16,20,8},{5,6,10,9},{21,22,18,17},{10,22,21,9},{9,21,17,5},{6,7,11,10},{22,23,19,18},{11,23,22,10},{7,8,12,11},{23,24,20,19},{8,20,24,12},{12,24,23,11}}]}
+	],
+	TestID->"StructuredMesh_3D-2"
+]
+
+
+(* ::Subsection::Closed:: *)
+(*Named meshes 2D*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*RectangleMesh*)
+
+
+VerificationTest[
+	RectangleMesh[2],
+	ElementMesh[
+		{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.5,0.5},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
+		{QuadElement[{{1,2,5,4},{2,3,6,5},{4,5,8,7},{5,6,9,8}}]},
+		{LineElement[{{1,2},{4,1},{2,3},{3,6},{8,7},{7,4},{6,9},{9,8}}]}
+	],
+	TestID->"RectangleMesh_unit-rectangle"
+]
+
+
+VerificationTest[
+	RectangleMesh[{1,2},{3,4},{1,2}],
+	ElementMesh[
+		{{1.,2.},{3.,2.},{1.,3.},{3.,3.},{1.,4.},{3.,4.}},
+		{QuadElement[{{1,2,4,3},{3,4,6,5}}]},
+		{LineElement[{{1,2},{2,4},{3,1},{4,6},{6,5},{5,3}}]}
+	],
+	TestID->"RectangleMesh_arbitrary-rectangle"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TriangleMesh*)
+
+
+VerificationTest[
+	TriangleMesh[2],
+	ElementMesh[
+		{{0.,0.},{0.5,0.},{0.,0.5},N@{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
+		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
+		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
+	],
+	TestID->"TriangleMesh_unit-triangle"
+]
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->TriangleElement],
+	ElementMesh[
+		{{0.,0.},{0.5,0.},{0.,0.5},{1.,0.},{0.5,0.5},{0.,1.}},
+		{TriangleElement[{{1,2,3},{2,4,5},{2,5,3},{3,5,6}}]},
+		{LineElement[{{3,1},{1,2},{4,5},{2,4},{5,6},{6,3}}]}
+	],
+	TestID->"TriangleMesh_type=TriangleElement"
+]
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->QuadElement],
+	ElementMesh[
+		{{0.,0.},{0.5,0.},{0.,0.5},N@{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
+		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
+		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
+	],
+	TestID->"TriangleMesh_type=QuadElement"
+]
+
+
+VerificationTest[
+	(* Nodes are given in wrong order for TriangleElement *)
+	TriangleMesh[{{0,0},{0,1},{1,0}},2,"MeshElementType"->QuadElement],
+	ElementMesh[
+		{{0.,0.},{0.5,0.},{0.,0.5},{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
+		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
+		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
+	],
+	TestID->"TriangleMesh_wrong-ordering"
+]
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},1],
+	$Failed,
+	{TriangleMesh::quadelms},
+	TestID->"TriangleMesh_too-few-elements"
+]
+
+
+VerificationTest[
+	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->"BadValue"],
+	$Failed,
+	{TriangleMesh::badtype},
+	TestID->"TriangleMesh_wrong-option"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DiskMesh*)
+
+
+VerificationTest[
+	DiskMesh[1],
+	DiskMesh[1],
+	{DiskMesh::noelems},
+	TestID->"DiskMesh_too-few-elements"
+]
+
+
+VerificationTest[
+	DiskMesh[2,Method->"unknown"],
+	$Failed,
+	{DiskMesh::method},
+	TestID->"DiskMesh_unknown-method"
+]
+
+
+VerificationTest[
+	DiskMesh[2,Method->"Projection"],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"DiskMesh_method-projection"
+]
+
+
+VerificationTest[
+	DiskMesh[2,Method->"Block"],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"DiskMesh_method-block"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*AnnulusMesh*)
+
+
+VerificationTest[
+	AnnulusMesh[{4,1}],
+	ElementMesh[
+		{{1.,0.},{0.,1.},{-1.,0.},{0.,-1.},{0.5,0.},{0.,0.5},{-0.5,0.},{0.,-0.5}},
+		{QuadElement[{{1,2,6,5},{2,3,7,6},{3,4,8,7},{4,1,5,8}}]},
+		{LineElement[{{1,2},{6,5},{2,3},{7,6},{3,4},{8,7},{4,1},{5,8}}]}
+	],
+	TestID->"AnnulusMesh_unit-annulus"
+]
+
+
+VerificationTest[
+	Length@First@ElementIncidents@(AnnulusMesh[{0,0},{1/2,1},{8,2}]["MeshElements"]),
+	16,
+	TestID->"AnnulusMesh_arbitrary-annulus-1"
+]
+
+
+VerificationTest[
+	AnnulusMesh[{0,0},{1/2,1},{0,Pi},{8,2}]["Bounds"],
+	{{-1.,1.},{0.,1.}},
+	TestID->"AnnulusMesh_arbitrary-annulus-2"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DiskVoidMesh*)
+
+
+VerificationTest[
+	DiskVoidMesh[1,2,4],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"DiskVoidMesh_arbitrary-void-1"
+]
+
+
+(* ::Subsection::Closed:: *)
+(*Named meshes 3D*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*CuboidMesh*)
+
+
+VerificationTest[
+	Length@First@ElementIncidents[CuboidMesh[2]["MeshElements"]],
+	8,
+	TestID->"CuboidMesh_unit-cube"
+]
+
+
+VerificationTest[
+	CuboidMesh[{0,0,0},{3,2,1},{3,2,1}]["Bounds"],
+	{{0.,3.},{0.,2.},{0.,1.}},
+	TestID->"CuboidMesh_arbitrary-cuboid"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*HexahedronMesh*)
+
+
+VerificationTest[
+	Length@First@ElementIncidents[HexahedronMesh[{2,3,4}]["MeshElements"]],
+	24,
+	TestID->"HexahedronMesh_unit-hexahedron"
+]
+
+
+VerificationTest[
+	HexahedronMesh[
+		{{0,0,0},{1,0,0},{2,1,0},{1,1,0},{0,0,1},{1,0,1},{2,1,1},{1,1,1}},
+		{1,2,2}
+	],
+	ElementMesh[
+		{{0.,0.,0.},{1.,0.,0.},{0.5,0.5,0.},{1.5,0.5,0.},{1.,1.,0.},{2.,1.,0.},{0.,0.,0.5},{1.,0.,0.5},{0.5,0.5,0.5},{1.5,0.5,0.5},{1.,1.,0.5},{2.,1.,0.5},{0.,0.,1.},{1.,0.,1.},{0.5,0.5,1.},{1.5,0.5,1.},{1.,1.,1.},{2.,1.,1.}},
+		{HexahedronElement[{{1,2,4,3,7,8,10,9},{3,4,6,5,9,10,12,11},{7,8,10,9,13,14,16,15},{9,10,12,11,15,16,18,17}}]},
+		{QuadElement[{{1,2,4,3},{1,7,8,2},{2,8,10,4},{3,9,7,1},{3,4,6,5},{4,10,12,6},{6,12,11,5},{5,11,9,3},{15,16,14,13},{7,13,14,8},{8,14,16,10},{9,15,13,7},{17,18,16,15},{10,16,18,12},{12,18,17,11},{11,17,15,9}}]}
+	],
+	TestID->"HexahedronMesh_arbitrary-hexahedron"
+]
+
+
+(* The last two points in Hexahedron are switched. *)
+VerificationTest[
+	HexahedronMesh[
+		{{0,0,0},{1,0,0},{2,1,0},{1,1,0},{0,0,1},{1,0,1},{1,1,1},{2,1,1}},
+		{1,2,3}
+	],
+	_ElementMesh,
+	{ToElementMesh::femimq,HexahedronMesh::ordering},
+	SameTest->MatchQ,
+	TestID->"HexahedronMesh_wrong-ordering"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TetrahedronMesh*)
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->TetrahedronElement],
+	ElementMesh[
+		{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{0.,0.,0.5},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
+		{TetrahedronElement[{{1,2,3,4},{2,5,6,7},{2,3,7,6},{3,6,8,9},{2,3,4,7},{3,6,9,7},{3,4,7,9},{4,7,9,10}}]},
+		{TriangleElement[{{4,1,3},{4,2,1},{1,2,3},{7,6,5},{7,5,2},{2,5,6},{6,3,2},{9,8,6},{9,3,8},{3,6,8},{7,2,4},{7,9,6},{9,4,3},{10,9,7},{10,4,9},{10,7,4}}]}
+	],
+	TestID->"TetrahedronMesh_tetrahedron"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->TetrahedronElement],
+	$Failed,
+	{TetrahedronMesh::tetelms},
+	TestID->"TetrahedronMesh_tetrahedron-too-few-elements"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->HexahedronElement],
+	ElementMesh[
+		{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{1/3,1/3,0.},{0.,0.,0.5},{1/3,0.,1/3},{0.,1/3,1/3},{0.25,0.25,0.25},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{1/3,1/3,1/3},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
+		{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
+		{QuadElement[{{1,2,4,3},{1,5,6,2},{3,7,5,1},{2,9,10,4},{2,6,11,9},{9,11,12,10},{3,4,10,13},{10,12,14,13},{13,14,7,3},{14,12,11,15},{5,15,11,6},{7,14,15,5}}]}
+	],
+	TestID->"TetrahedronMesh_hexahedron"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->HexahedronElement],
+	$Failed,
+	{TetrahedronMesh::hexelms},
+	TestID->"TetrahedronMesh_hexahedron-too-few-elements"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PrismMesh*)
+
+
+VerificationTest[
+	PrismMesh[{2,2}]["Coordinates"],
+	{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{0.3333,0.3333,0.},{1.,0.,0.},{0.5,0.5,0.},{0.,1.,0.},{0.,0.,0.5},{0.5,0.,0.5},{0.,0.5,0.5},{0.3333,0.3333,0.5},{1.,0.,0.5},{0.5,0.5,0.5},{0.,1.,0.5},{0.,0.,1.},{0.5,0.,1.},{0.,0.5,1.},{0.3333,0.3333,1.},{1.,0.,1.},{0.5,0.5,1.},{0.,1.,1.}},
+	SameTest->(Norm[#1-#2]<10^-3&),
+	TestID->"PrismMesh_unit-prism"
+]
+
+
+VerificationTest[
+	PrismMesh[{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0}},{2,1}]["Coordinates"],
+	{{1.,2.,1.},{0.5,2.,0.5},{1.5,2.,0.5},{1.,2.,0.3333},{0.,2.,0.},{1.,2.,0.},{2.,2.,0.},{1.,0.,1.},{0.5,0.,0.5},{1.5,0.,0.5},{1.,0.,0.3333},{0.,0.,0.},{1.,0.,0.},{2.,0.,0.}},
+	SameTest->(Norm[#1-#2]<10^-3&),
+	TestID->"PrismMesh_arbitrary-prism"
+]
+
+
+(* Wrong number of elements on triangular face edge. *)
+VerificationTest[
+	PrismMesh[{3,1}],
+	$Failed,
+	{PrismMesh::noelems},
+	TestID->"PrismMesh_wrong-element-specification"
+]
+
+
+(* Prism with non-coplanar triangular faces. *)
+VerificationTest[
+	PrismMesh[{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0.1}},{2,1}]["Coordinates"],
+	{{1.,1.99844,1.01246},{0.503507,1.99922,0.515978},{1.4961,2.,0.541342},{0.99948,2.,0.367135},{0.00624025,2.,0.0187207},{0.999219,2.00078,0.0437158},{1.99375,2.00156,0.06875},{1.,0.00157729,0.987382},{0.497238,0.000789266,0.484609},{1.50237,0.,0.510269},{0.999473,0.,0.33386},{-0.00631912,0.,-0.0189573},{0.999209,-0.000790514,0.00632411},{2.00633,-0.00158228,0.0316456}},
+	{PrismMesh::alignerr},
+	SameTest->(Norm[#1-#2]<10^-3&),
+	TestID->"PrismMesh_non-coplanar-faces"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CylinderMesh*)
+
+
+VerificationTest[
+	CylinderMesh[{2,2}]["Bounds"],
+	{{-1.,1.},{-1.,1.},{-1.,1.}},
+	TestID->"CylinderMesh_unit-cylinder"
+]
+
+
+VerificationTest[
+	CylinderMesh[{{0,0,0},{1,1,1}},1/2,{4,4}]["Bounds"],
+	{{-0.408248,1.40825},{-0.557678,1.55768},{-0.557678,1.55768}},
+	SameTest->(Norm[#1-#2]<10^-3&),
+	TestID->"CylinderMesh_arbitrary-cylinder"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SphereMesh*)
+
+
+VerificationTest[
+	SphereMesh[2]["Bounds"],
+	{{-1.,1.},{-1.,1.},{-1.,1.}},
+	TestID->"SphereMesh_unit-sphere"
+]
+
+
+VerificationTest[
+	SphereMesh[{1,2,3},3,3]["Bounds"],
+	{{-1.80534,3.80534},{-0.805339,4.80534},{0.194661,5.80534}},
+	SameTest->(Norm[#1-#2]<10^-3&),
+	TestID->"SphereMesh_arbitrary-sphere"
+]
+
+
+VerificationTest[
+	SphereMesh[2,"MeshOrder"->2]["MeshOrder"],
+	2,
+	TestID->"SphereMesh_order=2"
+]
+
+
+VerificationTest[
+	SphereMesh[1],
+	$Failed,
+	{SphereMesh::noelems},
+	TestID->"SphereMesh_too-few-elements"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SphericalShellMesh*)
+
+
+(* Test default SphericalShell with default "MeshOrder" *)
+VerificationTest[
+	SphericalShellMesh[{4,2}],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"SphericalShellMesh_unit-shell"
+]
+
+
+(* Test default SphericalShell with "MeshOrder"->2 *)
+VerificationTest[
+	SphericalShellMesh[{2,1},"MeshOrder"->2],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"SphericalShellMesh_unit-shell-order=2"
+]
+
+
+(* Test SphericalShell with arbitrary position and size. *)
+VerificationTest[
+	SphericalShellMesh[{1,2,3},{2,3},{4,2}],
+	_ElementMesh,
+	SameTest->MatchQ,
+	TestID->"SphericalShellMesh_arbitrary-shell"
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BallMesh*)
+
+
+VerificationTest[
+	BallMesh[2]["Bounds"],
+	{{-1.,1.},{-1.,1.},{-1.,1.}},
+	TestID->"BallMesh_unit-ball"
+]
+
+
+VerificationTest[
+	BallMesh[{1,2,3},3,3]["Bounds"],
+	{{-1.80534,3.80534},{-0.805339,4.80534},{0.194661,5.80534}},
+	SameTest->(Norm[#1-#2]<10^-3&),
+	TestID->"BallMesh_arbitrary-ball"
+]
 
 
 (* ::Subsection::Closed:: *)
