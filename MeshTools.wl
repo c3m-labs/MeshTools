@@ -964,7 +964,7 @@ RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
 
 RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}]
 
-RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_,ny_}]:=StructuredMesh[
+RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=StructuredMesh[
 	{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
 	{nx,ny}
 ]
@@ -1077,9 +1077,9 @@ DiskMesh//Options={Method->Automatic};
 
 DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-DiskMesh[n_,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts]
+DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts]
 
-DiskMesh[{x_,y_},r_,n_,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
+DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
 	{order,method,mesh},
 	
 	method=OptionValue[Method]/.Automatic->"Block";
@@ -1203,9 +1203,9 @@ CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or 
 
 CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-CylinderMesh[{nr_,nz_},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts]
+CylinderMesh[{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts]
 
-CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_,nz_},opts:OptionsPattern[]]:=Module[
+CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=Module[
 	{order,diskMesh,length,alignedCylinder,tf},
 	If[
 		TrueQ[nr<2]||Not@IntegerQ[nr],
@@ -1239,9 +1239,9 @@ SphereMesh//Options={"MeshOrder"->Automatic};
 
 SphereMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-SphereMesh[n_,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
+SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
 
-SphereMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
+SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{order,rescale,cuboid,cuboidShell,coordinates},
 	If[TrueQ[n<2]||Not@IntegerQ[n],Message[SphereMesh::noelems,n];Return[$Failed]];
 	order=OptionValue["MeshOrder"]/.Automatic->1;
@@ -1281,7 +1281,7 @@ SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern
 
 SphericalShellMesh[{n\[Phi]_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{n\[Phi],nr},opts]
 
-SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_,nr_},opts:OptionsPattern[]]:=Module[
+SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
 	{order,rescale,innerRaster,outerRaster,rotations,flatMesh,curvedMesh},
 	
 	order=OptionValue["MeshOrder"]/.Automatic->1;
@@ -1399,9 +1399,9 @@ BallMesh//Options={Method->Automatic};
 
 BallMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-BallMesh[n_,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts]
+BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts]
 
-BallMesh[{x_,y_,z_},r_,n_,opts:OptionsPattern[]]:=Module[
+BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{order,method},
 	
 	If[
@@ -1609,9 +1609,9 @@ PrismMesh::alignerr="Warning! Corner alignment error `1` is larger than toleranc
 
 PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
-PrismMesh[{n1_,n2_}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}]
+PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}]
 
-PrismMesh[corners_List,{n1_,n2_}]:=Module[
+PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 	{pts,error,triangleMesh,standardPrism,tf},
 	If[
 		Not@(TrueQ[n1>=2]&&EvenQ[n1]),
