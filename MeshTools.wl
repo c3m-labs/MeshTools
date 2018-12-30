@@ -1180,9 +1180,9 @@ HexahedronMesh::ordering="Warning! Ordering of corners may be incorrect.";
 
 HexahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
 
-HexahedronMesh[{nx_,ny_,nz_}]:=HexahedronMesh[{{0,0,0},{0,1,0},{1,1,0},{1,0,0},{0,0,1},{0,1,1},{1,1,1},{1,0,1}},{nx,ny,nz}]
+HexahedronMesh[{nx_Integer,ny_Integer,nz_Integer}]:=HexahedronMesh[{{0,0,0},{1,0,0},{1,1,0},{0,1,0},{0,0,1},{1,0,1},{1,1,1},{0,1,1}},{nx,ny,nz}]
 
-HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_,ny_,nz_}]:=Module[
+HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integer}]:=Module[
 	{mesh},
 	Check[
 		mesh=StructuredMesh[
