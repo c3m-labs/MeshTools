@@ -21,15 +21,16 @@ PacletDirectoryAdd@Directory[];
 Get["MeshTools`"];
 
 Module[
-	{report,time,results},
+	{report,time,results,n},
 	report=TestReport[FileNameJoin[{Directory[],"Tests","Tests.wl"}]];
 	time=QuantityMagnitude@report["TimeElapsed"];
 	results=report["TestResults"];
+	n=report["TestsSucceededCount"];
 	
 	If[
 		TrueQ@report["AllTestsSucceeded"]
 		,
-		Print["  All tests passed in ",ToString@time," seconds."];
+		Print["  All ",n," tests passed in ",ToString@time," seconds."];
 		Quit[0] (* exit code if all test pass *)
 		,
 		Print["  Tests failed!"];

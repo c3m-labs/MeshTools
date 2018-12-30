@@ -57,7 +57,7 @@ Cell[BoxData[
        RowBox[{"{", 
         RowBox[{"fields", "/.", "abbreviations"}], "}"}], ",", "results"}], 
       "]"}]}]}], "\[IndentingNewLine]", "]"}]}]], "Code",
- CellLabel->"In[14]:=",ExpressionUUID->"caf045cf-24c3-446d-8735-b8212fbf614a"],
+ CellLabel->"In[94]:=",ExpressionUUID->"caf045cf-24c3-446d-8735-b8212fbf614a"],
 
 Cell[BoxData[
  RowBox[{
@@ -94,7 +94,7 @@ Cell[BoxData[
          RowBox[{"Thread", "[", 
           RowBox[{"indx", "\[Rule]", "Pink"}], "]"}]}], "}"}]}]}], "\n", "\t",
       "]"}]}], "\[IndentingNewLine]", "]"}]}]], "Code",
- CellLabel->"In[15]:=",ExpressionUUID->"0f7168c5-7285-4299-83ba-1805253c69db"]
+ CellLabel->"In[95]:=",ExpressionUUID->"0f7168c5-7285-4299-83ba-1805253c69db"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -111,18 +111,23 @@ Cell[BoxData[
     RowBox[{"Get", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
   RowBox[{"PacletDirectoryAdd", "@", 
    RowBox[{"ParentDirectory", "[", 
-    RowBox[{"NotebookDirectory", "[", "]"}], 
-    "]"}]}]}]], \
-"Input",ExpressionUUID->"be743a64-43fa-44ce-9fa5-3bfd6d2ab364"],
+    RowBox[{"NotebookDirectory", "[", "]"}], "]"}]}]}]], "Input",
+ CellLabel->"In[96]:=",ExpressionUUID->"be743a64-43fa-44ce-9fa5-3bfd6d2ab364"],
 
 Cell[BoxData[
  RowBox[{"Get", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
- CellLabel->"In[17]:=",ExpressionUUID->"a8589388-f439-4697-90da-cdbabd65b1d9"],
+ CellLabel->"In[97]:=",ExpressionUUID->"a8589388-f439-4697-90da-cdbabd65b1d9"],
 
 Cell[BoxData[
  RowBox[{"Module", "[", "\n", "\t", 
   RowBox[{
-   RowBox[{"{", "time", "}"}], ",", "\n", "\t", 
+   RowBox[{"{", 
+    RowBox[{"time", ",", "noTests"}], "}"}], ",", "\n", "\t", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+    "$testReport", " ", "is", " ", "a", " ", "global", " ", "symbol", " ", 
+     "so", " ", "it", " ", "can", " ", "be", " ", "analysed", " ", 
+     RowBox[{"further", "."}]}], " ", "*)"}], "\n", "\t", 
    RowBox[{
     RowBox[{"$testReport", "=", 
      RowBox[{"TestReport", "[", 
@@ -132,22 +137,31 @@ Cell[BoxData[
          RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<Tests.wl\>\""}], 
         "}"}], "]"}], "]"}]}], ";", "\n", "\t", 
     RowBox[{"time", "=", 
-     RowBox[{
+     RowBox[{"Round", "[", 
       RowBox[{
-       RowBox[{"Round", "[", 
-        RowBox[{"#", ",", "0.01"}], "]"}], "&"}], "@", 
-      RowBox[{"QuantityMagnitude", "[", 
-       RowBox[{"$testReport", "[", "\"\<TimeElapsed\>\"", "]"}], "]"}]}]}], 
-    ";", "\n", "\t", "\n", "\t", 
-    RowBox[{"Print", "[", 
+       RowBox[{"QuantityMagnitude", "[", 
+        RowBox[{"$testReport", "[", "\"\<TimeElapsed\>\"", "]"}], "]"}], ",", 
+       "0.01"}], "]"}]}], ";", "\n", "\t", 
+    RowBox[{"noTests", "=", 
+     RowBox[{"$testReport", "[", "\"\<TestsSucceededCount\>\"", "]"}]}], ";", 
+    "\n", "\t", "\n", "\t", 
+    RowBox[{"If", "[", "\n", "\t\t", 
      RowBox[{
-     "\"\<Total elapsed time [s]: \>\"", ",", "time", ",", "\"\<\\n\>\""}], 
-     "]"}], ";", "\n", "\t", 
+      RowBox[{"TrueQ", "@", 
+       RowBox[{"$testReport", "[", "\"\<AllTestsSucceeded\>\"", "]"}]}], ",", 
+      "\n", "\t\t", 
+      RowBox[{"Print", "[", 
+       RowBox[{
+       "\"\<All \>\"", ",", "noTests", ",", "\"\< tests passed in \>\"", ",", 
+        "time", ",", "\"\< seconds.\>\""}], "]"}], ",", "\n", "\t\t", 
+      RowBox[{
+       RowBox[{"Print", "[", "\"\<Tests failed!\>\"", "]"}], ";"}]}], "\n", 
+     "\t", "]"}], ";", "\n", "\t", "\n", "\t", 
     RowBox[{"printTestResults", "@", 
      RowBox[{"getTestResults", "[", "$testReport", "]"}]}]}]}], "\n", 
   "]"}]], "Code",
  InitializationCell->False,
- CellLabel->"In[18]:=",ExpressionUUID->"61b309ae-4270-48e7-a594-60b30fba6fa2"]
+ CellLabel->"In[109]:=",ExpressionUUID->"61b309ae-4270-48e7-a594-60b30fba6fa2"]
 }, Open  ]]
 },
 WindowSize->{958, 1008},
