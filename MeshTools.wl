@@ -196,25 +196,37 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 (*TransformMesh*)
 
 
-(* Argument must be an expression of the form ElementType[incidents,markers] *)
-reorderNodes[elements_]:=Module[
-	{head,conn,markers,length,numbering},
+(* Helper function to reorder connectivity of elements (TriangleElement, etc.) if 
+transformation function has a negative jacobian. *)
+transformElements//ClearAll
+
+transformElements[elementObj_List,reorderQ_]:=Map[transformElements[#,reorderQ]&,elementObj]
+
+transformElements[elementObj_,reorderQ_]:=Module[
+	{head,connectivity,markers,length,numbering},
 	
-	head=Head[elements];
-	conn=First[elements];
-	markers=If[Length[elements]===2,elements[[2]],Nothing];
-	length=Last@Dimensions[conn];
+	head=Head@elementObj;
+	connectivity=ElementIncidents@elementObj;
+	markers=ElementMarkers@elementObj;
+	length=Last@Dimensions[connectivity];
+	(* Common renumbering for 1st and 2nd order. *)
 	numbering=Take[
 		head/.{
 			TriangleElement->{2,1,3,4,6,5},
 			QuadElement->{2,1,4,3,5,8,7,6},
 			TetrahedronElement->{3,2,1,4,6,5,7,8,10,9},
-			HexahedronElement->{2,1,4,3,6,5,8,7,9,12,11,10,13,16,15,14,18,17,20,19}
+			HexahedronElement->{2,1,4,3,6,5,8,7,9,12,11,10,13,16,15,14,18,17,20,19},
+			LineElement->{2,1,3},
+			PointElement->{1}
 			},
 		length
 	];
 	
-	head[Sequence@@{conn[[All,numbering]],markers}]
+	If[
+		TrueQ[reorderQ],
+		head[connectivity[[All,numbering]],markers],
+		head[connectivity,markers]
+	]
 ]
 
 
@@ -225,27 +237,27 @@ TransformMesh//Options=Options@ElementMesh;
 TransformMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
 TransformMesh[mesh_ElementMesh,tfun_TransformationFunction,opts:OptionsPattern[]]:=Module[
-	{elementsType,head,elements,transformedElements,reflectionQ},
+	{reorderQ},
 	
-	{elementsType,head}=If[
+	(* If TransformationFunction represents reflection (or inversion), 
+	then element incidents have to be reordered. *)
+	reorderQ=Negative@Det[TransformationMatrix[tfun]];
+	
+	If[
 		mesh["MeshElements"]===Automatic,
-		{"BoundaryElements",ToBoundaryMesh},
-		{"MeshElements",ToElementMesh}
-	];
-	
-	elements=mesh[elementsType];
-	
-	(* If TransformationFunction means reflection (or inversion), then reorder element incidents. *)
-	transformedElements=If[
-		Negative@Det[TransformationMatrix[tfun]],
-		reorderNodes/@elements,
-		elements
-	];
-	
-	head[
-		"Coordinates"->tfun/@mesh["Coordinates"],
-		elementsType->transformedElements,
-		FilterRules[{opts},Options@ElementMesh]
+		ToBoundaryMesh[
+			"Coordinates"->tfun/@mesh["Coordinates"],
+			"BoundaryElements"->transformElements[mesh["BoundaryElements"],reorderQ],
+			"PointElements"->transformElements[mesh["PointElements"],reorderQ],
+			FilterRules[{opts},Options@ElementMesh]
+		],
+		ToElementMesh[
+			"Coordinates"->tfun/@mesh["Coordinates"],
+			"MeshElements"->transformElements[mesh["MeshElements"],reorderQ],
+			"BoundaryElements"->transformElements[mesh["BoundaryElements"],reorderQ],
+			"PointElements"->transformElements[mesh["PointElements"],reorderQ],
+			FilterRules[{opts},Options@ElementMesh]
+		]
 	]
 ]
 
@@ -412,7 +424,7 @@ QuadToTriangleMesh::order="Only the first order mesh is currently supported.";
 QuadToTriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
 
 QuadToTriangleMesh[mesh_ElementMesh]:=Module[{
-	elementType,head,conn,triangles
+	elementType,head,connectivity,triangles
 	},
 	If[mesh["MeshOrder"]=!=1,Message[QuadToTriangleMesh::order];Return[$Failed]];
 	
@@ -422,8 +434,8 @@ QuadToTriangleMesh[mesh_ElementMesh]:=Module[{
 		{"MeshElements",ToElementMesh}
 	];
 	
-	conn=ElementIncidents@First@mesh[elementType];
-	triangles=Join[conn[[All,{1,2,3}]],conn[[All,{1,3,4}]]];
+	connectivity=ElementIncidents@First@mesh[elementType];
+	triangles=Join[connectivity[[All,{1,2,3}]],connectivity[[All,{1,3,4}]]];
 	
 	head[
 		"Coordinates"->mesh["Coordinates"],

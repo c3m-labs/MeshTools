@@ -50,83 +50,74 @@ With[{
 
 
 With[{
-	(* one element mesh *)
 	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->1],
-	(* Reflection over Y axis *)
-	rt=ReflectionTransform[{1,0},{0,0}]
+	tf=TranslationTransform[{1,0}]
 	},
 	VerificationTest[
-		TransformMesh[mesh,rt],	
+		TransformMesh[mesh,tf],	
+		ElementMesh[
+			{{1., 0.}, {2., 0.}, {1., 1.}}, 
+			{TriangleElement[{{1, 2, 3}}, {0}]}, 
+			{LineElement[{{2, 1}, {3, 2}, {1, 3}}, {1, 2, 3}]}, 
+			{PointElement[{{1}, {2}, {3}}, {1, 1, 2}]}
+		],
+		TestID->"TransformMesh_2D-translation-1"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->1],
+	tf=ReflectionTransform[{1,0},{0,0}]
+	},
+	VerificationTest[
+		TransformMesh[mesh,tf],	
+		ElementMesh[
+			{{0., 0.}, {-1., 0.}, {0., 1.}},
+			{TriangleElement[{{2, 1, 3}}, {0}]}, 
+			{LineElement[{{1, 2}, {2, 3}, {3, 1}}, {1, 2, 3}]}, 
+			{PointElement[{{1}, {2}, {3}}, {1, 1, 2}]}
+		],
+		TestID->"TransformMesh_2D-reflection-1"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{0.,1.}},
+		"MeshElements"->{TriangleElement[{{1,2,3}},{1}]},
+		"BoundaryElements"->{LineElement[{{2,1},{3,2},{1,3}},{1,2,3}]},
+		"PointElements"->{PointElement[{{1},{2},{3}},{1,2,3}]}
+	],
+	tf=ReflectionTransform[{1,0},{0,0}]
+	},
+	VerificationTest[
+		TransformMesh[mesh,tf],	
 		ElementMesh[
 			{{0., 0.}, {-1., 0.}, {0., 1.}}, 
-			{TriangleElement[{{2, 1, 3}}]}, 
-			{LineElement[{{1, 3}, {3, 2}, {2, 1}}]}
+			{TriangleElement[{{2, 1, 3}}, {1}]}, 
+			{LineElement[{{1, 2}, {2, 3}, {3, 1}}, {1, 2, 3}]}, 
+			{PointElement[{{1}, {2}, {3}}, {1, 2, 3}]}
 		],
-		TestID->"TransformMesh_2D-order=1"
+		TestID->"TransformMesh_2D-reflection-2"
 	]
 ]
 
 
 With[{
-	(* one element mesh *)
 	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->2],
-	(* Reflection over Y axis *)
-	rt=ReflectionTransform[{1,0},{0,0}]
+	tf=ReflectionTransform[{1,0},{0,0}]
 	},
 	VerificationTest[
-		TransformMesh[mesh,rt],	
+		TransformMesh[mesh,tf],	
 		ElementMesh[
 			{{0., 0.}, {-1., 0.}, {0., 1.}, {-0.5, 0.}, {-0.5, 0.5}, {0., 0.5}}, 
-			{TriangleElement[{{2, 1, 3, 4, 6, 5}}]}, 
-			{LineElement[{{1, 3, 6}, {3, 2, 5}, {2, 1, 4}}]}
+			{TriangleElement[{{2, 1, 3, 4, 6, 5}}, {0}]},
+			{LineElement[{{2, 1, 4}, {3, 2, 5}, {1, 3, 6}}, {1, 2, 3}]},
+			{PointElement[{{1}, {2}, {3}, {4}, {5}, {6}}, {1, 1, 2, 1, 2, 3}]}
 		],
-		TestID->"TransformMesh_2D-order=2"
-	]
-]
-
-
-With[{
-	(* one element mesh *)
-	mesh=ToElementMesh[Tetrahedron[],MaxCellMeasure->1,"MeshOrder"->1],
-	(* Reflection over Y axis *)
-	rt=ReflectionTransform[{1,0,0},{0,0,0}]
-	},
-	VerificationTest[
-		TransformMesh[mesh,rt],	
-		ElementMesh[
-			{{0., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}}, 
-			{TetrahedronElement[{{4, 1, 2, 3}}]}, 
-			{TriangleElement[{{3, 2, 1}, {3, 4, 2}, {3, 1, 4}, {4, 1, 2}}]}
-		],
-		TestID->"TransformMesh_3D-order=1"
-	]
-]
-
-
-With[{
-	(* one element mesh *)
-	mesh=ToElementMesh[Tetrahedron[],MaxCellMeasure->1,"MeshOrder"->2],
-	(* Reflection over Y axis *)
-	rt=ReflectionTransform[{1,0,0},{0,0,0}]
-	},
-	VerificationTest[
-		TransformMesh[mesh,rt],
-		(* It seems that node ordering has changed in ToElementMesh from 11.1 to 11.3. 
-		MMa 11.2 has not been tested. *)
-		If[
-		$VersionNumber<11.3,
-		ElementMesh[
-			{{0.,0.,0.},{-1.,0.,0.},{0.,1.,0.},{0.,0.,1.},{-0.5,0.,0.},{0.,0.,0.5},{-0.5,0.,0.5},{-0.5,0.5,0.},{0., 0.5,0.},{0.,0.5,0.5}},
-			{TetrahedronElement[{{4,1,2,3,6,5,7, 9,8,10}}]},
-			{TriangleElement[{{3,2,1,8,5,9},{3,4,2,10,7,8},{3,1,4,9,6,10},{4,1,2,6,5,7}}]}
-		],
-		ElementMesh[
-			{{0.,0.,0.},{-1.,0.,0.},{0.,1.,0.},{0.,0.,1.},{-0.5,0.,0.},{0.,0.,0.5},{-0.5,0.,0.5},{0.,0.5,0.},{0.,0.5,0.5},{-0.5,0.5,0.}},
-			{TetrahedronElement[{{4,1,2,3,6,5,7,8,10,9}}]},
-			{TriangleElement[{{3,2,1,10,5,8},{3,4,2,9,7,10},{3,1,4,8,6,9},{4,1,2,6,5,7}}]}
-		]
-		],
-		TestID->"TransformMesh_3D-order=2"
+		TestID->"TransformMesh_2D-reflection-order=2"
 	]
 ]
 
