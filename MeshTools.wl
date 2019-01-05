@@ -48,7 +48,7 @@ RectangleMesh;
 TriangleMesh;
 DiskMesh;
 AnnulusMesh;
-DiskVoidMesh;
+CircularVoidMesh;
 
 CuboidMesh;
 HexahedronMesh;
@@ -1133,29 +1133,33 @@ AnnulusMesh[{x_,y_},{rIn_,rOut_},{\[Phi]1_,\[Phi]2_},{n\[Phi]_Integer,nr_Integer
 
 
 (* ::Subsubsection::Closed:: *)
-(*DiskVoidMesh*)
+(*CircularVoidMesh*)
 
 
-DiskVoidMesh::usage="DiskVoidMesh[voidRadius, squareSize, noElements] creates a mesh with disk shaped void in square domain.";
+CircularVoidMesh::usage="CircularVoidMesh[{x,y}, r, s, n] creates a square mesh of size s with circular void of radius r centered at {x,y}.";
+CircularVoidMesh::ratio="Radius `1` should be smaller than the half of square domain size `2`.";
 
-DiskVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+CircularVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_}};
 
-DiskVoidMesh[voidRadius_,squareSize_,noElements_Integer,opts:OptionsPattern[]]:=Module[
-	{r,s,n,raster,half},
+CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
+	{raster,eighth,quarter},
+	(* This should also make sure that numerical quantities are compared. *)
+	If[
+		Not@TrueQ[radius<(size/2)],
+		Message[CircularVoidMesh::ratio,radius,size];Return[$Failed]
+	];
 		
-	s=squareSize;
-	r=Clip[voidRadius,{0.01,Infinity}];
-	n=noElements;
-	
 	raster=N@{
-		Table[{s,y},{y,0,s,s/n}],
-		Table[r*{Cos[fi],Sin[fi]},{fi,0,Pi/4,(Pi/4)/n}]
+		Table[{size/2,y}+{cx,cy},{y,-size/2,size/2,size/n}],
+		Table[radius*{Cos[fi],Sin[fi]}+{cx,cy},{fi,-Pi/4,Pi/4,(Pi/2)/n}]
 	};
-	half=StructuredMesh[raster,{n,Ceiling[(s/r/2)*n]}];
+	quarter=StructuredMesh[raster,{n,Ceiling[(size/radius/8)*n]}];
 	
 	MergeMesh[{
-		half,
-		TransformMesh[half,ReflectionTransform[{-1,1},{0,0}]]
+		quarter,
+		TransformMesh[quarter,RotationTransform[Pi/2,{cx,cy}]],
+		TransformMesh[quarter,RotationTransform[Pi,{cx,cy}]],
+		TransformMesh[quarter,RotationTransform[3*Pi/2,{cx,cy}]]
 	}]
 ]
 

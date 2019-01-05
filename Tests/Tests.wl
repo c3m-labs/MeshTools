@@ -820,14 +820,28 @@ VerificationTest[
 
 
 (* ::Subsubsection::Closed:: *)
-(*DiskVoidMesh*)
+(*CircularVoidMesh*)
 
 
 VerificationTest[
-	DiskVoidMesh[1,2,4],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"DiskVoidMesh_arbitrary-void-1"
+	CircularVoidMesh[{0,0},0.2,1,2]["Bounds"],
+	{{-0.5,0.5},{-0.5,0.5}},
+	TestID->"CircularVoidMesh_arbitrary-void-1"
+]
+
+
+VerificationTest[
+	CircularVoidMesh[{0.5,0.5},0.2,1,2]["Bounds"],
+	{{0.,1.},{0.,1.}},
+	TestID->"CircularVoidMesh_arbitrary-void-2"
+]
+
+
+VerificationTest[
+	CircularVoidMesh[{0.,0.},0.6,1,2],
+	$Failed,
+	{CircularVoidMesh::ratio},
+	TestID->"CircularVoidMesh_bad-size-radius-ratio"
 ]
 
 
