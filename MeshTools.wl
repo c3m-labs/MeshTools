@@ -58,7 +58,6 @@ CylinderMesh;
 SphereMesh;
 SphericalShellMesh;
 BallMesh;
-RodriguesSpaceMesh;
 
 
 (* ::Section::Closed:: *)
@@ -1653,56 +1652,6 @@ PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 		"Coordinates" ->(tf@standardPrism["Coordinates"]),
 		"MeshElements" -> standardPrism["MeshElements"]
 	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RodriguesSpaceMesh*)
-
-
-RodriguesSpaceMesh::usage="RodriguesSpaceMesh[n] creates mesh for Rodrigues space used in metal texture analysis.";
-RodriguesSpaceMesh::tetelms=TetrahedronMesh::tetelms;
-RodriguesSpaceMesh::hexelms=TetrahedronMesh::hexelms;
-RodriguesSpaceMesh::badtype=TetrahedronMesh::badtype;
-
-RodriguesSpaceMesh//Options={"MeshElementType"->TetrahedronElement};
-
-RodriguesSpaceMesh//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPattern[]}};
-
-RodriguesSpaceMesh[n_Integer,opts:OptionsPattern[]]:=Module[
-	{type,a,b,divisions,sideBasicMesh,basicRotations,sideMesh,sideRotations,allSidesMesh,cornerMesh,cornerRotations,allCornersMesh},
-	
-	a=N@Tan[Pi/8];
-	b=N@(1-2a);
-	type=(OptionValue["MeshElementType"]);
-	
-	Switch[type,
-		TetrahedronElement,
-		If[Not@MemberQ[{2,4,8,16},n],Message[RodriguesSpaceMesh::tetelms];Return[$Failed]],
-		HexahedronElement,
-		If[OddQ[n],Message[RodriguesSpaceMesh::hexelms];Return[$Failed]],
-		_,Message[RodriguesSpaceMesh::badtype,type];Return[$Failed]
-	];
-	
-	sideBasicMesh=TetrahedronMesh[{{a,0,0},{a,b,a},{a,-b,a},{0,0,0}},n,opts];
-	
-	basicRotations=N@RotationTransform[#,{1,0,0}]&/@(Most@Subdivide[0,2Pi,8]);
-	sideMesh=MergeMesh[ TransformMesh[sideBasicMesh,#]&/@basicRotations ];
-	
-	sideRotations=N@Join[
-		RotationTransform[#,{0,0,1}]&/@{0,Pi/2,Pi,3Pi/2},
-		RotationTransform[#,{0,1,0}]&/@{Pi/2,3Pi/2}
-	];
-	allSidesMesh=MergeMesh[ TransformMesh[sideMesh,#]&/@sideRotations ];
-	
-	cornerMesh=TetrahedronMesh[{{a,a,b},{b,a,a},{a,b,a},{0,0,0}},n,opts];
-	cornerRotations=N@Join[
-		RotationTransform[#,{0,0,1}]&/@{0,Pi/2,Pi,3Pi/2},
-		(RotationTransform[#,{0,0,1}]@*RotationTransform[Pi,{1,1,0}])&/@{0,Pi/2,Pi,3Pi/2}
-	];
-	allCornersMesh=MergeMesh[ TransformMesh[cornerMesh,#]&/@cornerRotations ];
-	
-	MergeMesh[{allSidesMesh,allCornersMesh}]
 ]
 
 
