@@ -1067,7 +1067,7 @@ diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 	(* Size of internal square. Optimial minimal element quality is obtained at 0.2.
 	Value of 0.3 creates nicer element size distribution. *)
 	d=0.3*r;
-	square=RectangleMesh[{x-r,y-r},{x+r,y+r},{n,n}];
+	square=RectangleMesh[{x-d,y-d},{x+d,y+d},{n,n}];
 
 	raster={
 		Thread[{x+Subdivide[-d,d,90],y+d}],
@@ -1090,21 +1090,21 @@ DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts]
 
-DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]/;If[TrueQ[n>=2&&IntegerQ[n]],True,Message[DiskMesh::noelems,n];False]:=Module[
-	{order,method,mesh},
+DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
+	{method},
+	
+	If[
+		Not@TrueQ[n>=2&&IntegerQ[n]],
+		Message[DiskMesh::noelems,n];Return[$Failed]
+	];
 	
 	method=OptionValue[Method]/.Automatic->"Block";
 		
-	If[
-		Not@MemberQ[{"Block","Projection"},method],
-		Message[DiskMesh::method,method];Return[$Failed]
-	];
-	
-	mesh=Switch[method,
+	Switch[method,
 		"Block",diskMeshBlock[{x,y},r,n],
-		"Projection",diskMeshProjection[{x,y},r,n]
-	];
-	mesh
+		"Projection",diskMeshProjection[{x,y},r,n],
+		_,Message[DiskMesh::method,method];Return[$Failed]
+	]
 ]
 
 

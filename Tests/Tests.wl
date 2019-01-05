@@ -760,7 +760,7 @@ VerificationTest[
 
 VerificationTest[
 	DiskMesh[1],
-	DiskMesh[1],
+	$Failed,
 	{DiskMesh::noelems},
 	TestID->"DiskMesh_too-few-elements"
 ]
@@ -985,7 +985,7 @@ VerificationTest[
 
 VerificationTest[
 	CylinderMesh[{{0,0,0},{1,1,1}},1/2,{4,4}]["Bounds"],
-	{{-0.408248,1.40825},{-0.557678,1.55768},{-0.557678,1.55768}},
+	{{-0.408248,1.40825},{-0.40474,1.40474},{-0.40474,1.40474}},
 	SameTest->(Norm[#1-#2]<10^-3&),
 	TestID->"CylinderMesh_arbitrary-cylinder"
 ]
