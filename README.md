@@ -4,7 +4,7 @@
 # MeshTools
 Utilities for creating and manipulating Mathematica `ElementMesh` objects. 
 
-![example1](Graphics/ExampleMeshes.png)
+![example1](Images/ExampleMeshes.png)
 
 
 ## Installation
@@ -59,7 +59,7 @@ mesh["Wireframe"[
 ]
 ```
     
-![screenshot](Graphics/DoubleAnnulus.png )
+![screenshot](Images/DoubleAnnulus.png )
 
 To access the documentation, open the notebook interface help viewer and search for MeshTools. 
 The first hit will be a summary page enumerating the most commonly used functions in MeshTools that enable you to perform the following tasks:
