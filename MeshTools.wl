@@ -415,17 +415,36 @@ SmoothenMesh[mesh_ElementMesh]:=Block[
 (*QuadToTriangleMesh*)
 
 
-(* TODO: Add "smart" method of splitting triangles, where diagonal is chosen according to better quality of
- resulting triangle. *)
+(* Split a quadrilateral over its shorter diagonal. This makes triangles with better quality. *)
+smartSplit[crds_,connectivity_]:=Module[
+	{pts,split},
+	
+	pts=Part[crds,#]&/@connectivity;
+	split=If[
+		TrueQ[Norm[#1[[1]]-#1[[3]]]>Norm[#1[[2]]-#1[[4]]]],
+		{{#2[[1]],#2[[2]],#2[[4]]},{#2[[2]],#2[[3]],#2[[4]]}},
+		{{#2[[1]],#2[[2]],#2[[3]]},{#2[[1]],#2[[3]],#2[[4]]}}
+	]&;
+	Join@@MapThread[split,{pts,connectivity}]
+]
+
+
 QuadToTriangleMesh::usage="QuadToTriangleMesh[mesh] converts quadrilateral mesh to triangular mesh.";
 QuadToTriangleMesh::order="Only the first order mesh is currently supported.";
 
-QuadToTriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
+QuadToTriangleMesh//Options={"SplitDirection"->Automatic};
 
-QuadToTriangleMesh[mesh_ElementMesh]:=Module[{
-	elementType,head,connectivity,triangles
-	},
-	If[mesh["MeshOrder"]=!=1,Message[QuadToTriangleMesh::order];Return[$Failed]];
+QuadToTriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPattern[]}};
+
+QuadToTriangleMesh[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
+	{method,elementType,head,crds,connectivity,markers,triangles,triMarkers},
+	
+	method=OptionValue["SplitDirection"]/.(Except[Left|Right|Automatic]->Automatic);
+	
+	If[
+		mesh["MeshOrder"]=!=1,
+		Message[QuadToTriangleMesh::order];Return[$Failed,Module]
+	];
 	
 	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
@@ -433,12 +452,23 @@ QuadToTriangleMesh[mesh_ElementMesh]:=Module[{
 		{"MeshElements",ToElementMesh}
 	];
 	
+	crds=mesh["Coordinates"];
 	connectivity=ElementIncidents@First@mesh[elementType];
-	triangles=Join[connectivity[[All,{1,2,3}]],connectivity[[All,{1,3,4}]]];
+	markers=ElementMarkers@First@mesh[elementType];
 	
+	triangles=Switch[method,
+		Left,
+		Join@@({#[[{1,2,3}]],#[[{1,3,4}]]}&/@connectivity),
+		Right,
+		Join@@({#[[{1,2,4}]],#[[{2,3,4}]]}&/@connectivity),
+		Automatic,
+		smartSplit[crds,connectivity]
+	];
+	triMarkers=Join@@Map[{#,#}&,markers];
+
 	head[
-		"Coordinates"->mesh["Coordinates"],
-		elementType->{TriangleElement[triangles]}
+		"Coordinates"->crds,
+		elementType->{TriangleElement[triangles,triMarkers]}
 	]
 ]
 

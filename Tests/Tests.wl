@@ -403,18 +403,42 @@ With[{
 
 With[{
 	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
-		"MeshElements"->{QuadElement[{{1,2,3,4}}]}
+		"Coordinates"->{{0,0},{1,0},{2,1},{0,1},{2,2},{0,2}},
+		"MeshElements"->{QuadElement[{{1,2,3,4},{4,3,5,6}},{1,2}]}
 	]
 	},
 	VerificationTest[
-		QuadToTriangleMesh[mesh],	
-		ElementMesh[
-			{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
-			{TriangleElement[{{1,2,3},{1,3,4}}]},
-			{LineElement[{{2,3},{1,2},{3,4},{4,1}}]}
-		],
-		TestID->"QuadToTriangleMesh_normal-1"
+		QuadToTriangleMesh[mesh,"SplitDirection"->Automatic]["MeshElements"],	
+		{TriangleElement[{{1,2,4},{2,3,4},{4,3,5},{4,5,6}},{1,1,2,2}]},
+		TestID->"QuadToTriangleMesh_direction-Automatic"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0,0},{1,0},{2,1},{0,1},{2,2},{0,2}},
+		"MeshElements"->{QuadElement[{{1,2,3,4},{4,3,5,6}},{1,2}]}
+	]
+	},
+	VerificationTest[
+		QuadToTriangleMesh[mesh,"SplitDirection"->Left]["MeshElements"],	
+		{TriangleElement[{{1,2,3},{1,3,4},{4,3,5},{4,5,6}},{1,1,2,2}]},
+		TestID->"QuadToTriangleMesh_direction-Left"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0,0},{1,0},{2,1},{0,1},{2,2},{0,2}},
+		"MeshElements"->{QuadElement[{{1,2,3,4},{4,3,5,6}},{1,2}]}
+	]
+	},
+	VerificationTest[
+		QuadToTriangleMesh[mesh,"SplitDirection"->Right]["MeshElements"],	
+		{TriangleElement[{{1,2,4},{2,3,4},{4,3,6},{3,5,6}},{1,1,2,2}]},
+		TestID->"QuadToTriangleMesh_direction-Rigth"
 	]
 ]
 
