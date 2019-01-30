@@ -717,13 +717,21 @@ VerificationTest[
 
 
 VerificationTest[
-	TriangleMesh[2],
-	ElementMesh[
-		N@{{0.,0.},{0.5,0.},{0.,0.5},{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
-		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
-		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
-	],
+	TriangleMesh[2]["MeshElements"],
+	{QuadElement[{{1, 2, 4, 3}, {2, 5, 6, 4}, {3, 4, 6, 7}}, {0, 0, 0}]},
 	TestID->"TriangleMesh_unit-triangle"
+]
+
+
+VerificationTest[
+	TriangleMesh[
+		{{0,0},{1,1},{2,0}},
+		2,
+		"MeshElementType"->TriangleElement
+	]["Coordinates"],
+	{{0.,0.},{0.5,0.5},{1.,1.},{1.,0.},{1.5,0.5},{2.,0.}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
+	TestID->"TriangleMesh_coordinates"
 ]
 
 
@@ -745,7 +753,7 @@ VerificationTest[
 		2,
 		"MeshElementType"->TriangleElement
 	]["MeshElements"],
-	{TriangleElement[{{1,2,4},{2,5,4},{2,3,5},{4,5, 6}},{0,0,0,0}]},
+	{TriangleElement[{{2,1,4},{5,2,4},{3,2,5},{5,4,6}},{0,0,0,0}]},
 	TestID->"TriangleMesh_triangles-n=2"
 ]
 
@@ -762,25 +770,13 @@ VerificationTest[
 
 
 VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->QuadElement],
-	ElementMesh[
-		{{0.,0.},{0.5,0.},{0.,0.5},N@{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
-		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
-		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
-	],
-	TestID->"TriangleMesh_quads"
-]
-
-
-VerificationTest[
-	(* Nodes are given in wrong order for TriangleElement *)
-	TriangleMesh[{{0,0},{0,1},{1,0}},2,"MeshElementType"->QuadElement],
-	ElementMesh[
-		{{0.,0.},{0.5,0.},{0.,0.5},{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
-		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
-		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
-	],
-	TestID->"TriangleMesh_wrong-ordering"
+	TriangleMesh[
+		{{0,0},{1,0},{0,1}},
+		2,
+		"MeshElementType"->QuadElement
+	]["MeshElements"],
+	{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
+	TestID->"TriangleMesh_quads-n=2"
 ]
 
 
@@ -997,22 +993,14 @@ VerificationTest[
 		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
 		2,
 		"MeshElementType"->HexahedronElement
-	],
-	ElementMesh[
-		{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{1/3,1/3,0.},{0.,0.,0.5},{1/3,0.,1/3},{0.,1/3,1/3},{0.25,0.25,0.25},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{1/3,1/3,1/3},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
-		{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
-		{QuadElement[{{1,2,4,3},{1,5,6,2},{3,7,5,1},{2,9,10,4},{2,6,11,9},{9,11,12,10},{3,4,10,13},{10,12,14,13},{13,14,7,3},{14,12,11,15},{5,15,11,6},{7,14,15,5}}]}
-	],
-	TestID->"TetrahedronMesh_hexahedron"
+	]["MeshElements"],
+	{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
+	TestID->"TetrahedronMesh_hexahedron-n=2"
 ]
 
 
 VerificationTest[
-	TetrahedronMesh[
-		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
-		1,
-		"MeshElementType"->HexahedronElement
-	],
+	TetrahedronMesh[1,"MeshElementType"->HexahedronElement],
 	$Failed,
 	{TetrahedronMesh::hexelms},
 	TestID->"TetrahedronMesh_hexahedron-too-few-elements"

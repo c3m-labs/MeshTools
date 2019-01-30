@@ -942,69 +942,6 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 
 
 (* ::Subsubsection::Closed:: *)
-(*Helper functions for Simplex*)
-
-
-(* Adjusted from documentation page on Triangle and Tetrahedron *)
-symmetricSubdivision[shape_[pl_],k_]/;0<=k<2^Length[pl]:=Module[
-	{n=Length[pl]-1,i0,bl,pos},
-	
-	i0=DigitCount[k,2,1]; 
-	bl=IntegerDigits[k,2,n];
-	pos=FoldList[If[#2==0,#1+{0,1},#1+{1,0}]&,{0,i0},Reverse[bl]];
-	shape@Map[Mean,Extract[pl,#]&/@Map[{#}&,pos+1,{2}]] 
-]
-
-
-(* Adjusted from documentation page on Triangle and Tetrahedron *)
-nestedSymmetricSubdivision[shape_[pl_],level_Integer]/;level==0:=shape[pl]
-
-nestedSymmetricSubdivision[shape_[pl_],level_Integer]/;level>0:=Flatten[
-	Map[
-		nestedSymmetricSubdivision[symmetricSubdivision[shape[pl],#],level-1]&,
-		Range[0,(shape/.{Triangle->3,Tetrahedron->7})]
-	]
-]
-
-
-(* Helper function to check the orientation of nodes used in TriangleElement and TetrahedronElement*)
-reorientSimplex[{a_,b_,c_}]:=If[
-	Negative@Det[{a-c,b-c}],
-	{a,c,b},
-	{a,b,c}
-]
-
-reorientSimplex[{a_,b_,c_,d_}]:=If[
-	Positive@Det[{a-d,b-d,c-d}],
-	{a,b,d,c},
-	{a,b,c,d}
-]
-
-
-(* TODO: It would be really nice if Triangle and Tetrahedron could be split to arbitrary 
-number of elements per edge.*)
-
-simplexMesh[shape_,corners_,n_Integer]:=Module[
-	{divisions,f,allCrds,nodes,connectivity,elementType},
-	
-	elementType=shape/.{Triangle->TriangleElement,Tetrahedron->TetrahedronElement};
-	divisions=Log[2,n];
-	
-	allCrds=reorientSimplex/@(Join@@List@@@nestedSymmetricSubdivision[shape[corners],divisions]);
-	nodes=DeleteDuplicates@Flatten[allCrds,1];
-	connectivity=With[
-		{rules=Thread[nodes->Range@Length[nodes]]},
-		Replace[allCrds,rules,{2}]
-	];
-	
-	ToElementMesh[
-		"Coordinates"->nodes,
-		"MeshElements"->{elementType[connectivity]}
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
 (*RectangleMesh*)
 
 
@@ -1024,11 +961,10 @@ RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=StructuredMesh[
 (*TriangleMesh*)
 
 
-splitTriangleToQuads[{p1_,p2_,p3_},n_Integer]:=Module[
+unitTriangleToQuads[n_Integer]:=Module[
 	{n1,n2,n3,x,connectivity},
 	
-	(* Renumber triangle to be consistent with TriangleElement *)
-	{n1,n2,n3}=reorientSimplex[{p1,p2,p3}];
+	{n1,n2,n3}={{0,0},{1,0},{0,1}};
 	
 	x=Join[{n1,n2,n3},Mean/@{{n1,n2},{n2,n3},{n3,n1},{n1,n2,n3}}];
 	connectivity={
@@ -1043,23 +979,12 @@ splitTriangleToQuads[{p1_,p2_,p3_},n_Integer]:=Module[
 ]
 
 
-splitTriangleToTriangles[{p1_,p2_,p3_},n_Integer]:=Module[
-	{n1,n2,n3,unitMesh,tf},
-	
-	(* Renumber triangle to be consistent with TriangleElement *)
-	{n1,n2,n3}=reorientSimplex[{p1,p2,p3}];
-	
-	unitMesh=SelectElements[
+unitTriangleToTriangles[n_Integer]:=Module[
+	{},
+	SelectElements[
 		QuadToTriangleMesh[RectangleMesh[n],"SplitDirection"->Right],
 		#1+#2<=1&
-	];
-	tf=Threshold/@Last@FindGeometricTransform[
-		{n1,n2,n3},
-		{{0,0},{1,0},{0,1}},
-		Method->"Linear"
-	];
-	
-	TransformMesh[unitMesh,tf]
+	]
 ]
 
 
@@ -1074,7 +999,7 @@ TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts]
 
 TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
-	{type},
+	{type,unitCorners,unitMesh,tf},
 	
 	type=OptionValue["MeshElementType"];
 
@@ -1083,11 +1008,19 @@ TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 		Message[TriangleMesh::quadelms];Return[$Failed,Module]
 	];
 	
-	Switch[type,
-		TriangleElement,splitTriangleToTriangles[{p1,p2,p3},n],
-		QuadElement,splitTriangleToQuads[{p1,p2,p3},n/2],
-		_,Message[TriangleMesh::badtype,type];$Failed
-	]
+	unitMesh=Switch[type,
+		TriangleElement,unitTriangleToTriangles[n],
+		QuadElement,unitTriangleToQuads[n/2],
+		_,Message[TriangleMesh::badtype,type];Return[$Failed,Module]
+	];
+	
+	tf=Threshold/@Last@FindGeometricTransform[
+		{p1,p2,p3},
+		{{0,0},{1,0},{0,1}},
+		Method->"Linear"
+	];
+	
+	TransformMesh[unitMesh,tf]
 ]
 
 
@@ -1587,10 +1520,10 @@ EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 (*TetrahedronMesh*)
 
 
-splitTetrahedronToHexahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
+unitTetrahedronToHexahedra[n_Integer]:=Module[
 	{n1,n2,n3,n4,x,connectivity},
-	(* Make ordering of nodes consistent with TetrahedronElement *)
-	{n1,n2,n3,n4}=reorientSimplex[{p1,p2,p3,p4}];
+
+	{n1,n2,n3,n4}={{0,0,0},{1,0,0},{0,1,0},{0,0,1}};
 	
 	x=Join[{n1,n2,n3,n4},Mean/@{
 		{n1,n2},{n2,n3},{n3,n1},{n2,n4},{n3,n4},{n1,n4},
@@ -1624,24 +1557,13 @@ splitTetrahedronToHexahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
 ]
 
 
-splitTetrahedronToTetrahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
-	{n1,n2,n3,n4,unitMesh,tf},
-	
-	(* Make ordering of nodes consistent with TetrahedronElement *)
-	{n1,n2,n3,n4}=reorientSimplex[{p1,p2,p3,p4}];
-	
-	unitMesh=SelectElements[
+unitTetrahedronToTetrahedra[n_Integer]:=Module[
+	{},
+
+	SelectElements[
 		HexToTetrahedronMesh[CuboidMesh[n]],
 		#1+#2+#3<=1&
-	];
-	
-	tf=Threshold/@Last@FindGeometricTransform[
-		{n1,n2,n3,n4},
-		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
-		Method->"Linear"
-	];
-	
-	TransformMesh[unitMesh,tf]
+	]
 ]
 
 
@@ -1656,7 +1578,7 @@ TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 TetrahedronMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts]
 
 TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
-	{type},
+	{type,unitMesh,tf},
 	
 	type=OptionValue["MeshElementType"];
 	
@@ -1665,11 +1587,19 @@ TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer?Positive,opts:OptionsPattern[]]:=Mod
 		Message[TetrahedronMesh::hexelms];Return[$Failed,Module]
 	];
 	
-	Switch[type,
-		TetrahedronElement,splitTetrahedronToTetrahedra[{p1,p2,p3,p4},n],
-		HexahedronElement,splitTetrahedronToHexahedra[{p1,p2,p3,p4},n/2],
-		_,Message[TetrahedronMesh::badtype,type];$Failed
-	]
+	unitMesh=Switch[type,
+		TetrahedronElement,unitTetrahedronToTetrahedra[n],
+		HexahedronElement,unitTetrahedronToHexahedra[n/2],
+		_,Message[TetrahedronMesh::badtype,type];Return[$Failed,Module]
+	];
+	
+	tf=Threshold/@Last@FindGeometricTransform[
+		{p1,p2,p3,p4},
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
+		Method->"Linear"
+	];
+	
+	TransformMesh[unitMesh,tf]
 ]
 
 
