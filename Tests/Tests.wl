@@ -956,26 +956,48 @@ VerificationTest[
 
 
 VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->TetrahedronElement],
-	ElementMesh[
-		{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{0.,0.,0.5},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
-		{TetrahedronElement[{{1,2,3,4},{2,5,6,7},{2,3,7,6},{3,6,8,9},{2,3,4,7},{3,6,9,7},{3,4,7,9},{4,7,9,10}}]},
-		{TriangleElement[{{4,1,3},{4,2,1},{1,2,3},{7,6,5},{7,5,2},{2,5,6},{6,3,2},{9,8,6},{9,3,8},{3,6,8},{7,2,4},{7,9,6},{9,4,3},{10,9,7},{10,4,9},{10,7,4}}]}
+	TetrahedronMesh[
+		{{2,0,0},{2,0,2},{2,2,2},{0,0,2}},
+		1,
+		"MeshElementType"->TetrahedronElement
+	]["Coordinates"],
+	{{2,0,0},{2,0,2},{2,2,2},{0,0,2}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
+	TestID->"TetrahedronMesh_coordinates"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
+		1,
+		"MeshElementType"->TetrahedronElement
+	]["MeshElements"],
+	{TetrahedronElement[{{1,2,3,4}},{0}]},
+	TestID->"TetrahedronMesh_tetrahedron-n=1"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
+		2,
+		"MeshElementType"->TetrahedronElement
+	]["MeshElements"],
+	{TetrahedronElement[
+		{{1,2,4,7},{2,4,7,9},{2,7,8,9},{2,9,8,5},{2,5,4,9},{2,3,5,8},{4,5,6,9},{7,8,9,10}},
+		{0,0,0,0,0,0,0,0}
+	]},
+	TestID->"TetrahedronMesh_tetrahedron-n=2"
+]
+
+
+VerificationTest[
+	TetrahedronMesh[
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
+		2,
+		"MeshElementType"->HexahedronElement
 	],
-	TestID->"TetrahedronMesh_tetrahedron"
-]
-
-
-VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->TetrahedronElement],
-	$Failed,
-	{TetrahedronMesh::tetelms},
-	TestID->"TetrahedronMesh_tetrahedron-too-few-elements"
-]
-
-
-VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},2,"MeshElementType"->HexahedronElement],
 	ElementMesh[
 		{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{1/3,1/3,0.},{0.,0.,0.5},{1/3,0.,1/3},{0.,1/3,1/3},{0.25,0.25,0.25},{1.,0.,0.},{0.5,0.5,0.},{0.5,0.,0.5},{1/3,1/3,1/3},{0.,1.,0.},{0.,0.5,0.5},{0.,0.,1.}},
 		{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
@@ -986,7 +1008,11 @@ VerificationTest[
 
 
 VerificationTest[
-	TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},1,"MeshElementType"->HexahedronElement],
+	TetrahedronMesh[
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
+		1,
+		"MeshElementType"->HexahedronElement
+	],
 	$Failed,
 	{TetrahedronMesh::hexelms},
 	TestID->"TetrahedronMesh_hexahedron-too-few-elements"

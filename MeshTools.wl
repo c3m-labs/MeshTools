@@ -1624,8 +1624,28 @@ splitTetrahedronToHexahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
 ]
 
 
+splitTetrahedronToTetrahedra[{p1_,p2_,p3_,p4_},n_Integer]:=Module[
+	{n1,n2,n3,n4,unitMesh,tf},
+	
+	(* Make ordering of nodes consistent with TetrahedronElement *)
+	{n1,n2,n3,n4}=reorientSimplex[{p1,p2,p3,p4}];
+	
+	unitMesh=SelectElements[
+		HexToTetrahedronMesh[CuboidMesh[n]],
+		#1+#2+#3<=1&
+	];
+	
+	tf=Threshold/@Last@FindGeometricTransform[
+		{n1,n2,n3,n4},
+		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
+		Method->"Linear"
+	];
+	
+	TransformMesh[unitMesh,tf]
+]
+
+
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
-TetrahedronMesh::tetelms="Only 2, 4, 8 or 16 elements per edge is allowed for tetrahedral mesh.";
 TetrahedronMesh::hexelms="Only even number of elements per edge is allowed for hexahedral mesh.";
 TetrahedronMesh::badtype="Unknown value `1` for option \"MeshElementType\".";
 
@@ -1633,24 +1653,20 @@ TetrahedronMesh//Options={"MeshElementType"->HexahedronElement};
 
 TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
-TetrahedronMesh[n_Integer,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts]
+TetrahedronMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts]
 
-TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
+TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 	{type},
 	
 	type=OptionValue["MeshElementType"];
-	If[
-		(type===TetrahedronElement)&&Not@MemberQ[{2,4,8,16},n],
-		Message[TetrahedronMesh::tetelms];Return[$Failed]
-	];
 	
 	If[
 		(type===HexahedronElement)&&OddQ[n],
-		Message[TetrahedronMesh::hexelms];Return[$Failed]
+		Message[TetrahedronMesh::hexelms];Return[$Failed,Module]
 	];
 	
 	Switch[type,
-		TetrahedronElement,simplexMesh[Tetrahedron,{p1,p2,p3,p4},n],
+		TetrahedronElement,splitTetrahedronToTetrahedra[{p1,p2,p3,p4},n],
 		HexahedronElement,splitTetrahedronToHexahedra[{p1,p2,p3,p4},n/2],
 		_,Message[TetrahedronMesh::badtype,type];$Failed
 	]
