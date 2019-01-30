@@ -720,7 +720,7 @@ VerificationTest[
 VerificationTest[
 	TriangleMesh[2],
 	ElementMesh[
-		{{0.,0.},{0.5,0.},{0.,0.5},N@{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
+		N@{{0.,0.},{0.5,0.},{0.,0.5},{1/3,1/3},{1.,0.},{0.5,0.5},{0.,1.}},
 		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
 		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
 	],
@@ -729,13 +729,36 @@ VerificationTest[
 
 
 VerificationTest[
-	TriangleMesh[{{0,0},{1,0},{0,1}},2,"MeshElementType"->TriangleElement],
-	ElementMesh[
-		{{0.,0.},{0.5,0.},{0.,0.5},{1.,0.},{0.5,0.5},{0.,1.}},
-		{TriangleElement[{{1,2,3},{2,4,5},{2,5,3},{3,5,6}}]},
-		{LineElement[{{3,1},{1,2},{4,5},{2,4},{5,6},{6,3}}]}
-	],
-	TestID->"TriangleMesh_type=TriangleElement"
+	TriangleMesh[
+		{{0,0},{1,0},{0,1}},
+		1,
+		"MeshElementType"->TriangleElement
+	]["MeshElements"],
+	{TriangleElement[{{1,2,3}},{0}]},
+	TestID->"TriangleMesh_triangles-n=1"
+]
+
+
+VerificationTest[
+	(* Triangle corners are given in wrong order. *)
+	TriangleMesh[
+		{{0,0},{0,1},{1,0}},
+		2,
+		"MeshElementType"->TriangleElement
+	]["MeshElements"],
+	{TriangleElement[{{1,2,4},{2,5,4},{2,3,5},{4,5, 6}},{0,0,0,0}]},
+	TestID->"TriangleMesh_triangles-n=2"
+]
+
+
+VerificationTest[
+	TriangleMesh[
+		{{0,0},{1,0},{0,1}},
+		3,
+		"MeshElementType"->TriangleElement
+	]["MeshElements"],
+	{TriangleElement[{{1,2,5},{2,6,5},{2,3,6},{3,7,6},{3,4,7},{5,6,8},{6,9,8},{6,7,9},{8,9,10}},{0,0,0,0,0,0,0,0,0}]},
+	TestID->"TriangleMesh_triangles-n=3"
 ]
 
 
@@ -746,7 +769,7 @@ VerificationTest[
 		{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
 		{LineElement[{{1,2},{3,1},{2,5},{5,6},{6,7},{7,3}}]}
 	],
-	TestID->"TriangleMesh_type=QuadElement"
+	TestID->"TriangleMesh_quads"
 ]
 
 

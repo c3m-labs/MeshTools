@@ -1034,8 +1034,27 @@ splitTriangleToQuads[{p1_,p2_,p3_},n_Integer]:=Module[
 ]
 
 
+splitTriangleToTriangles[{p1_,p2_,p3_},n_Integer]:=Module[
+	{n1,n2,n3,unitMesh,tf},
+	
+	(* Renumber triangle to be consistent with TriangleElement *)
+	{n1,n2,n3}=reorientSimplex[{p1,p2,p3}];
+	
+	unitMesh=SelectElements[
+		QuadToTriangleMesh[RectangleMesh[n],"SplitDirection"->Right],
+		#1+#2<=1&
+	];
+	tf=Threshold/@Last@FindGeometricTransform[
+		{n1,n2,n3},
+		{{0,0},{1,0},{0,1}},
+		Method->"Linear"
+	];
+	
+	TransformMesh[unitMesh,tf]
+]
+
+
 TriangleMesh::usage="TriangleMesh[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
-TriangleMesh::trielms="Only 2, 4, 8, 16 or 32 elements per edge are supported for \"MeshElementType\"->TriangleElement.";
 TriangleMesh::quadelms="Only even number of elements per edge is allowed for \"MeshElementType\"->QuadElement.";
 TriangleMesh::badtype="Unknown option value for \"MeshElementType\"->`1`.";
 
@@ -1043,25 +1062,20 @@ TriangleMesh//Options={"MeshElementType"->QuadElement};
 
 TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
-TriangleMesh[n_Integer,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts]
+TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts]
 
-TriangleMesh[{p1_,p2_,p3_},n_Integer,opts:OptionsPattern[]]:=Module[
+TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 	{type},
 	
 	type=OptionValue["MeshElementType"];
-	
-	If[
-		(type===TriangleElement)&&Not@MemberQ[{2,4,8,16,32},n],
-		Message[TriangleMesh::trielms];Return[$Failed]
-	];
-	
+
 	If[
 		(type===QuadElement)&&OddQ[n],
-		Message[TriangleMesh::quadelms];Return[$Failed]
+		Message[TriangleMesh::quadelms];Return[$Failed,Module]
 	];
 	
 	Switch[type,
-		TriangleElement,simplexMesh[Triangle,{p1,p2,p3},n],
+		TriangleElement,splitTriangleToTriangles[{p1,p2,p3},n],
 		QuadElement,splitTriangleToQuads[{p1,p2,p3},n/2],
 		_,Message[TriangleMesh::badtype,type];$Failed
 	]
