@@ -481,32 +481,41 @@ HexToTetrahedronMesh::usage="HexToTetrahedronMesh[mesh] converts hexahedral mesh
 HexToTetrahedronMesh::type="ElementMesh should contain only hexadedral elements.";
 
 HexToTetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
-(* TODO: Figure out if this function actually works correctly. *)
+
+(* This function returns valid mesh only on properly structured hex meshes. *)
 HexToTetrahedronMesh[mesh_ElementMesh]:=Module[
-	{nodes,origElms,tetConnect,restructure,newElms},
+	{connectivity,markers,tetConnect,restructure,newConnectivity,newMarkers},
 	
-	origElms=mesh["MeshElements"];
 	If[
-		Head@First[origElms]=!=HexahedronElement,
-		Message[HexToTetrahedronMesh::type];Return[$Failed]
+		Head/@mesh["MeshElements"]=!={HexahedronElement},
+		Message[HexToTetrahedronMesh::type];Return[$Failed,Module]
 	];
 	
-	tetConnect={
-		{4, 1, 2, 5},
-		{7, 5, 2, 6},
-		{4, 2, 3, 7},
-		{4, 5, 2, 7},
-		{4, 5, 7, 8}
-	};
-	restructure=Function[{hexNodes},Part[hexNodes,#]&/@tetConnect];
+	connectivity=ElementIncidents@First[mesh["MeshElements"]];
+	markers=ElementMarkers@First[mesh["MeshElements"]];
 	
-	newElms=TetrahedronElement[
-		Flatten[restructure/@First@ElementIncidents[origElms],1]
+	tetConnect={
+		{1,2,4,5},
+		{2,4,5,8},
+		{2,5,6,8},
+		{2,8,6,3},
+		{2,3,4,8},
+		{3,8,6,7}
+	};
+	restructure=Function[
+		{hexNodes},
+		Map[Part[hexNodes,#]&,tetConnect]
+	];
+	
+	newConnectivity=Join@@Map[restructure,connectivity];
+	newMarkers=Join@@Map[
+		ConstantArray[#,Length[tetConnect]]&,
+		markers
 	];
 	
 	ToElementMesh[
 		"Coordinates"->mesh["Coordinates"],
-		"MeshElements"->{newElms}
+		"MeshElements"->{TetrahedronElement[newConnectivity,newMarkers]}
 	]
 ]
 
