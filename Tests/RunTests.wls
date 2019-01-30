@@ -20,23 +20,33 @@ By default we assume script is started from git root directory. *)
 PacletDirectoryAdd@Directory[];
 Get["MeshTools`"];
 
+Print["  Using Mathematica: ",$VersionNumber];
+
 Module[
-	{report,time,results,n},
-	report=TestReport[FileNameJoin[{Directory[],"Tests","Tests.wl"}]];
-	time=QuantityMagnitude@report["TimeElapsed"];
+	{report,time,results,failIdx},
+	
+	report=TestReport[
+		FileNameJoin[{Directory[],"Tests","Tests.wl"}]
+	];
+	time=Round[
+		QuantityMagnitude@report["TimeElapsed"],
+		0.001
+	];
 	results=report["TestResults"];
-	n=report["TestsSucceededCount"];
+	failIdx=report["TestsFailedIndices"];
+	
+	Print["\n","  ",Length[results]," tests run in ",time," seconds."];
 	
 	If[
 		TrueQ@report["AllTestsSucceeded"]
 		,
-		Print["  All ",n," tests passed in ",ToString@time," seconds."];
+		Print["  All tests succeeded!"];
 		Quit[0] (* exit code if all test pass *)
 		,
-		Print["  Tests failed!"];
+		Print["  ",Length[failIdx]," tests failed!"];
 		Do[
 			Print["  ",i," / ",results[i]["Outcome"]," / ",results[i]["TestID"]],
-			{i,report["TestsFailedIndices"]}
+			{i,failIdx}
 		];
 		Quit[1] (* exit code if any test fails *)
 	]
