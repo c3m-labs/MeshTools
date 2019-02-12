@@ -75,26 +75,58 @@ Begin["`Private`"];
 (*AddMeshMarkers*)
 
 
-AddMeshMarkers::usage="AddMeshMarkers[mesh, marker] adds integer marker to all mesh elements.";
+insertMarkers[mesh_,elementType_,value_]:=Module[
+	{original,new},
+	original=ElementMarkers@mesh[elementType];
+	new=If[
+		value===Automatic,
+		original,
+		ConstantArray[value,Dimensions@original]
+	];
+
+	MapThread[
+		Append[Take[#1,1],#2]&,
+		{mesh[elementType],new}
+	]
+]
+
+
+AddMeshMarkers::usage="AddMeshMarkers[mesh, keyword->marker] adds integer marker element type according to keyword.";
+AddMeshMarkers::badkey="`1` is not recognized keyword \"MeshElementsMarker\", \"BoundaryElementsMarker\" or \"PointElementsMarker\".";
 
 AddMeshMarkers//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
-AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[
-	{elementType,head,elementTypes,elementIncidents,elementMarkers},
+(* TODO: Remove this definition in the next version. *)
+(* Obsolete definition, only kept for backward compatibility. *)
+AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=AddMeshMarkers[mesh,"MeshElementsMarker"->marker]
+
+AddMeshMarkers[mesh_ElementMesh,list_List]:=Fold[AddMeshMarkers[#1,#2]&,mesh,list]
+
+AddMeshMarkers[mesh_ElementMesh,type_String->int_Integer]:=Module[
+	{mMark,bMark,pMark},
+
+	mMark=bMark=pMark=Automatic;
 	
-	{elementType,head}=If[
-		mesh["MeshElements"]===Automatic,
-		{"BoundaryElements",ToBoundaryMesh},
-		{"MeshElements",ToElementMesh}
+	Switch[type,
+		"MeshElementsMarker",mMark=int,
+		"BoundaryElementsMarker",bMark=int,
+		"PointElementsMarker",pMark=int,
+		_,Message[AddMeshMarkers::badkey,type];Return[mesh,Module]
 	];
 	
-	elementTypes=Head/@mesh[elementType];
-	elementIncidents=ElementIncidents@mesh[elementType];
-	elementMarkers=ConstantArray[marker,#]&/@(Length/@elementIncidents);
-	
-	head[
-		"Coordinates"->mesh["Coordinates"],
-		elementType->MapThread[#1[#2,#3]&,{elementTypes,elementIncidents,elementMarkers}]
+	If[
+		mesh["MeshElements"]===Automatic,
+		ToBoundaryMesh[
+			"Coordinates"->mesh["Coordinates"],
+			"BoundaryElements"->insertMarkers[mesh,"BoundaryElements",bMark],
+			"PointElements"->insertMarkers[mesh,"PointElements",pMark]
+		],
+		ToElementMesh[
+			"Coordinates"->mesh["Coordinates"],
+			"MeshElements"->insertMarkers[mesh,"MeshElements",mMark],
+			"BoundaryElements"->insertMarkers[mesh,"BoundaryElements",bMark],
+			"PointElements"->insertMarkers[mesh,"PointElements",pMark]
+		]
 	]
 ]
 

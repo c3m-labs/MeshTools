@@ -29,18 +29,83 @@ BeginTestSection["Tests"]
 
 With[{
 	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
-		"MeshElements"->{QuadElement[{{1,2,3,4}}]}
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,4,5}}],TriangleElement[{{2,3,4}}]}
 	]
 	},
 	VerificationTest[
-		AddMeshMarkers[mesh,1],	
-		ElementMesh[
-			{{0., 0.}, {1., 0.}, {1., 1.}, {0., 1.}},
-			{QuadElement[{{1, 2, 3, 4}}, {1}]},
-			{LineElement[{{1, 2}, {2, 3}, {3, 4}, {4, 1}}]}
-		],
-		TestID->"AddMeshMarkers_1"
+		AddMeshMarkers[
+			mesh,
+			"MeshElementsMarker"->1
+		]["MeshElements"]//ElementMarkers,	
+		{{1},{1}},
+		TestID->"AddMeshMarkers_MeshElements"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,4,5}}],TriangleElement[{{2,3,4}}]}
+	]
+	},
+	VerificationTest[
+		AddMeshMarkers[
+			mesh,
+			{"MeshElementsMarker"->1,"BoundaryElementsMarker"->2}
+		]["BoundaryElements"]//ElementMarkers,	
+		{{2,2,2,2,2}},
+		TestID->"AddMeshMarkers_BoundaryElements"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,4,5}}],TriangleElement[{{2,3,4}}]}
+	]
+	},
+	VerificationTest[
+		AddMeshMarkers[
+			mesh,
+			{"MeshElementsMarker"->1,"PointElementsMarker"->3}
+		]["PointElements"]//ElementMarkers,	
+		{{3,3,3,3,3}},
+		TestID->"AddMeshMarkers_PointElements"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,4,5}}],TriangleElement[{{2,3,4}}]}
+	]
+	},
+	VerificationTest[
+		AddMeshMarkers[
+			mesh,
+			"BadKeyword"->1
+		]["MeshElements"]//ElementMarkers,	
+		{{0},{0}},
+		{AddMeshMarkers::badkey},
+		TestID->"AddMeshMarkers_bad-keyword"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{1.,1.},{0.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,4,5}}],TriangleElement[{{2,3,4}}]}
+	]
+	},
+	VerificationTest[
+		AddMeshMarkers[mesh,1]["MeshElements"]//ElementMarkers,	
+		{{1},{1}},
+		TestID->"AddMeshMarkers_legacy-method"
 	]
 ]
 
