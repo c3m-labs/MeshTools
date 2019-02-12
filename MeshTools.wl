@@ -26,7 +26,6 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 
 AddMeshMarkers;
-SelectElementsByMarker;
 SelectElements;
 
 MergeMesh;
@@ -104,13 +103,10 @@ AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=Module[
 (*SelectElements*)
 
 
-SelectElementsByMarker::usage="SelectElementsByMarker[mesh, marker] creates ElementMesh made only out of elements with selected marker.";
-SelectElementsByMarker::marker="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
-
-SelectElementsByMarker//SyntaxInformation={"ArgumentsPattern"->{_,_}};
-
-SelectElementsByMarker[mesh_ElementMesh,int_Integer]:=Module[
-	{elementType,head,elementHeads,connectivity,markers,selectedElements,selectedNodes,renumbering},
+(* Returned ElementMesh is without markers. *)
+selectElementsByMarkers[mesh_ElementMesh,ints_List]:=Module[
+	{elementType,head,types,connectivity,markers,selectedElements,
+	selectedNodes,renumbering},
 	
 	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
@@ -118,40 +114,47 @@ SelectElementsByMarker[mesh_ElementMesh,int_Integer]:=Module[
 		{"MeshElements",ToElementMesh}
 	];
 	
-	elementHeads=Head/@mesh[elementType];
+	types=Head/@mesh[elementType];
 	connectivity=ElementIncidents@mesh[elementType];
 	markers=ElementMarkers@mesh[elementType];
 	
-	If[
-		Not@MemberQ[Union@Flatten@markers,int],
-		Message[SelectElementsByMarker::marker,int];Return[mesh]
+	selectedElements=MapThread[
+		Pick[#1,#2,Alternatives@@ints]&,
+		{connectivity,markers}
 	];
-	
-	selectedElements=MapThread[Pick[#1,#2,int]&,{connectivity,markers}];
 	selectedNodes=Union@Flatten@selectedElements;
-	renumbering=MapIndexed[#1->First[#2]&,selectedNodes];
+	renumbering=Thread[selectedNodes->Range@Length[selectedNodes]];
 
 	head[
 		"Coordinates" -> Part[mesh["Coordinates"],selectedNodes],
-		elementType -> MapThread[#1[#2]&,{elementHeads,selectedElements/.renumbering}]
+		elementType -> MapThread[#1[#2]&,{types,selectedElements/.renumbering}]
 	]
 ]
 
 
-SelectElements::usage="SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit.";
+SelectElements::usage=(
+	"SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."<>"\n"<>
+	"SelectElements[mesh, ElementMarker==m] select the elements having ElementMarker corresponding to the marker m."
+);
 SelectElements::noelms="No elements in ElementMesh match the criterion.";
 SelectElements::funslots="Criterion Function has too many Slots for ElementMesh with \"EmbeddingDimension\"==`1`.";
+SelectElements::marker="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
+SelectElements::intmark="ElementMarker should be non-negative integer.";
 
 SelectElements//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
 SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 	{elementType,head,elementHeads,connectivity,markers,renumbering,
-	selectedNodes,selectedElementNumbers,selectedElements,selectedMarkers},
+	selectedNodes,selectedElementNumbers,selectedElements,selectedMarkers,elementTypeList},
 	
-	(* Test for appropriate number of Slots in crit Function, otherwise problems occur at Apply[crit]... *)
+	(* Test for appropriate number of Slots in crit Function, 
+	otherwise problems occur at Apply[crit]... *)
 	With[
 		{dim=mesh["EmbeddingDimension"]},
-		If[ Count[crit,_Slot,Infinity]>dim, Message[SelectElements::funslots,dim];Return[$Failed] ]
+		If[
+			Count[crit,_Slot,Infinity]>dim,
+			Message[SelectElements::funslots,dim];Return[$Failed,Module]
+		]
 	];
 	
 	{elementType,head}=If[
@@ -168,7 +171,7 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 		If[Apply[crit][#1],First[#2],Nothing]&,
 		mesh["Coordinates"]
 	];
-	renumbering=MapIndexed[#1->First[#2]&,selectedNodes];
+	renumbering=Thread[selectedNodes->Range@Length[selectedNodes]];
 	
 	selectedElementNumbers=MapIndexed[
 		If[ContainsAll[selectedNodes,#1],Last@#2,Nothing]&,
@@ -177,17 +180,51 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 	];
 	(* This catches majority of bad crit Function(s), since no elements are selected. *)
 	If[
-		selectedElementNumbers==={{}},
-		Message[SelectElements::noelms];Return[$Failed]
+		MatchQ[selectedElementNumbers,{{}..}],
+		Message[SelectElements::noelms];Return[$Failed,Module]
 	];
 	
 	selectedElements=MapThread[Part,{connectivity,selectedElementNumbers}]/.renumbering;
 	selectedMarkers=MapThread[Part,{markers,selectedElementNumbers}];
+	
+	(* Quick hack to allow mixed mesh types. 
+	It removes element type with empty connectivity vector. *)
+	elementTypeList=Quiet@ReplaceAll[
+		MapThread[
+			#1[#2,#3]&,
+			{elementHeads,selectedElements,selectedMarkers}
+		],
+		_[{},__]->Nothing
+	];
 
 	head[
-		"Coordinates" -> Part[mesh["Coordinates"],selectedNodes],
-		elementType -> MapThread[#1[#2,#3]&,{elementHeads,selectedElements,selectedMarkers}]
+		"Coordinates"->Part[mesh["Coordinates"],selectedNodes],
+		elementType->elementTypeList
 	]
+]
+
+(* Select elements by marker function. *)
+SelectElements[mesh_ElementMesh,func_/;Not@FreeQ[func,ElementMarker]]:=Module[
+	{ints,existingMarkers},
+	
+	ints=Flatten[{ElementMarker/.Solve[func, ElementMarker]}];
+	If[
+		Not@VectorQ[ints,IntegerQ],
+		Message[SelectElements::intmark];Return[$Failed,Module]
+	];
+	
+	existingMarkers=If[
+		mesh["MeshElements"]===Automatic,
+		mesh["BoundaryElementMarkerUnion"],
+		mesh["MeshElementMarkerUnion"]
+	];
+	
+	If[
+		Not@MemberQ[existingMarkers,Alternatives@@ints],
+		Message[SelectElements::marker,ints];Return[mesh,Module]
+	];
+	
+	selectElementsByMarkers[mesh,ints]
 ]
 
 

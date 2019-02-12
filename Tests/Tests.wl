@@ -151,102 +151,46 @@ With[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*SelectElementsByMarker*)
-
-
-With[{
-	(* A mesh with mixed element types. *)
-	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
-		"MeshElements"->{
-			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
-			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
-		}]
-	},
-	VerificationTest[
-		SelectElementsByMarker[mesh,1],	
-		ElementMesh[
-			{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.}},
-			{TriangleElement[{{3,4,7},{4,8,7}}],QuadElement[{{1,2,6,5},{2,3,7,6}}]},
-			{LineElement[{{3,4},{8,7},{4,8},{1,2},{6,5},{5,1},{2,3},{7,6}}]}
-		],
-		TestID->"SelectElementsByMarker_1"
-	]
-]
-
-
-With[{
-	(* A mesh with mixed element types. *)
-	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
-		"MeshElements"->{
-			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
-			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
-		}]
-	},
-	VerificationTest[
-		SelectElementsByMarker[mesh,2],	
-		ElementMesh[
-			{{0., 1.}, {1., 1.}, {2., 1.}, {3., 1.}, {2.5, 1.5}, {0., 2.},{1., 2.}, {2., 2.}},
-			{TriangleElement[{{3, 5, 8}, {3, 4, 5}}],QuadElement[{{1, 2, 7, 6}, {2, 3, 8, 7}}]},
-			{LineElement[{{5, 8}, {4, 5}, {3, 4}, {1, 2}, {7, 6}, {6, 1}, {2, 3}, {8, 7}}]
-		}],
-		TestID->"SelectElementsByMarker_2"
-	]
-]
-
-
-With[{
-	(* A mesh with mixed element types. *)
-	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
-		"MeshElements"->{
-			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
-			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
-		}]
-	},
-	VerificationTest[
-		SelectElementsByMarker[mesh,0],	
-		_ElementMesh,
-		{SelectElementsByMarker::marker},
-		SameTest->MatchQ,
-		TestID->"SelectElementsByMarker_nonexistent-marker"
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
 (*SelectElements*)
 
 
-With[{
-	mesh=ToElementMesh[
-		Rectangle[],
-		MaxCellMeasure->1/2,
-		"MeshOrder"->1
-	]
-	},
+(* Example mesh is defined once as a global symbol, because it is goung to be used in many tests. *)
+$mixedMeshExample=ToElementMesh[
+	"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{2.5,0.5},{0.,1.},{1.,1.},{2.,1.},{3.,1.},{2.5,1.5},{0.,2.},{1.,2.},{2.,2.}},
+	"MeshElements"->{
+		QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}],
+		TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}]
+	}
+];
+
+
+With[
+	{mesh=$mixedMeshExample},
 	VerificationTest[
-		SelectElements[mesh,#1>=0.5&&#2>=0.5&],	
-		ElementMesh[
-			{{0.5, 0.5}, {0.5, 1.}, {1., 0.5}, {1., 1.}},
-			{QuadElement[{{1, 3, 4, 2}}, {0}]},
-			{LineElement[{{1, 3}, {3, 4}, {4, 2}, {2, 1}}]}
-		],
+		SelectElements[mesh,#2<=1.&]["MeshElements"],	
+		{
+			TriangleElement[{{3,4,7},{4,8,7}},{1,1}],
+			QuadElement[{{1,2,6,5},{2,3,7,6}},{1,1}]
+		},
 		TestID->"SelectElements_2D-1"
 	]
 ]
 
 
-With[{
-	mesh=ToElementMesh[
-		Rectangle[],
-		MaxCellMeasure->1/2,
-		"MeshOrder"->1
-	]
-	},
+With[
+	{mesh=$mixedMeshExample},
 	VerificationTest[
-		SelectElements[mesh,#1>=2&],	
+		SelectElements[mesh,#1<=1.&]["MeshElements"],	
+		{QuadElement[{{1,2,4,3},{3,4,6,5}},{1,2}]},
+		TestID->"SelectElements_2D-2"
+	]
+]
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[mesh,#1+1&],	
 		$Failed,
 		{SelectElements::noelms},
 		TestID->"SelectElements_no-elements"
@@ -254,18 +198,88 @@ With[{
 ]
 
 
-With[{
-	mesh=ToElementMesh[
-		Rectangle[],
-		MaxCellMeasure->1/2,
-		"MeshOrder"->1
-	]
-	},
+With[
+	{mesh=$mixedMeshExample},
 	VerificationTest[
 		SelectElements[mesh,#1>=0.5&&#2>=0.5&&#3>=0.5&],	
 		$Failed,
 		{SelectElements::funslots},
 		TestID->"SelectElements_wrong-criterion"
+	]
+]
+
+
+(* ::Text:: *)
+(*=========================================================================================*)
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[mesh,ElementMarker==1]["MeshElements"],
+		{TriangleElement[{{3,4,7},{4,8,7}}],QuadElement[{{1,2,6,5},{2,3,7,6}}]},
+		TestID->"SelectElements_marker=1"
+	]
+]
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[mesh,ElementMarker==2]["MeshElements"],
+		{TriangleElement[{{3,5,8},{3,4,5}}],QuadElement[{{1,2,7,6},{2,3,8,7}}]},
+		TestID->"SelectElements_marker=2"
+	]
+]
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[MeshOrderAlteration[mesh,2],ElementMarker==2]["MeshElements"],
+		{
+			TriangleElement[{{3,5,8,10,11,12},{3,4,5,9,13,10}}],
+			QuadElement[{{1,2,7,6,14,16,17,18},{2,3,8,7,15,12,19,16}}]
+		},
+		TestID->"SelectElements_marker-MeshOrder->2"
+	]
+]
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[mesh,ElementMarker==0]["MeshElements"],
+		{
+			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}],
+			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}]
+		},
+		{SelectElements::marker},
+		TestID->"SelectElements_non-existent-marker"
+	]
+]
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[mesh,ElementMarker==1||ElementMarker==2]["MeshElements"],
+		{
+			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}}],
+			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}}]
+		},
+		TestID->"SelectElements_two-markers"
+	]
+]
+
+
+With[
+	{mesh=$mixedMeshExample},
+	VerificationTest[
+		SelectElements[mesh,ElementMarker==1.],
+		$Failed,
+		{SelectElements::intmark},
+		TestID->"SelectElements_non-integer-marker"
 	]
 ]
 
