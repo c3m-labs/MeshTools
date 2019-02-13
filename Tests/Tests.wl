@@ -96,20 +96,6 @@ With[{
 ]
 
 
-With[{
-	mesh=ToElementMesh[
-		"Coordinates"->{{0.,0.},{1.,0.},{2.,0.},{1.,1.},{0.,1.}},
-		"MeshElements"->{QuadElement[{{1,2,4,5}}],TriangleElement[{{2,3,4}}]}
-	]
-	},
-	VerificationTest[
-		AddMeshMarkers[mesh,1]["MeshElements"]//ElementMarkers,	
-		{{1},{1}},
-		TestID->"AddMeshMarkers_legacy-method"
-	]
-]
-
-
 (* ::Subsubsection::Closed:: *)
 (*TransformMesh*)
 
@@ -354,8 +340,8 @@ With[
 
 
 With[{
-	m1=AddMeshMarkers[RectangleMesh[1],1],
-	m2=AddMeshMarkers[RectangleMesh[1],2]
+	m1=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->1],
+	m2=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->2]
 	},
 	VerificationTest[
 		MergeMesh[m1,m2],	
@@ -370,8 +356,8 @@ With[{
 
 
 With[{
-	m1=AddMeshMarkers[RectangleMesh[1],1],
-	m2=AddMeshMarkers[RectangleMesh[1],2]
+	m1=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->1],
+	m2=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->2]
 	},
 	VerificationTest[
 		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->True],	
@@ -386,8 +372,8 @@ With[{
 
 
 With[{
-	m1=AddMeshMarkers[RectangleMesh[1],1],
-	m2=AddMeshMarkers[RectangleMesh[1],2]
+	m1=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->1],
+	m2=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->2]
 	},
 	(* For some weird reason direct comparison of ElementMesh objects doesn't work here. *)
 	VerificationTest[
@@ -434,8 +420,8 @@ Module[
 		]
 	];
 	basic=RectangleMesh[1];
-	m1=toBoundaryMesh@AddMeshMarkers[basic,1];
-	m2=toBoundaryMesh@AddMeshMarkers[basic,2];
+	m1=toBoundaryMesh@AddMeshMarkers[basic,"MeshElementsMarker"->1];
+	m2=toBoundaryMesh@AddMeshMarkers[basic,"MeshElementsMarker"->2];
 	(* ElementMesh is not inert head and sometimes reorders expression 
 	therefore option "CheckIntersections" is needed. *)
 	VerificationTest[

@@ -96,12 +96,9 @@ AddMeshMarkers::badkey="`1` is not recognized keyword \"MeshElementsMarker\", \"
 
 AddMeshMarkers//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
-(* TODO: Remove this definition in the next version. *)
-(* Obsolete definition, only kept for backward compatibility. *)
-AddMeshMarkers[mesh_ElementMesh,marker_Integer]:=AddMeshMarkers[mesh,"MeshElementsMarker"->marker]
-
 AddMeshMarkers[mesh_ElementMesh,list_List]:=Fold[AddMeshMarkers[#1,#2]&,mesh,list]
 
+(* TODO: Add FrontEnd autocomplete for type argument. *)
 AddMeshMarkers[mesh_ElementMesh,type_String->int_Integer]:=Module[
 	{mMark,bMark,pMark},
 
