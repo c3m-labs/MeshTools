@@ -161,30 +161,9 @@ selectElementsByMarkers[mesh_ElementMesh,ints_List]:=Module[
 ]
 
 
-SelectElements::usage=(
-	"SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."<>"\n"<>
-	"SelectElements[mesh, ElementMarker==m] select the elements having ElementMarker corresponding to the marker m."
-);
-SelectElements::noelms="No elements in ElementMesh match the criterion.";
-SelectElements::funslots="Criterion Function has too many Slots for ElementMesh with \"EmbeddingDimension\"==`1`.";
-SelectElements::marker="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
-SelectElements::intmark="ElementMarker should be non-negative integer.";
-
-SelectElements//SyntaxInformation={"ArgumentsPattern"->{_,_}};
-
-SelectElements[mesh_ElementMesh,crit_Function]:=Module[
-	{elementType,head,elementHeads,connectivity,markers,renumbering,
+selectElementsByCoordinates[mesh_ElementMesh,crit_Function]:=Module[
+	{crds,elementType,head,elementHeads,connectivity,markers,renumbering,
 	selectedNodes,selectedElementNumbers,selectedElements,selectedMarkers,elementTypeList},
-	
-	(* Test for appropriate number of Slots in crit Function, 
-	otherwise problems occur at Apply[crit]... *)
-	With[
-		{dim=mesh["EmbeddingDimension"]},
-		If[
-			Count[crit,_Slot,Infinity]>dim,
-			Message[SelectElements::funslots,dim];Return[$Failed,Module]
-		]
-	];
 	
 	{elementType,head}=If[
 		mesh["MeshElements"]===Automatic,
@@ -192,25 +171,25 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 		{"MeshElements",ToElementMesh}
 	];
 	
+	crds=mesh["Coordinates"];
 	elementHeads=Head/@mesh[elementType];
 	connectivity=ElementIncidents@mesh[elementType];
 	markers=ElementMarkers@mesh[elementType];
 	
-	selectedNodes=MapIndexed[
-		If[Apply[crit][#1],First[#2],Nothing]&,
-		mesh["Coordinates"]
-	];
+	selectedNodes=Pick[Range@Length[crds],crit@@@crds];
 	renumbering=Thread[selectedNodes->Range@Length[selectedNodes]];
 	
+	(* TODO: Try to write vectorized variant of element selector. *)
 	selectedElementNumbers=MapIndexed[
 		If[ContainsAll[selectedNodes,#1],Last@#2,Nothing]&,
 		connectivity,
 		{2}
 	];
-	(* This catches majority of bad crit Function(s), since no elements are selected. *)
+	(* This catches majority of bad crit Function(s), since no elements are selected.
+	Message is issued in the top public function. *)
 	If[
 		MatchQ[selectedElementNumbers,{{}..}],
-		Message[SelectElements::noelms];Return[$Failed,Module]
+		Return[$Failed,Module]
 	];
 	
 	selectedElements=MapThread[Part,{connectivity,selectedElementNumbers}]/.renumbering;
@@ -227,8 +206,38 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 	];
 
 	head[
-		"Coordinates"->Part[mesh["Coordinates"],selectedNodes],
+		"Coordinates"->Part[crds,selectedNodes],
 		elementType->elementTypeList
+	]
+]
+
+
+SelectElements::usage=(
+	"SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."<>"\n"<>
+	"SelectElements[mesh, ElementMarker==m] select elements with marker m."
+);
+SelectElements::noelms="No elements in ElementMesh match the criterion.";
+SelectElements::funslots="Criterion Function has too many Slots for ElementMesh with \"EmbeddingDimension\"==`1`.";
+SelectElements::nomark="Specified marker `1` does not exist and unmodified ElementMesh is returned.";
+SelectElements::intmark="ElementMarker should be non-negative integer.";
+
+SelectElements//SyntaxInformation={"ArgumentsPattern"->{_,_}};
+
+SelectElements[mesh_ElementMesh,crit_Function]:=Module[
+	{dim,newMesh},
+	
+	(* Test for appropriate number of Slots in crit Function. *)
+	dim=mesh["EmbeddingDimension"];
+	If[
+		Count[crit,_Slot,Infinity]>dim,
+		Message[SelectElements::funslots,dim];Return[$Failed,Module]
+	];
+	
+	newMesh=selectElementsByCoordinates[mesh,crit];
+	If[
+		Head[newMesh]===ElementMesh,
+		newMesh,
+		Message[SelectElements::noelms];$Failed
 	]
 ]
 
@@ -250,7 +259,7 @@ SelectElements[mesh_ElementMesh,func_/;Not@FreeQ[func,ElementMarker]]:=Module[
 	
 	If[
 		Not@MemberQ[existingMarkers,Alternatives@@ints],
-		Message[SelectElements::marker,ints];Return[mesh,Module]
+		Message[SelectElements::nomark,ints];Return[mesh,Module]
 	];
 	
 	selectElementsByMarkers[mesh,ints]

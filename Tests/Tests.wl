@@ -305,7 +305,7 @@ With[
 			TriangleElement[{{3,4,7},{4,8,7},{7,9,12},{7,8,9}},{1,1,2,2}],
 			QuadElement[{{1,2,6,5},{2,3,7,6},{5,6,11,10},{6,7,12,11}},{1,1,2,2}]
 		},
-		{SelectElements::marker},
+		{SelectElements::nomark},
 		TestID->"SelectElements_non-existent-marker"
 	]
 ]
