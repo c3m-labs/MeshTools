@@ -5,7 +5,8 @@
 
 
 (* ::Text:: *)
-(*These are unit test for "MeshTools" paclet. Each test should normally run fast enough (i.e. < 0.1 second), so that there can be many of them and the whole procedure doesn't take too long.*)
+(*These are unit test for "MeshTools" paclet. Each test should normally run fast enough (i.e. < 0.1 second),*)
+(*so that there can be many of them and the whole procedure doesn't take too long.*)
 
 
 (* "MeshTools.wl" must be loaded before running these tests, otherwise testing is aborted. *)
@@ -15,7 +16,7 @@ If[
 ];
 
 
-(* Currently it is unclear what this line does, it is automatically gnerated during conversion to .wlt *)
+(* Currently it is unclear what this line does, it is automatically generated during conversion to .wlt *)
 BeginTestSection["Tests"]
 
 
@@ -92,6 +93,50 @@ With[{
 		{{0},{0}},
 		{AddMeshMarkers::badkey},
 		TestID->"AddMeshMarkers_bad-keyword"
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*IdentifyMeshBoundary*)
+
+
+With[{
+	mesh=ToElementMesh[
+		Fold[RegionDifference,Rectangle[],{Disk[{1/4,1/4},1/8],Disk[{3/4,3/4},1/6]}],
+		"MeshOrder"->1,
+		MaxCellMeasure->1
+	]},
+	VerificationTest[
+		IdentifyMeshBoundary[mesh]["BoundaryElementMarkerUnion"],	
+		{1,2,3},
+		TestID->"IdentifyMeshBoundary_2D-holes"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{0.,1.},{1.,1.},{2.,0.},{4.,0.},{2.,2.},{4.,2.}},
+		"MeshElements"->{QuadElement[{{1,2,4,3},{5,6,8,7}},{0,0}]}
+	]},
+	VerificationTest[
+		IdentifyMeshBoundary[mesh]["BoundaryElementMarkerUnion"],	
+		{1,2},
+		TestID->"IdentifyMeshBoundary_2D-2-quads"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.,0.},{1.,0.,0.},{0.,1.,0.},{1.,1.,0.},{0.,0.,1.},{1.,0.,1.},{0.,1.,1.},{1.,1.,1.},{2.,0.,0.},{4.,0.,0.},{2.,2.,0.},{4.,2.,0.},{2.,0.,2.},{4.,0.,2.},{2.,2.,2.},{4.,2.,2.}},
+		"MeshElements"->{HexahedronElement[{{1,2,4,3,5,6,8,7},{9,10,12,11,13,14,16,15}},{0,0}]}
+	]},
+	VerificationTest[
+		IdentifyMeshBoundary[mesh]["BoundaryElementMarkerUnion"],	
+		{1,2},
+		TestID->"IdentifyMeshBoundary-3D-2-cubes"
 	]
 ]
 

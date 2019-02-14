@@ -26,6 +26,7 @@ BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 
 AddMeshMarkers;
+IdentifyMeshBoundary;
 SelectElements;
 
 MergeMesh;
@@ -124,6 +125,67 @@ AddMeshMarkers[mesh_ElementMesh,type_String->int_Integer]:=Module[
 			"BoundaryElements"->insertMarkers[mesh,"BoundaryElements",bMark],
 			"PointElements"->insertMarkers[mesh,"PointElements",pMark]
 		]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*IdentifyMeshBoundary*)
+
+
+boundingBoxMeasure[coordinates_,incidents_]:=Times@@Flatten[
+	Differences/@MinMax/@Transpose@Part[
+		coordinates,
+		Union[Join@@incidents]
+	]
+]
+
+
+(* 
+Function assigns different integer marker to "BoundaryElements" on each disconnected boundary. 
+Boundary with largest bounding box measure has marker 1. 
+This is external boundary in case of holes.
+Method is adjusted from https://mathematica.stackexchange.com/a/189117
+*)
+IdentifyMeshBoundary::usage="IdentifyMeshBoundary[mesh] identifies distinct boundaries of mesh.";
+IdentifyMeshBoundary::mixed="Mixed element type on boundary mesh is not supported.";
+
+IdentifyMeshBoundary//SyntaxInformation={"ArgumentsPattern"->{_}};
+
+IdentifyMeshBoundary[mesh_ElementMesh]:=Module[
+	{incidents,elementType,vbc,mat,components,boundariesConn,markers},
+	
+	If[
+		Length[mesh["BoundaryElements"]]>1,
+		Message[IdentifyMeshBoundary::mixed];Return[$Failed,Module]
+	];
+	
+	incidents=Join@@ElementIncidents[mesh["BoundaryElements"]];
+	elementType=Head@First@mesh["BoundaryElements"];
+	vbc=mesh["VertexBoundaryConnectivity"];
+	mat=Transpose[vbc].vbc;
+	components=SparseArray`StronglyConnectedComponents[mat];
+	
+	(* Sort elements on boundary by measure (area or volume) of their bounding box
+	from largest to smallest. The largest should be the outside boundary. *)
+	boundariesConn=Reverse@SortBy[
+		Map[
+			(Developer`ToPackedArray/@Part[incidents,#])&,
+			components
+		],
+		boundingBoxMeasure[mesh["Coordinates"],#]&
+	];
+	
+	markers=Join@@MapIndexed[
+		ConstantArray[First@#2,#1]&,
+		Length/@boundariesConn
+	];
+	
+	ToElementMesh[
+		"Coordinates"->mesh["Coordinates"],
+		"MeshElements"->mesh["MeshElements"],
+		"BoundaryElements"->{elementType[Join@@boundariesConn,markers]},
+		"PointElements"->mesh["PointElements"]
 	]
 ]
 
