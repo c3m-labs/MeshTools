@@ -764,6 +764,62 @@ With[{
 ]
 
 
+With[{
+	mesh=MeshOrderAlteration[
+		ToElementMesh[Disk[],MaxCellMeasure->(1/10)],
+		1
+	]
+	},
+	VerificationTest[
+		Total@Flatten@BoundaryElementMeasure[mesh],	
+		2*Pi,
+		SameTest->(Abs[#1-#2]<10^-2&),
+		TestID->"BoundaryElementMeasure_disk-order=1"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[Disk[],MaxCellMeasure->(1/10)]
+	},
+	VerificationTest[
+		Total@Flatten@BoundaryElementMeasure[mesh],	
+		2*Pi,
+		SameTest->(Abs[#1-#2]<10^-5&),
+		TestID->"BoundaryElementMeasure_disk-order=2"
+	]
+]
+
+
+With[{
+	mesh=MeshOrderAlteration[
+		ToBoundaryMesh[Sphere[],MaxCellMeasure->(1/10)],
+		1
+	]
+	},
+	VerificationTest[
+		Total@Flatten@BoundaryElementMeasure[mesh],	
+		4*Pi,
+		SameTest->(Abs[#1-#2]<10^-1&),
+		TestID->"BoundaryElementMeasure_sphere-order=1"
+	]
+]
+
+
+(* It seems that even with "MeshOrder"\[Rule]2 sphere doesn't have curved edges and
+calculated surface area is the same as "MeshOrder"\[Rule]1. *)
+With[{
+	mesh=ToBoundaryMesh[Sphere[],MaxCellMeasure->(1/10)]
+	},
+	VerificationTest[
+		Total@Flatten@BoundaryElementMeasure[mesh],	
+		4*Pi,
+		SameTest->(Abs[#1-#2]<10^-1&),
+		TestID->"BoundaryElementMeasure_sphere-order=2"
+	]
+]
+
+
 (* ::Subsection::Closed:: *)
 (*Structured mesh*)
 

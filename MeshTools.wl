@@ -892,42 +892,44 @@ MeshElementMeasure[mesh_ElementMesh]:=Module[
 (*BoundaryElementMeasure*)
 
 
-boundaryElementMeasure//ClearAll
+boundaryMeasure//ClearAll
 
-(* Boundary mesh measure for each submesh. *)
-boundaryElementMeasure[
-	nodes_List/;(Depth[nodes]==4),
-	type_,
-	order_,
-	integrationOrder_]:=
-	boundaryElementMeasure[#,type,order,integrationOrder]&/@nodes
-
-(* Boundary mesh measure for each 1D element. *)
-boundaryElementMeasure[
-	nodes_List/;(Depth[nodes]==3),
-	type_/;(type==LineElement),
-	order_,
-	integrationOrder_]:=Block[{
-		f,\[Xi],
-		igCrds=ElementIntegrationPoints[type,integrationOrder],
-		igWgts=ElementIntegrationWeights[type,integrationOrder]
-		},
-		f=Function[{\[Xi]},Cross@@(ElementShapeFunctionDerivative[type,order][\[Xi]].nodes//Simplify )//Norm];
-		igWgts.(f@@@igCrds)
-]
-
-(* Boundary mesh measure for each 2D element. *)
-boundaryElementMeasure[
-	nodes_List/;(Depth[nodes]==3),
-	type_,
-	order_,
-	integrationOrder_]:=Block[{
-		f,\[Xi],\[Eta],
-		igCrds=ElementIntegrationPoints[type,integrationOrder],
-		igWgts=ElementIntegrationWeights[type,integrationOrder]
-		},
-		f=Function[{\[Xi],\[Eta]},Cross@@(ElementShapeFunctionDerivative[type,order][\[Xi],\[Eta]].nodes//Simplify )//Norm];
-		igWgts.(f@@@igCrds)
+boundaryMeasure[element_,crds_,order_]:=Module[
+	{noNodes,noDim,type,nodes,igCrds,igWgts,shapeDerivative,area,pts,areaFun,elementByCrds},
+	
+	noNodes=Last@Dimensions[ElementIncidents@element];
+	noDim=Last@Dimensions[crds];
+	type=Head@element;
+	
+	igCrds=ElementIntegrationPoints[type,order];
+	igWgts=ElementIntegrationWeights[type,order];
+	shapeDerivative=ElementShapeFunctionDerivative[type,order];
+	(* First argument name of GetElement has to match Compile function argument name. *)
+	nodes=Table[Compile`GetElement[pts,i,j],{i,1,noNodes},{j,1,noDim}];
+	
+	(* Calculate symbolic function for numerical integration and pass it to Compile. *)
+	area=Function[
+		Evaluate@Norm[
+			Cross@@(shapeDerivative[#1,#2,#3].nodes)
+		]
+	];
+	
+	areaFun=With[
+		{code=(area@@@igCrds).igWgts},
+		Compile[
+			{{pts,_Real,2}},
+			code,
+			RuntimeAttributes->{Listable},
+			Parallelization->True
+		]
+	];
+	(* A very fast method to get element by coordinates list. *)
+	elementByCrds=Partition[
+		crds[[Flatten@ElementIncidents@element]],
+		noNodes
+	];
+	
+	areaFun[elementByCrds]
 ]
 
 
@@ -938,18 +940,13 @@ BoundaryElementMeasure::usage="BoundaryElementMeasure[mesh] gives the measure of
 BoundaryElementMeasure//SyntaxInformation={"ArgumentsPattern"->{_}};
 
 BoundaryElementMeasure[mesh_ElementMesh]:=Module[
-	{order,elements,nodes,elementCoordinates,elementTypes},
+	{order,elements,crds},
 	
 	order=mesh["MeshOrder"];
 	elements=mesh["BoundaryElements"];
-	nodes=mesh["Coordinates"];
-	elementCoordinates=Map[Part[nodes,#]&,ElementIncidents@elements,{2}];
-	elementTypes=Head/@mesh["BoundaryElements"];
+	crds=mesh["Coordinates"];
 	
-	MapThread[
-		boundaryElementMeasure[#1,#2,order,3]&,
-		{elementCoordinates,elementTypes}
-	]
+	boundaryMeasure[#,crds,order]&/@elements
 ]
 
 
