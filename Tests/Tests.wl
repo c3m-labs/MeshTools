@@ -632,7 +632,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],	
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_1D-length"
+		TestID->"MeshElementMeasure_line"
 	]
 ]
 
@@ -647,7 +647,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],	
 		mesh["MeshElementMeasure"],
-		TestID->"MeshElementMeasure_2D"
+		TestID->"MeshElementMeasure_triangle"
 	]
 ]
 
@@ -663,6 +663,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
+		SameTest->(RootMeanSquare[Flatten[#1]-Flatten[#2]]<10^-8 &),
 		TestID->"MeshElementMeasure_triangle-order=2"
 	]
 ]
@@ -679,6 +680,7 @@ With[{
 	VerificationTest[
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
+		SameTest->(RootMeanSquare[Flatten[#1]-Flatten[#2]]<10^-8 &),
 		TestID->"MeshElementMeasure_quad-order=2"
 	]
 ]
@@ -710,6 +712,21 @@ With[{
 		MeshElementMeasure[mesh],
 		mesh["MeshElementMeasure"],
 		TestID->"MeshElementMeasure_hexahedron"
+	]
+]
+
+
+With[{
+	bmesh=ToBoundaryMesh[
+		"Coordinates"->{{0.,0.},{1.,0.},{1.,1.},{0.,1.}},
+		"BoundaryElements"->{LineElement[{{1,2},{2,3},{3,4},{4,1}}]}
+	]
+	},
+	VerificationTest[
+		MeshElementMeasure[bmesh],
+		$Failed,
+		{MeshElementMeasure::meshelements},
+		TestID->"MeshElementMeasure_boundary-mesh-fail"
 	]
 ]
 

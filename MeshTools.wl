@@ -814,50 +814,77 @@ TriangleToQuadMesh[meshIn_] /; ElementMeshQ[meshIn] && !BoundaryElementMeshQ[mes
 
 elementMeasure//ClearAll
 
-(* Definition for multiple elements in a list. *)
-elementMeasure[nodes_List/;(Depth[nodes]==4),type_,order_]:=elementMeasure[#,type,order]&/@nodes
-
-(* Length of LineElement (as "MeshElement") is calculated differently. *)
-elementMeasure[nodes_List/;(Depth[nodes]==3),LineElement,order_]:=Abs[Differences@Flatten@Take[nodes,2]]
-
-elementMeasure[nodes_List/;(Depth[nodes]==3),type_,order_]:=Block[{
-	igCrds=ElementIntegrationPoints[type,order],
-	igWgts=ElementIntegrationWeights[type,order],
-	shapeDerivative=ElementShapeFunctionDerivative[type,order],
-	jacobian,r,s,t
-	},
+elementMeasure[LineElement[connectivity_,___],crds_,order_]:=Module[
+	{elementByCrds},
 	
-	jacobian=With[{
-		vars=(type/.{
-			TriangleElement|QuadElement->{r,s},
-			TetrahedronElement|HexahedronElement->{r,s,t}
-		})
-		},
-		Function[Evaluate@vars,Evaluate@Det[(shapeDerivative@@vars).nodes]]
+	elementByCrds=Partition[
+		N[crds][[Flatten@Part[connectivity,All,{1,2}]]],
+		2
 	];
 	
-	(jacobian@@@igCrds).igWgts
+	(* Additional partition is used to match the output of mesh["MeshElementMeasure"]. *)
+	Partition[
+		Abs[Subtract@@@Part[elementByCrds,All,All,1]],
+		1
+	]
+]
+
+elementMeasure[element_,crds_,order_]:=Module[
+	{noNodes,noDim,type,nodes,igCrds,igWgts,shapeDerivative,jacobian,pts,volumeFun,elementByCrds},
+	
+	noNodes=Last@Dimensions[ElementIncidents@element];
+	noDim=Last@Dimensions[crds];
+	type=Head@element;
+	
+	igCrds=ElementIntegrationPoints[type,order];
+	igWgts=ElementIntegrationWeights[type,order];
+	shapeDerivative=ElementShapeFunctionDerivative[type,order];
+	(* First argument name of GetElement has to match Compile function argument name. *)
+	nodes=Table[Compile`GetElement[pts,i,j],{i,1,noNodes},{j,1,noDim}];
+	
+	(* Calculate symbolic function for numerical integration and pass it to Compile. *)
+	jacobian=Function[
+		Evaluate@Det[(shapeDerivative@@Take[{#1,#2,#3},noDim]).nodes]
+	];
+	
+	volumeFun=With[
+		{code=(jacobian@@@igCrds).igWgts},
+		Compile[
+			{{pts,_Real,2}},
+			code,
+			RuntimeAttributes->{Listable},
+			Parallelization->True
+		]
+	];
+	(* A very fast method to get element by coordinates list. *)
+	elementByCrds=Partition[
+		crds[[Flatten@ElementIncidents@element]],
+		noNodes
+	];
+	
+	volumeFun[elementByCrds]
 ]
 
 
 (* This function gives the same result as asking for the property mesh["MeshElementMeasure"] *)
 MeshElementMeasure::usage="MeshElementMeasure[mesh] gives the measure of each mesh element.";
+MeshElementMeasure::meshelements="Given ElementMesh doesn't contain any \"MeshElements\".";
 
 MeshElementMeasure//SyntaxInformation={"ArgumentsPattern"->{_}};
 
 MeshElementMeasure[mesh_ElementMesh]:=Module[
-	{order,elements,nodes,elementCoordinates,elementTypes},
+	{order,elements,crds},
 	
 	order=mesh["MeshOrder"];
 	elements=mesh["MeshElements"];
-	nodes=mesh["Coordinates"];
-	elementCoordinates=Map[Part[nodes,#]&,ElementIncidents@elements,{2}];
-	elementTypes=Head/@elements;
+	crds=mesh["Coordinates"];
 	
-	MapThread[
-		elementMeasure[#1,#2,order]&,
-		{elementCoordinates,elementTypes}
-	]
+	If[
+		Not@ListQ[elements],
+		Message[MeshElementMeasure::meshelements];Return[$Failed,Module]
+	];
+		
+	elementMeasure[#,crds,order]&/@elements
 ]
 
 
