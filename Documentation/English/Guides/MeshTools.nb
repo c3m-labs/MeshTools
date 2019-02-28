@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     29418,        743]
-NotebookOptionsPosition[     21640,        586]
-NotebookOutlinePosition[     22082,        603]
-CellTagsIndexPosition[     22039,        600]
+NotebookDataLength[     30651,        772]
+NotebookOptionsPosition[     22635,        611]
+NotebookOutlinePosition[     23077,        628]
+CellTagsIndexPosition[     23034,        625]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -512,7 +512,20 @@ Cell[TextData[{
 }], "GuideText",
  CellChangeTimes->{{3.743502783724872*^9, 3.743502839932952*^9}, {
   3.75904775477485*^9, 3.7590477564408245`*^9}},
- CellID->877602149,ExpressionUUID->"4d9b320c-df13-4249-a52f-242d90378170"]
+ CellID->877602149,ExpressionUUID->"4d9b320c-df13-4249-a52f-242d90378170"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["IdentifyMeshBoundary",
+   BaseStyle->"Link",
+   ButtonData->"paclet:MeshTools/ref/IdentifyMeshBoundary"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "f978143b-48d1-4fab-a044-ab544bf2b869"],
+ " \[LongDash] add markers to \"BoundaryElements\" on distinct boundaries"
+}], "GuideText",
+ CellChangeTimes->{{3.760276794009556*^9, 3.760276853905526*^9}, {
+  3.7603512004922714`*^9, 3.7603512004922714`*^9}},
+ CellID->381223260,ExpressionUUID->"8a6e67a3-0d95-45f5-bfaa-c8376f001f96"]
 }, Open  ]]
 }, Open  ]],
 
@@ -537,7 +550,19 @@ Cell[TextData[{
   3.734929609689502*^9, 3.7349296255776963`*^9}, {3.734929715225362*^9, 
   3.734929750472605*^9}, {3.734930051447833*^9, 3.734930097814221*^9}, {
   3.738334170576452*^9, 3.738334170699375*^9}},
- CellID->418893573,ExpressionUUID->"c428a13f-05a0-489d-ac21-32877f448d11"]
+ CellID->418893573,ExpressionUUID->"c428a13f-05a0-489d-ac21-32877f448d11"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["BoundaryElementMeasure",
+   BaseStyle->"Link",
+   ButtonData->"paclet:MeshTools/ref/BoundaryElementMeasure"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "ccaa6c1a-c9e4-4981-95f2-e17f302c3f3a"],
+ " \[LongDash] calculate measure of BoundaryElements (length or area)"
+}], "GuideText",
+ CellChangeTimes->{{3.760276717107999*^9, 3.760276781229109*^9}},
+ CellID->524069020,ExpressionUUID->"e73bac32-76a9-4bdf-b1c9-ba7fe0d11a1a"]
 }, Open  ]],
 
 Cell["Tutorials", "GuideTutorialsSection",
@@ -718,31 +743,35 @@ Cell[17849, 488, 102, 1, 31, "GuideDelimiter",ExpressionUUID->"bb858221-a7a3-4b8
 Cell[17954, 491, 535, 11, 27, "GuideText",ExpressionUUID->"5a281aff-5b40-4331-8de6-35bd9b871342",
  CellID->668162596],
 Cell[18492, 504, 502, 10, 27, "GuideText",ExpressionUUID->"4d9b320c-df13-4249-a52f-242d90378170",
- CellID->877602149]
+ CellID->877602149],
+Cell[18997, 516, 521, 11, 27, "GuideText",ExpressionUUID->"8a6e67a3-0d95-45f5-bfaa-c8376f001f96",
+ CellID->381223260]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[19043, 520, 292, 4, 86, "GuideFunctionsSection",ExpressionUUID->"6b48c604-3e82-4c89-a407-f72684bd6777",
+Cell[19567, 533, 292, 4, 86, "GuideFunctionsSection",ExpressionUUID->"6b48c604-3e82-4c89-a407-f72684bd6777",
  CellID->493682340],
-Cell[19338, 526, 651, 13, 27, "GuideText",ExpressionUUID->"c428a13f-05a0-489d-ac21-32877f448d11",
- CellID->418893573]
+Cell[19862, 539, 651, 13, 27, "GuideText",ExpressionUUID->"c428a13f-05a0-489d-ac21-32877f448d11",
+ CellID->418893573],
+Cell[20516, 554, 468, 10, 27, "GuideText",ExpressionUUID->"e73bac32-76a9-4bdf-b1c9-ba7fe0d11a1a",
+ CellID->524069020]
 }, Open  ]],
-Cell[20004, 542, 117, 1, 88, "GuideTutorialsSection",ExpressionUUID->"e2cfd81e-c9f8-4b08-a303-99b0d221ccbc",
+Cell[20999, 567, 117, 1, 88, "GuideTutorialsSection",ExpressionUUID->"e2cfd81e-c9f8-4b08-a303-99b0d221ccbc",
  CellID->415694126],
 Cell[CellGroupData[{
-Cell[20146, 547, 117, 1, 73, "GuideMoreAboutSection",ExpressionUUID->"5631f907-d803-42b1-a794-d760726d55b1",
+Cell[21141, 572, 117, 1, 73, "GuideMoreAboutSection",ExpressionUUID->"5631f907-d803-42b1-a794-d760726d55b1",
  CellID->23220180],
-Cell[20266, 550, 306, 5, 26, "GuideMoreAbout",ExpressionUUID->"aa8b16db-f10d-447f-889f-28d2168b48df",
+Cell[21261, 575, 306, 5, 26, "GuideMoreAbout",ExpressionUUID->"aa8b16db-f10d-447f-889f-28d2168b48df",
  CellID->175046091]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[20609, 560, 124, 1, 88, "GuideRelatedLinksSection",ExpressionUUID->"9d9882cb-fa99-44a0-b321-6fa584fbfab4",
+Cell[21604, 585, 124, 1, 88, "GuideRelatedLinksSection",ExpressionUUID->"9d9882cb-fa99-44a0-b321-6fa584fbfab4",
  CellID->415694148],
-Cell[20736, 563, 271, 5, 26, "GuideTutorial",ExpressionUUID->"ef531751-fc3f-4498-8f0c-df1a1ecdee2d",
+Cell[21731, 588, 271, 5, 26, "GuideTutorial",ExpressionUUID->"ef531751-fc3f-4498-8f0c-df1a1ecdee2d",
  CellID->806871991],
-Cell[21010, 570, 305, 5, 26, "GuideTutorial",ExpressionUUID->"adfbd72d-89a7-4c1c-b2b1-49ec7079eb02",
+Cell[22005, 595, 305, 5, 26, "GuideTutorial",ExpressionUUID->"adfbd72d-89a7-4c1c-b2b1-49ec7079eb02",
  CellID->473765691],
-Cell[21318, 577, 306, 6, 26, "GuideTutorial",ExpressionUUID->"6d18609a-3194-4b59-9dc0-7066bdce2b83",
+Cell[22313, 602, 306, 6, 26, "GuideTutorial",ExpressionUUID->"6d18609a-3194-4b59-9dc0-7066bdce2b83",
  CellID->54613490]
 }, Open  ]]
 }
