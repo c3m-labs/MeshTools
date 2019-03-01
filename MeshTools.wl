@@ -462,22 +462,27 @@ MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
 
 
 ExtrudeMesh::usage="ExtrudeMesh[mesh, thickness, layers] extrudes 2D quadrilateral mesh to 3D hexahedron mesh.";
-ExtrudeMesh::badType="Only first order 2D quadrilateral mesh is supported.";
+ExtrudeMesh::order="Only first order mesh is supported.";
+ExtrudeMesh::eltype="Only mesh with QuadElement(s) is supported.";
 
 ExtrudeMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
 
-(* TODO: Should argument checking be done inside the function? *)
 ExtrudeMesh[mesh_ElementMesh,thickness_?Positive,layers_Integer?Positive]:=Module[
 	{n,nodes2D,nodes3D,elements2D,elements3D,markers2D,markers3D},
 	
 	If[
-		Or[mesh["MeshOrder"]=!=1,(Head/@mesh["MeshElements"])=!={QuadElement},mesh["EmbeddingDimension"]=!=2],
-		Message[ExtrudeMesh::badType];Return[$Failed]
+		mesh["MeshOrder"]=!=1,
+		Message[ExtrudeMesh::order];Return[$Failed,Module]
+	];
+	(* Mesh "EmbeddingDimension" is already checked with correct "MeshElements" type. *)
+	If[
+		(Head/@mesh["MeshElements"])=!={QuadElement},
+		Message[ExtrudeMesh::eltype];Return[$Failed,Module]
 	];
 		
 	nodes2D=mesh["Coordinates"];
-	elements2D=Join@@ElementIncidents[mesh["MeshElements"]];
-	markers2D=Join@@ElementMarkers[mesh["MeshElements"]];
+	elements2D=First@ElementIncidents[mesh["MeshElements"]];
+	markers2D=First@ElementMarkers[mesh["MeshElements"]];
 	n=Length[nodes2D];
 	
 	nodes3D=Join@@Map[

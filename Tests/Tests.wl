@@ -521,7 +521,7 @@ With[{
 	VerificationTest[
 		ExtrudeMesh[mesh,1,1],	
 		$Failed,
-		{ExtrudeMesh::badType},
+		{ExtrudeMesh::order},
 		TestID->"ExtrudeMesh_wrong-MeshOrder"
 	]
 ]
@@ -533,7 +533,7 @@ With[{
 	VerificationTest[
 		ExtrudeMesh[mesh,1,1],	
 		$Failed,
-		{ExtrudeMesh::badType},
+		{ExtrudeMesh::eltype},
 		TestID->"ExtrudeMesh_wrong-EmbeddingDimension"
 	]
 ]
@@ -545,7 +545,7 @@ With[{
 	VerificationTest[
 		ExtrudeMesh[mesh,1,1],	
 		$Failed,
-		{ExtrudeMesh::badType},
+		{ExtrudeMesh::eltype},
 		TestID->"ExtrudeMesh_wrong-element-type"
 	]
 ]
