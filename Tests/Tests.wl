@@ -494,15 +494,59 @@ With[{
 	]
 	},
 	VerificationTest[
+		ExtrudeMesh[mesh,1,1]["Bounds"],	
+		{{0.,2.},{0.,1.},{0.,1.}},
+		TestID->"ExtrudeMesh_check-bounds"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{2.,0.},{2.,1.}},
+		"MeshElements"->{QuadElement[{{1,3,4,2},{3,5,6,4}},{11,22}]}
+	]
+	},
+	VerificationTest[
+		ExtrudeMesh[mesh,1,1]["MeshElementMarkerUnion"],	
+		{11,22},
+		TestID->"ExtrudeMesh_check-markers"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[Rectangle[],MaxCellMeasure->1,"MeshOrder"->2]
+	},
+	VerificationTest[
 		ExtrudeMesh[mesh,1,1],	
-		ElementMesh[
-			{{0.,0.,0.},{0.,1.,0.},{1.,0.,0.},{1.,1.,0.},{2.,0.,0.},{2.,1.,0.},
-			{0.,0.,1.},{0.,1.,1.},{1.,0.,1.}, {1.,1.,1.},{2.,0.,1.},{2.,1.,1.}},
-			{HexahedronElement[{{1,3,4,2,7,9,10,8},{3,5,6,4,9,11,12,10}},{1,2}]},
-			{QuadElement[{{1,3,4,2},{8,10,9,7},{1,7,9,3},{3,9,10,4},{4,10,8,2},
-			{2,8,7,1},{3,5,6,4},{10,12,11,9},{3,9,11,5},{5,11,12,6},{6,12,10,4}}]}
-		],
-		TestID->"ExtrudeMesh_normal-1"
+		$Failed,
+		{ExtrudeMesh::badType},
+		TestID->"ExtrudeMesh_wrong-MeshOrder"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[Cuboid[],MaxCellMeasure->1,"MeshOrder"->1]
+	},
+	VerificationTest[
+		ExtrudeMesh[mesh,1,1],	
+		$Failed,
+		{ExtrudeMesh::badType},
+		TestID->"ExtrudeMesh_wrong-EmbeddingDimension"
+	]
+]
+
+
+With[{
+	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->1]
+	},
+	VerificationTest[
+		ExtrudeMesh[mesh,1,1],	
+		$Failed,
+		{ExtrudeMesh::badType},
+		TestID->"ExtrudeMesh_wrong-element-type"
 	]
 ]
 
