@@ -1,2 +1,5 @@
 # Build folder for Paclet
 build
+
+# Folder created by IntelliJ IDEA editor
+.idea
