@@ -305,10 +305,6 @@ With[
 ]
 
 
-(* ::Text:: *)
-(*=========================================================================================*)
-
-
 With[
 	{mesh=$mixedMeshExample},
 	VerificationTest[
@@ -389,12 +385,8 @@ With[{
 	m2=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->2]
 	},
 	VerificationTest[
-		MergeMesh[m1,m2],	
-		ElementMesh[
-			{{0.,0.}, {1.,0.},{0.,1.},{1.,1.}},
-			{QuadElement[{{1,2,4,3},{1,2,4,3}},{1,2}]},
-			{LineElement[{{1,2},{2,4},{4,3},{3,1}}]}
-		],
+		MergeMesh[m1,m2]["Coordinates"]//Length,	
+		4,
 		TestID->"MergeMesh_normal-1"
 	]
 ]
@@ -405,12 +397,11 @@ With[{
 	m2=AddMeshMarkers[RectangleMesh[1],"MeshElementsMarker"->2]
 	},
 	VerificationTest[
-		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->True],	
-		ElementMesh[
-			{{0.,0.},{1.,0.},{0.,1.},{1.,1.}},
-			{QuadElement[{{1,2,4,3},{1,2,4,3}},{1,2}]},
-			{LineElement[{{1,2},{2,4},{4,3},{3,1}}]}
-		],
+		MergeMesh[
+			{m1,m2},
+			"DeleteDuplicateCoordinates"->True
+		]["Coordinates"]//Length,	
+		4,
 		TestID->"MergeMesh_normal-2"
 	]
 ]
@@ -422,8 +413,11 @@ With[{
 	},
 	(* For some weird reason direct comparison of ElementMesh objects doesn't work here. *)
 	VerificationTest[
-		MergeMesh[{m1,m2},"DeleteDuplicateCoordinates"->False]["Coordinates"],
-		{{0.,0.},{1.,0.},{0.,1.},{1.,1.},{0.,0.},{1.,0.},{0.,1.},{1.,1.}},
+		MergeMesh[
+			{m1,m2},
+			"DeleteDuplicateCoordinates"->False
+		]["Coordinates"]//Length,
+		8,
 		TestID->"MergeMesh_option-DeleteDuplicateCoordinates"
 	]
 ]
@@ -472,9 +466,9 @@ Module[
 	VerificationTest[
 		MergeMesh[{m1,m2},"CheckIntersections"->False],
 		ElementMesh[
-			{{0.,0.,0.},{1.,0.,0.},{0.,1.,0.},{1.,1.,0.}},
+			{{0.,0.,0.},{0.,1.,0.},{1.,0.,0.},{1.,1.,0.}},
 			Automatic,
-			{QuadElement[{{1,2,4,3},{1,2,4,3}},{1,2}]},
+			{QuadElement[{{1,3,4,2},{1,3,4,2}},{1,2}]},
 			{PointElement[{{1},{2},{3},{4}}]},
 			"CheckIntersections"->False
 		],
@@ -872,12 +866,13 @@ With[{
 (*StructuredMesh*)
 
 
+(* Explicitly test node and element ordering in this fundamental function. *)
 VerificationTest[
 	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{2,1}],
 	ElementMesh[
-		{{0.,0.},{1.,0.},{2.,0.},{0.,1.},{1.,1.},{2.,1.}},
-		{QuadElement[{{1,2,5,4},{2,3,6,5}}]},
-		{LineElement[{{1,2},{5,4},{4,1},{2,3},{3,6},{6,5}}]}
+		{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{2.,0.},{2.,1.}},
+		{QuadElement[{{1,3,4,2},{3,5,6,4}}]},
+		{LineElement[{{1,3},{4,2},{2,1},{3,5},{5,6},{6,4}}]}
 	],
 	TestID->"StructuredMesh_2D-1"
 ]
@@ -886,26 +881,34 @@ VerificationTest[
 VerificationTest[
 	StructuredMesh[{{{0,0,0},{2,0,0}},{{0,1,0},{2,1,0}}},{2,1}],
 	ElementMesh[
-		{{0.,0.,0.},{1.,0.,0.},{2.,0.,0.},{0.,1.,0.},{1.,1.,0.},{2.,1.,0.}},
+		{{0.,0.,0.},{0.,1.,0.},{1.,0.,0.},{1.,1.,0.},{2.,0.,0.},{2.,1.,0.}},
 		Automatic,
-		{QuadElement[{{1,2,5,4},{2,3,6,5}},{1,1}]},
+		{QuadElement[{{1,3,4,2},{3,5,6,4}},{1,1}]},
 		{PointElement[{{1},{2},{3},{4},{5},{6}}]}
 	],
 	TestID->"StructuredMesh_3D-1"
 ]
 
 
-VerificationTest[
-	With[
-		{a=3,b=2,c=1},
-		StructuredMesh[{{{{0,0,0},{a,0,0}},{{0,b,0},{a,b,0}}},{{{0,0,c},{a,0,c}},{{0,b,c},{a,b,c}}}},{3,2,1}]
-	],
-	ElementMesh[
-		{{0.,0.,0.},{1.,0.,0.},{2.,0.,0.},{3.,0.,0.},{0.,1.,0.},{1.,1.,0.},{2.,1.,0.},{3.,1.,0.},{0.,2.,0.},{1.,2.,0.},{2.,2.,0.},{3.,2.,0.},{0.,0.,1.},{1.,0.,1.},{2.,0.,1.},{3.,0.,1.},{0.,1.,1.},{1.,1.,1.},{2.,1.,1.},{3.,1.,1.},{0.,2.,1.},{1.,2.,1.},{2.,2.,1.},{3.,2.,1.}},
-		{HexahedronElement[{{1,2,6,5,13,14,18,17},{2,3,7,6,14,15,19,18},{3,4,8,7,15,16,20,19},{5,6,10,9,17,18,22,21},{6,7,11,10,18,19,23,22},{7,8,12,11,19,20,24,23}}]},
-		{QuadElement[{{1,2,6,5},{17,18,14,13},{1,13,14,2},{5,17,13,1},{2,3,7,6},{18,19,15,14},{2,14,15,3},{3,4,8,7},{19,20,16,15},{3,15,16,4},{4,16,20,8},{5,6,10,9},{21,22,18,17},{10,22,21,9},{9,21,17,5},{6,7,11,10},{22,23,19,18},{11,23,22,10},{7,8,12,11},{23,24,20,19},{8,20,24,12},{12,24,23,11}}]}
-	],
-	TestID->"StructuredMesh_3D-2"
+With[
+	{a=3,b=2,c=1},
+	VerificationTest[
+		StructuredMesh[{
+			{{{0,0,0},{a,0,0}},{{0,b,0},{a,b,0}}},
+			{{{0,0,c},{a,0,c}},{{0,b,c},{a,b,c}}}
+			},
+			{3,2,1}
+		]["MeshElements"],
+		{HexahedronElement[{
+			{1,7,9,3,2,8,10,4},
+			{3,9,11,5,4,10,12,6},
+			{7,13,15,9,8,14,16,10},
+			{9,15,17,11,10,16,18,12},
+			{13,19,21,15,14,20,22,16},
+			{15,21,23,17,16,22,24,18}
+		}]},
+		TestID->"StructuredMesh_3D-2"
+	]
 ]
 
 
@@ -918,23 +921,15 @@ VerificationTest[
 
 
 VerificationTest[
-	RectangleMesh[2],
-	ElementMesh[
-		{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.5,0.5},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
-		{QuadElement[{{1,2,5,4},{2,3,6,5},{4,5,8,7},{5,6,9,8}}]},
-		{LineElement[{{1,2},{4,1},{2,3},{3,6},{8,7},{7,4},{6,9},{9,8}}]}
-	],
+	RectangleMesh[2]["Coordinates"]//Sort,
+	{{0.,0.},{0.,0.5},{0.,1.},{0.5,0.},{0.5,0.5},{0.5,1.},{1.,0.},{1.,0.5},{1.,1.}},
 	TestID->"RectangleMesh_unit-rectangle"
 ]
 
 
 VerificationTest[
-	RectangleMesh[{1,2},{3,4},{1,2}],
-	ElementMesh[
-		{{1.,2.},{3.,2.},{1.,3.},{3.,3.},{1.,4.},{3.,4.}},
-		{QuadElement[{{1,2,4,3},{3,4,6,5}}]},
-		{LineElement[{{1,2},{2,4},{3,1},{4,6},{6,5},{5,3}}]}
-	],
+	RectangleMesh[{1,2},{3,4},{1,2}]["Coordinates"]//Sort,
+	{{1.,2.},{1.,3.},{1.,4.},{3.,2.},{3.,3.},{3.,4.}},
 	TestID->"RectangleMesh_arbitrary-rectangle"
 ]
 
@@ -943,9 +938,12 @@ VerificationTest[
 (*TriangleMesh*)
 
 
+(* Only coordinates are compared in canonical order because their ordering and 
+element ordering should not be important. *)
 VerificationTest[
-	TriangleMesh[2]["MeshElements"],
-	{QuadElement[{{1, 2, 4, 3}, {2, 5, 6, 4}, {3, 4, 6, 7}}, {0, 0, 0}]},
+	TriangleMesh[2]["Coordinates"]//Sort,
+	{{0,0},{0,1/2},{0,1},{1/3,1/3},{1/2,0},{1/2,1/2},{1,0}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_unit-triangle"
 ]
 
@@ -955,7 +953,7 @@ VerificationTest[
 		{{0,0},{1,1},{2,0}},
 		2,
 		"MeshElementType"->TriangleElement
-	]["Coordinates"],
+	]["Coordinates"]//Sort,
 	{{0.,0.},{0.5,0.5},{1.,1.},{1.,0.},{1.5,0.5},{2.,0.}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_coordinates"
@@ -967,8 +965,8 @@ VerificationTest[
 		{{0,0},{1,0},{0,1}},
 		1,
 		"MeshElementType"->TriangleElement
-	]["MeshElements"],
-	{TriangleElement[{{1,2,3}},{0}]},
+	]["Coordinates"]//Sort,
+	{{0.,0.},{0.,1.},{1.,0.}},
 	TestID->"TriangleMesh_triangles-n=1"
 ]
 
@@ -979,8 +977,8 @@ VerificationTest[
 		{{0,0},{0,1},{1,0}},
 		2,
 		"MeshElementType"->TriangleElement
-	]["MeshElements"],
-	{TriangleElement[{{2,1,4},{5,2,4},{3,2,5},{5,4,6}},{0,0,0,0}]},
+	]["Coordinates"]//Sort,
+	{{0.,0.},{0.,0.5},{0.,1.},{0.5,0.},{0.5,0.5},{1.,0.}},
 	TestID->"TriangleMesh_triangles-n=2"
 ]
 
@@ -990,8 +988,9 @@ VerificationTest[
 		{{0,0},{1,0},{0,1}},
 		3,
 		"MeshElementType"->TriangleElement
-	]["MeshElements"],
-	{TriangleElement[{{1,2,5},{2,6,5},{2,3,6},{3,7,6},{3,4,7},{5,6,8},{6,9,8},{6,7,9},{8,9,10}},{0,0,0,0,0,0,0,0,0}]},
+	]["Coordinates"]//Sort,
+	{{0,0},{0,1/3},{0,2/3},{0,1},{1/3,0},{1/3,1/3},{1/3,2/3},{2/3,0},{2/3,1/3},{1,0}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_triangles-n=3"
 ]
 
@@ -1001,8 +1000,9 @@ VerificationTest[
 		{{0,0},{1,0},{0,1}},
 		2,
 		"MeshElementType"->QuadElement
-	]["MeshElements"],
-	{QuadElement[{{1,2,4,3},{2,5,6,4},{3,4,6,7}},{0,0,0}]},
+	]["Coordinates"]//Sort,
+	{{0,0},{0,1/2},{0,1},{1/3,1/3},{1/2,0},{1/2,1/2},{1,0}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_quads-n=2"
 ]
 
@@ -1066,9 +1066,9 @@ VerificationTest[
 VerificationTest[
 	AnnulusMesh[{4,1}],
 	ElementMesh[
-		{{1.,0.},{0.,1.},{-1.,0.},{0.,-1.},{0.5,0.},{0.,0.5},{-0.5,0.},{0.,-0.5}},
-		{QuadElement[{{1,2,6,5},{2,3,7,6},{3,4,8,7},{4,1,5,8}}]},
-		{LineElement[{{1,2},{6,5},{2,3},{7,6},{3,4},{8,7},{4,1},{5,8}}]}
+		{{1.,0.},{0.5,0.},{0.,1.},{0.,0.5},{-1.,0.},{-0.5,0.},{0.,-1.},{0.,-0.5}},
+		{QuadElement[{{1,3,4,2},{3,5,6,4},{5,7,8,6},{7,1,2,8}}]},
+		{LineElement[{{1,3},{4,2},{3,5},{6,4},{5,7},{8,6},{7,1},{2,8}}]}
 	],
 	TestID->"AnnulusMesh_unit-annulus"
 ]
@@ -1151,12 +1151,8 @@ VerificationTest[
 	HexahedronMesh[
 		{{0,0,0},{1,0,0},{2,1,0},{1,1,0},{0,0,1},{1,0,1},{2,1,1},{1,1,1}},
 		{1,2,2}
-	],
-	ElementMesh[
-		{{0.,0.,0.},{1.,0.,0.},{0.5,0.5,0.},{1.5,0.5,0.},{1.,1.,0.},{2.,1.,0.},{0.,0.,0.5},{1.,0.,0.5},{0.5,0.5,0.5},{1.5,0.5,0.5},{1.,1.,0.5},{2.,1.,0.5},{0.,0.,1.},{1.,0.,1.},{0.5,0.5,1.},{1.5,0.5,1.},{1.,1.,1.},{2.,1.,1.}},
-		{HexahedronElement[{{1,2,4,3,7,8,10,9},{3,4,6,5,9,10,12,11},{7,8,10,9,13,14,16,15},{9,10,12,11,15,16,18,17}}]},
-		{QuadElement[{{1,2,4,3},{1,7,8,2},{2,8,10,4},{3,9,7,1},{3,4,6,5},{4,10,12,6},{6,12,11,5},{5,11,9,3},{15,16,14,13},{7,13,14,8},{8,14,16,10},{9,15,13,7},{17,18,16,15},{10,16,18,12},{12,18,17,11},{11,17,15,9}}]}
-	],
+	]["Coordinates"]//Length,
+	18,
 	TestID->"HexahedronMesh_arbitrary-hexahedron"
 ]
 
@@ -1178,13 +1174,15 @@ VerificationTest[
 (*TetrahedronMesh*)
 
 
+(* Only coordinates are compared in canonical order because their ordering and 
+element ordering should not be important. *)
 VerificationTest[
 	TetrahedronMesh[
 		{{2,0,0},{2,0,2},{2,2,2},{0,0,2}},
 		1,
 		"MeshElementType"->TetrahedronElement
-	]["Coordinates"],
-	{{2,0,0},{2,0,2},{2,2,2},{0,0,2}},
+	]["Coordinates"]//Sort,
+	{{0.,0.,2.},{2.,0.,0.},{2.,0.,2.},{2.,2.,2.}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TetrahedronMesh_coordinates"
 ]
@@ -1195,8 +1193,8 @@ VerificationTest[
 		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
 		1,
 		"MeshElementType"->TetrahedronElement
-	]["MeshElements"],
-	{TetrahedronElement[{{1,2,3,4}},{0}]},
+	]["Coordinates"]//Sort,
+	{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}},
 	TestID->"TetrahedronMesh_tetrahedron-n=1"
 ]
 
@@ -1206,11 +1204,8 @@ VerificationTest[
 		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
 		2,
 		"MeshElementType"->TetrahedronElement
-	]["MeshElements"],
-	{TetrahedronElement[
-		{{1,2,4,7},{2,4,7,9},{2,7,8,9},{2,9,8,5},{2,5,4,9},{2,3,5,8},{4,5,6,9},{7,8,9,10}},
-		{0,0,0,0,0,0,0,0}
-	]},
+	]["Coordinates"]//Sort,
+	{{0.,0.,0.},{0.,0.,0.5},{0.,0.,1.},{0.,0.5,0.},{0.,0.5,0.5},{0.,1.,0.},{0.5,0.,0.},{0.5,0.,0.5},{0.5,0.5,0.},{1.,0.,0.}},
 	TestID->"TetrahedronMesh_tetrahedron-n=2"
 ]
 
@@ -1220,8 +1215,10 @@ VerificationTest[
 		{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},
 		2,
 		"MeshElementType"->HexahedronElement
-	]["MeshElements"],
-	{HexahedronElement[{{1,2,4,3,5,6,8,7},{2,9,10,4,6,11,12,8},{3,4,10,13,7,8,12,14},{5,6,8,7,15,11,12,14}},{0,0,0,0}]},
+	]["Coordinates"]//Sort,
+	{{0,0,0},{0,0,1/2},{0,0,1},{0,1/3,1/3},{0,1/2,0},{0,1/2,1/2},{0,1,0},{1/4,1/4,1/4},
+	{1/3,0,1/3},{1/3,1/3,0},{1/3,1/3,1/3},{1/2,0,0},{1/2,0,1/2},{1/2,1/2,0},{1,0,0}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TetrahedronMesh_hexahedron-n=2"
 ]
 
@@ -1239,17 +1236,21 @@ VerificationTest[
 
 
 VerificationTest[
-	PrismMesh[{2,2}]["Coordinates"],
-	{{0.,0.,0.},{0.5,0.,0.},{0.,0.5,0.},{0.3333,0.3333,0.},{1.,0.,0.},{0.5,0.5,0.},{0.,1.,0.},{0.,0.,0.5},{0.5,0.,0.5},{0.,0.5,0.5},{0.3333,0.3333,0.5},{1.,0.,0.5},{0.5,0.5,0.5},{0.,1.,0.5},{0.,0.,1.},{0.5,0.,1.},{0.,0.5,1.},{0.3333,0.3333,1.},{1.,0.,1.},{0.5,0.5,1.},{0.,1.,1.}},
-	SameTest->(Norm[#1-#2]<10^-3&),
+	PrismMesh[{2,2}]["Bounds"],
+	{{0.,1.},{0.,1.},{0.,1.}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_unit-prism"
 ]
 
 
 VerificationTest[
-	PrismMesh[{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0}},{2,1}]["Coordinates"],
-	{{1.,2.,1.},{0.5,2.,0.5},{1.5,2.,0.5},{1.,2.,0.3333},{0.,2.,0.},{1.,2.,0.},{2.,2.,0.},{1.,0.,1.},{0.5,0.,0.5},{1.5,0.,0.5},{1.,0.,0.3333},{0.,0.,0.},{1.,0.,0.},{2.,0.,0.}},
-	SameTest->(Norm[#1-#2]<10^-3&),
+	PrismMesh[
+		{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0}},
+		{2,1}
+	]["Coordinates"]//Sort,
+	{{0,0,0},{0,2,0},{1/2,0,1/2},{1/2,2,1/2},{1,0,0},{1,2,0},{1,0,1/3},
+	{1,2,1/3},{1,0,1},{1,2,1},{3/2,0,1/2},{3/2,2,1/2},{2,0,0},{2,2,0}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_arbitrary-prism"
 ]
 
@@ -1265,10 +1266,14 @@ VerificationTest[
 
 (* Prism with non-coplanar triangular faces. *)
 VerificationTest[
-	PrismMesh[{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0.1}},{2,1}]["Coordinates"],
-	{{1.,1.99844,1.01246},{0.503507,1.99922,0.515978},{1.4961,2.,0.541342},{0.99948,2.,0.367135},{0.00624025,2.,0.0187207},{0.999219,2.00078,0.0437158},{1.99375,2.00156,0.06875},{1.,0.00157729,0.987382},{0.497238,0.000789266,0.484609},{1.50237,0.,0.510269},{0.999473,0.,0.33386},{-0.00631912,0.,-0.0189573},{0.999209,-0.000790514,0.00632411},{2.00633,-0.00158228,0.0316456}},
+	PrismMesh[
+		{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0.1}},
+		{2,1}
+	]["Coordinates"]//Sort,
+	{{0,0,-(1/52)},{0,2,1/53},{1/2,0,10/21},{1/2,2,11/21},{1,0,0},{1,2,1/22},{1,0,1/3},
+	{1,2,3/8},{1,0,44/45},{1,2,81/80},{3/2,2,6/11},{3/2,0,13/25},{2,2,1/14},{2,0,1/31}},
 	{PrismMesh::alignerr},
-	SameTest->(Norm[#1-#2]<10^-3&),
+	SameTest->(Norm[Flatten[#1-#2]]<10^-1&),
 	TestID->"PrismMesh_non-coplanar-faces"
 ]
 
