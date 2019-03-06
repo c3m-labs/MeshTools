@@ -21,6 +21,10 @@
 BeginPackage["MeshTools`",{"NDSolve`FEM`"}];
 
 
+(* Clear definitions from package symbols in public and private context. *)
+ClearAll["`*","`*`*"];
+
+
 (* ::Subsection::Closed:: *)
 (*Public symbols*)
 
@@ -89,7 +93,7 @@ insertMarkers[mesh_,elementType_,value_]:=Module[
 		Append[Take[#1,1],#2]&,
 		{mesh[elementType],new}
 	]
-]
+];
 
 
 AddMeshMarkers::usage="AddMeshMarkers[mesh, keyword->marker] adds integer marker element type according to keyword.";
@@ -97,7 +101,7 @@ AddMeshMarkers::badkey="`1` is not recognized keyword \"MeshElementsMarker\", \"
 
 AddMeshMarkers//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
-AddMeshMarkers[mesh_ElementMesh,list_List]:=Fold[AddMeshMarkers[#1,#2]&,mesh,list]
+AddMeshMarkers[mesh_ElementMesh,list_List]:=Fold[AddMeshMarkers[#1,#2]&,mesh,list];
 
 (* TODO: Add FrontEnd autocomplete for type argument. *)
 AddMeshMarkers[mesh_ElementMesh,type_String->int_Integer]:=Module[
@@ -126,7 +130,7 @@ AddMeshMarkers[mesh_ElementMesh,type_String->int_Integer]:=Module[
 			"PointElements"->insertMarkers[mesh,"PointElements",pMark]
 		]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -138,7 +142,7 @@ boundingBoxMeasure[coordinates_,incidents_]:=Times@@Flatten[
 		coordinates,
 		Union[Join@@incidents]
 	]
-]
+];
 
 
 (* 
@@ -187,7 +191,7 @@ IdentifyMeshBoundary[mesh_ElementMesh]:=Module[
 		"BoundaryElements"->{elementType[Join@@boundariesConn,markers]},
 		"PointElements"->mesh["PointElements"]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -220,7 +224,7 @@ selectElementsByMarkers[mesh_ElementMesh,ints_List]:=Module[
 		"Coordinates" -> Part[mesh["Coordinates"],selectedNodes],
 		elementType -> MapThread[#1[#2]&,{types,selectedElements/.renumbering}]
 	]
-]
+];
 
 
 selectElementsByCoordinates[mesh_ElementMesh,crit_Function]:=Module[
@@ -271,7 +275,7 @@ selectElementsByCoordinates[mesh_ElementMesh,crit_Function]:=Module[
 		"Coordinates"->Part[crds,selectedNodes],
 		elementType->elementTypeList
 	]
-]
+];
 
 
 SelectElements::usage=(
@@ -301,7 +305,7 @@ SelectElements[mesh_ElementMesh,crit_Function]:=Module[
 		newMesh,
 		Message[SelectElements::noelms];$Failed
 	]
-]
+];
 
 (* Select elements by marker function. *)
 SelectElements[mesh_ElementMesh,func_/;Not@FreeQ[func,ElementMarker]]:=Module[
@@ -325,18 +329,20 @@ SelectElements[mesh_ElementMesh,func_/;Not@FreeQ[func,ElementMarker]]:=Module[
 	];
 	
 	selectElementsByMarkers[mesh,ints]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*TransformMesh*)
 
 
-(* Helper function to reorder connectivity of elements (TriangleElement, etc.) if 
-transformation function has a negative jacobian. *)
-transformElements//ClearAll
+(* Helper function to reorder connectivity of elements (TriangleElement, etc.)
+if transformation function has a negative jacobian. *)
 
-transformElements[elementObj_List,reorderQ_]:=Map[transformElements[#,reorderQ]&,elementObj]
+transformElements[elementObj_List,reorderQ_]:=Map[
+	transformElements[#,reorderQ]&,
+	elementObj
+];
 
 transformElements[elementObj_,reorderQ_]:=Module[
 	{head,connectivity,markers,length,numbering},
@@ -363,7 +369,7 @@ transformElements[elementObj_,reorderQ_]:=Module[
 		head[connectivity[[All,numbering]],markers],
 		head[connectivity,markers]
 	]
-]
+];
 
 
 TransformMesh::usage="TransformMesh[mesh, tfun] transforms ElementMesh mesh according to TransformationFunction tfun";
@@ -395,17 +401,14 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction,opts:OptionsPattern[]
 			FilterRules[{opts},Options@ElementMesh]
 		]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*MergeMesh*)
 
 
-(* 
-Code is adjusted after this source: 
-https://mathematica.stackexchange.com/questions/156445/automatically-generating-boundary-meshes-for-region-intersections 
-*)
+(* Code is adjusted after this: https://mathematica.stackexchange.com/q/156445 *)
 MergeMesh::usage="MergeMesh[{mesh1,mesh2,...}] merges a list of ElementMesh objects with the same embedding dimension.";
 MergeMesh::order="Meshes must have the same \"MeshOrder\".";
 MergeMesh::dim="Meshes must have the same \"EmbeddingDimension\".";
@@ -414,7 +417,7 @@ MergeMesh//Options=Options@ElementMesh;
 
 MergeMesh//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-MergeMesh[list_List/;Length[list]>=2,opts:OptionsPattern[]]:=Fold[MergeMesh[#1,#2,opts]&,list]
+MergeMesh[list_List/;Length[list]>=2,opts:OptionsPattern[]]:=Fold[MergeMesh[#1,#2,opts]&,list];
 
 MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
 	{elementType,head,c1,c2,newCrds,newElements,elementTypes,elementMarkers,inci1,inci2},
@@ -454,7 +457,7 @@ MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
 		elementType->newElements,
 		FilterRules[{opts},Options@ElementMesh]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -501,7 +504,7 @@ ExtrudeMesh[mesh_ElementMesh,thickness_?Positive,layers_Integer?Positive]:=Modul
 		"Coordinates"->nodes3D,
 		"MeshElements"->{HexahedronElement[elements3D,markers3D]}
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -517,40 +520,51 @@ SmoothenMesh::badType="Smoothing is only supported for first order 2D meshes.";
 
 SmoothenMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
 
-SmoothenMesh[mesh_ElementMesh]:=Block[
-	{n,vec,mat,adjacencymatrix2,mass2,laplacian2,bndvertices2,interiorvertices,stiffness,load,newCoords},
+SmoothenMesh[mesh_ElementMesh]:=Module[
+	{n,vec,mat,adjacencyMatrix,mass,typoOpt,
+	bndVertices,interiorvertices,stiffness,load,newCoords},
 	
 	If[
 		Or[mesh["MeshOrder"]=!=1,mesh["EmbeddingDimension"]=!=2],
 		Message[SmoothenMesh::badType];Return[$Failed]
 	];
 	
-	n=Length[mesh["Coordinates"]];
-	vec=mesh["VertexElementConnectivity"];
-	mat=Unitize[vec.Transpose[vec]];
-	vec=Null;
-	adjacencymatrix2=mat-DiagonalMatrix[Diagonal[mat]];
-	mass2=DiagonalMatrix[SparseArray[Total[adjacencymatrix2,{2}]]];
-	stiffness=N[mass2-adjacencymatrix2];
-	adjacencymatrix2=Null;
-	mass2=Null;
-	bndvertices2=Flatten[Join@@ElementIncidents[mesh["PointElements"]]];
-	interiorvertices=Complement[Range[1,n],bndvertices2];
-	stiffness[[bndvertices2]]=IdentityMatrix[n,SparseArray][[bndvertices2]];
-	load=ConstantArray[0.,{n,mesh["EmbeddingDimension"]}];
-	load[[bndvertices2]]=mesh["Coordinates"][[bndvertices2]];
-	newCoords=LinearSolve[stiffness,load(*,Method\[Rule]"Pardiso"*)];
+	n = Length[mesh["Coordinates"]];
+	vec = mesh["VertexElementConnectivity"];
+	mat = Unitize[vec.Transpose[vec]];
+	vec = Null;
+	adjacencyMatrix = mat - DiagonalMatrix[Diagonal[mat]];
+	mass = DiagonalMatrix[SparseArray[Total[adjacencyMatrix, {2}]]];
+	stiffness = N[mass - adjacencyMatrix];
+	adjacencyMatrix = Null;
+	mass = Null;
+	
+	bndVertices = Flatten[Join @@ ElementIncidents[mesh["PointElements"]]];
+	interiorvertices = Complement[Range[1, n], bndVertices];
+	
+	stiffness[[bndVertices]] = IdentityMatrix[n, SparseArray][[bndVertices]];
+	
+	load = ConstantArray[0., {n, mesh["EmbeddingDimension"]}];
+	load[[bndVertices]] = mesh["Coordinates"][[bndVertices]];
+	newCoords = LinearSolve[stiffness, load];
+	
+	typoOpt = If[
+		$VersionNumber <= 11.3,
+		"CheckIncidentsCompletness" -> False,
+		"CheckIncidentsCompleteness" -> False
+	];
 	
 	ToElementMesh[
-		"Coordinates"->newCoords,
-		"MeshElements"->mesh["MeshElements"],
-		"BoundaryElements"->mesh["BoundaryElements"],
-		"PointElements"->mesh["PointElements"],
-		"CheckIncidentsCompletness"->False,
-		"CheckIntersections"->False,
-		"DeleteDuplicateCoordinates"->False
+		"Coordinates" -> newCoords,
+		"MeshElements" -> mesh["MeshElements"],
+		"BoundaryElements" -> mesh["BoundaryElements"],
+		"PointElements" -> mesh["PointElements"],
+		typoOpt,
+		"CheckIntersections" -> False,
+		"DeleteDuplicateCoordinates" -> False,
+		"RegionHoles" -> mesh["RegionHoles"]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -568,7 +582,7 @@ smartSplit[crds_,connectivity_]:=Module[
 		{{#2[[1]],#2[[2]],#2[[3]]},{#2[[1]],#2[[3]],#2[[4]]}}
 	]&;
 	Join@@MapThread[split,{pts,connectivity}]
-]
+];
 
 
 QuadToTriangleMesh::usage="QuadToTriangleMesh[mesh] converts quadrilateral mesh to triangular mesh.";
@@ -612,7 +626,7 @@ QuadToTriangleMesh[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
 		"Coordinates"->crds,
 		elementType->{TriangleElement[triangles,triMarkers]}
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -659,7 +673,7 @@ HexToTetrahedronMesh[mesh_ElementMesh]:=Module[
 		"Coordinates"->mesh["Coordinates"],
 		"MeshElements"->{TetrahedronElement[newConnectivity,newMarkers]}
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -690,7 +704,7 @@ Original implementation is by Prof. Joze Korelc taken from AceFEM package
 have been improved by Oliver Ruebenkoenig from WRI.
 *)
 TriangleToQuadMesh::usage="TriangleToQuadMesh[mesh] converts triangular mesh to quadrilateral mesh.";
-TriangleToQuadMesh::elmtype = "Only conversion of pure triangular meshes is supported."
+TriangleToQuadMesh::elmtype = "Only conversion of pure triangular meshes is supported.";
 
 TriangleToQuadMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
 
@@ -806,7 +820,7 @@ TriangleToQuadMesh[meshIn_] /; ElementMeshQ[meshIn] && !BoundaryElementMeshQ[mes
 	If[ increaseOrderQ, mesh = MeshOrderAlteration[mesh, meshIn["MeshOrder"]]];
 
 	mesh
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -816,8 +830,6 @@ TriangleToQuadMesh[meshIn_] /; ElementMeshQ[meshIn] && !BoundaryElementMeshQ[mes
 (* ::Subsubsection::Closed:: *)
 (*MeshElementMeasure*)
 
-
-elementMeasure//ClearAll
 
 elementMeasure[LineElement[connectivity_,___],crds_,order_]:=Module[
 	{elementByCrds},
@@ -832,7 +844,7 @@ elementMeasure[LineElement[connectivity_,___],crds_,order_]:=Module[
 		Abs[Subtract@@@Part[elementByCrds,All,All,1]],
 		1
 	]
-]
+];
 
 elementMeasure[element_,crds_,order_]:=Module[
 	{noNodes,noDim,type,nodes,igCrds,igWgts,shapeDerivative,jacobian,pts,volumeFun,elementByCrds},
@@ -868,7 +880,7 @@ elementMeasure[element_,crds_,order_]:=Module[
 	];
 	
 	volumeFun[elementByCrds]
-]
+];
 
 
 (* This function gives the same result as asking for the property mesh["MeshElementMeasure"] *)
@@ -890,14 +902,12 @@ MeshElementMeasure[mesh_ElementMesh]:=Module[
 	];
 		
 	elementMeasure[#,crds,order]&/@elements
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*BoundaryElementMeasure*)
 
-
-boundaryMeasure//ClearAll
 
 boundaryMeasure[element_,crds_,order_]:=Module[
 	{noNodes,noDim,type,nodes,igCrds,igWgts,shapeDerivative,area,pts,areaFun,elementByCrds},
@@ -935,7 +945,7 @@ boundaryMeasure[element_,crds_,order_]:=Module[
 	];
 	
 	areaFun[elementByCrds]
-]
+];
 
 
 (* This function returns the surface of boundary elements in 3D embedding and length of 
@@ -952,7 +962,7 @@ BoundaryElementMeasure[mesh_ElementMesh]:=Module[
 	crds=mesh["Coordinates"];
 	
 	boundaryMeasure[#,crds,order]&/@elements
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -967,9 +977,9 @@ ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[mesh] plots second
 
 ElementMeshCurvedWireframe//SyntaxInformation={"ArgumentsPattern"->{_}};
 
-ElementMeshCurvedWireframe[mesh_ElementMesh]:=Block[
-	{triIncidentsOrder,quadIncidentsOrder,interpolatingQuadBezierCurve,interpolatingQuadBezierCurveComplex,
-	triEdges,triIncidents,coordinates},
+ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
+	{triIncidentsOrder,quadIncidentsOrder,interpolatingQuadBezierCurve,
+	interpolatingQuadBezierCurveComplex,triEdges,triIncidents,coordinates},
 
 	triIncidentsOrder={1,4,2,5,3,6};
 	quadIncidentsOrder={1,5,2,6,3,7,4,8};
@@ -980,7 +990,9 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Block[
 		{pts[[1]],(1/2)(-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]};
 	interpolatingQuadBezierCurve[ptslist_List]:=interpolatingQuadBezierCurve/@ptslist;
 
-	interpolatingQuadBezierCurveComplex[coords_,indices_]:=interpolatingQuadBezierCurve[Map[coords[[#]]&,indices]];
+	interpolatingQuadBezierCurveComplex[coords_,indices_]:=interpolatingQuadBezierCurve[
+		Map[coords[[#]]&,indices]
+	];
 
 	triEdges=Partition[triIncidentsOrder, 3, 2, {1,1}];
 	triIncidents=Join@@ElementIncidents[mesh["MeshElements"]];
@@ -989,7 +1001,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Block[
 	Graphics[{
 		interpolatingQuadBezierCurveComplex[coordinates,triIncidents[[All, #]]]&/@triEdges
 	}]
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -1007,7 +1019,7 @@ getElementConnectivity[nx_,ny_]:=Flatten[
 		{j,1,ny}
 	],
 	1
-]
+];
 
 getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 	Table[{
@@ -1025,7 +1037,7 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 		{k,1,nz}
 	],
 	2
-]
+];
 
 
 (* This function may cause shadowing with the same function in FEMAddOns paclet (https://github.com/WolframResearch/FEMAddOns). *)
@@ -1073,7 +1085,7 @@ StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
 			"MeshElements"->{QuadElement[connectivity]}
 		]
 	]
-]
+];
 
 StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 	{order,restructured,xInt,yInt,zInt,nodes,connectivity},
@@ -1104,7 +1116,7 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 		"Coordinates"->nodes,
 		"MeshElements"->{HexahedronElement[connectivity]}
 	]
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -1115,16 +1127,17 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 (*RectangleMesh*)
 
 
-RectangleMesh::usage="RectangleMesh[{xMin, yMin},{xMax, yMax},{nx, ny}] creates structured mesh on axis-aligned Rectangle with corners {xMin,yMin} and {xMax,yMax}.";
+RectangleMesh::usage="RectangleMesh[{xMin, yMin},{xMax, yMax},{nx, ny}] creates structured mesh 
+on axis-aligned Rectangle with corners {xMin,yMin} and {xMax,yMax}.";
 
 RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
 
-RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}]
+RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}];
 
 RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=StructuredMesh[
 	{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
 	{nx,ny}
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1146,16 +1159,19 @@ unitTriangleToQuads[n_Integer]:=Module[
 		StructuredMesh[#,{n,n}]&,
 		connectivity
 	]
-]
+];
 
 
 unitTriangleToTriangles[n_Integer]:=Module[
 	{},
 	SelectElements[
-		QuadToTriangleMesh[RectangleMesh[n],"SplitDirection"->Right],
+		QuadToTriangleMesh[
+			RectangleMesh[{0,0},{1,1},{n,n}],
+			"SplitDirection"->Right
+		],
 		#1+#2<=1&
 	]
-]
+];
 
 
 TriangleMesh::usage="TriangleMesh[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
@@ -1166,7 +1182,7 @@ TriangleMesh//Options={"MeshElementType"->QuadElement};
 
 TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
-TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts]
+TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts];
 
 TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 	{type,unitCorners,unitMesh,tf},
@@ -1191,7 +1207,7 @@ TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 	];
 	
 	TransformMesh[unitMesh,tf]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1214,7 +1230,7 @@ diskMeshProjection[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 		"Coordinates" ->coordinates,
 		"MeshElements" -> square["MeshElements"]
 	]
-]
+];
 
 
 diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
@@ -1227,13 +1243,13 @@ diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
 
 	raster={
 		Thread[{x+Subdivide[-d,d,90],y+d}],
-		N@Table[{x+r*Cos[fi],y+r*Sin[fi]},{fi,3Pi/4,Pi/4,-Pi/180}]
+		N@Table[{x+r*Cos[fi],y+r*Sin[fi]},{fi,3*Pi/4,Pi/4,-Pi/180}]
 	};
 	sideMesh=StructuredMesh[raster,{n,n}];
 	rotations=RotationTransform[#,{x,y}]&/@(Range[4]*Pi/2);
 	
 	MergeMesh@Join[{square},TransformMesh[sideMesh,#]&/@rotations]	
-]
+];
 
 
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
@@ -1244,7 +1260,7 @@ DiskMesh//Options={Method->Automatic};
 
 DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts]
+DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{method},
@@ -1261,7 +1277,7 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 		"Projection",diskMeshProjection[{x,y},r,n],
 		_,Message[DiskMesh::method,method];Return[$Failed]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1269,23 +1285,25 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 
 
 AnnulusMesh::usage=
-	"AnnulusMesh[{x, y}, {rIn, rOut}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential and nr elements in radial direction."<>"\n"<>
+	"AnnulusMesh[{x, y}, {rIn, rOut}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential 
+and nr elements in radial direction."<>"\n"<>
 	"AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus from angle \[Phi]1 to \[Phi]2.";
 
 AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_.}};
 
-AnnulusMesh[{n\[Phi]_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2Pi},{n\[Phi],nr}]
+AnnulusMesh[{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nPhi,nr}];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{n\[Phi]_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2Pi},{n\[Phi],nr}]
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nPhi,nr}];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{\[Phi]1_,\[Phi]2_},{n\[Phi]_Integer,nr_Integer}]:=Module[
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{phi1_,phi2_},{nPhi_Integer,nr_Integer}]:=Module[
 	{raster},
+	
 	raster=N@{
-		Table[rOut*{Cos[fi],Sin[fi]}+{x,y},{fi,\[Phi]1,\[Phi]2,(\[Phi]2-\[Phi]1)/n\[Phi]}],
-		Table[rIn*{Cos[fi],Sin[fi]}+{x,y},{fi,\[Phi]1,\[Phi]2,(\[Phi]2-\[Phi]1)/n\[Phi]}]
+		Table[rOut*{Cos[fi],Sin[fi]}+{x,y},{fi,phi1,phi2,(phi2-phi1)/nPhi}],
+		Table[rIn*{Cos[fi],Sin[fi]}+{x,y},{fi,phi1,phi2,(phi2-phi1)/nPhi}]
 	};
-	StructuredMesh[raster,{n\[Phi],nr}]
-]
+	StructuredMesh[raster,{nPhi,nr}]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1317,7 +1335,7 @@ CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
 		TransformMesh[quarter,RotationTransform[Pi,{cx,cy}]],
 		TransformMesh[quarter,RotationTransform[3*Pi/2,{cx,cy}]]
 	}]
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -1332,7 +1350,7 @@ CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates 
 
 CuboidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
 
-CuboidMesh[n_Integer]:=CuboidMesh[{0,0,0},{1,1,1},{n,n,n}]
+CuboidMesh[n_Integer]:=CuboidMesh[{0,0,0},{1,1,1},{n,n,n}];
 
 CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 	{{{x1,y1,z1},{x2,y1,z1}},{{x1,y2,z1},{x2,y2,z1}}},
@@ -1351,7 +1369,10 @@ HexahedronMesh::ordering="Warning! Ordering of corners may be incorrect.";
 
 HexahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
 
-HexahedronMesh[{nx_Integer,ny_Integer,nz_Integer}]:=HexahedronMesh[{{0,0,0},{1,0,0},{1,1,0},{0,1,0},{0,0,1},{1,0,1},{1,1,1},{0,1,1}},{nx,ny,nz}]
+HexahedronMesh[{nx_Integer,ny_Integer,nz_Integer}]:=HexahedronMesh[
+	{{0,0,0},{1,0,0},{1,1,0},{0,1,0},{0,0,1},{1,0,1},{1,1,1},{0,1,1}},
+	{nx,ny,nz}
+];
 
 HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integer}]:=Module[
 	{mesh},
@@ -1362,7 +1383,7 @@ HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integ
 		],
 		Message[HexahedronMesh::ordering];mesh
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1374,7 +1395,7 @@ CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or 
 
 CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-CylinderMesh[{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts]
+CylinderMesh[{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts];
 
 CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=Module[
 	{order,diskMesh,length,alignedCylinder,tf},
@@ -1392,7 +1413,7 @@ CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:Optio
 		"Coordinates" -> (tf@alignedCylinder["Coordinates"]),
 		"MeshElements" -> alignedCylinder["MeshElements"]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1410,7 +1431,7 @@ SphereMesh//Options={"MeshOrder"->Automatic};
 
 SphereMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts]
+SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts];
 
 SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{order,rescale,cuboid,cuboidShell,coordinates},
@@ -1437,22 +1458,23 @@ SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 		"Coordinates" -> coordinates,
 		"BoundaryElements" -> cuboidShell["BoundaryElements"]
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*SphericalShellMesh*)
 
 
-SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell, with n\[Phi] elements in circumferential and nr elements in radial direction.";
+SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell, 
+with nPhi elements in circumferential and nr elements in radial direction.";
 
 SphericalShellMesh//Options={"MeshOrder"->Automatic};
 
 SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-SphericalShellMesh[{n\[Phi]_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{n\[Phi],nr},opts]
+SphericalShellMesh[{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{nPhi,nr},opts];
 
-SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
+SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
 	{order,rescale,innerRaster,outerRaster,rotations,flatMesh,curvedMesh},
 	
 	order=OptionValue["MeshOrder"]/.Automatic->1;
@@ -1465,16 +1487,16 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_Integer,nr_Integer},opts:Opt
 	
 	(* This special raster makes all element edges on disk edge of the same length. *)
 	innerRaster=With[
-		{pts=rIn*N@Tan@Subdivide[-Pi/4,Pi/4,n\[Phi]]},
+		{pts=rIn*N@Tan@Subdivide[-Pi/4,Pi/4,nPhi]},
 		Map[Append[rIn], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	outerRaster=With[
-		{pts=rOut*N@Tan@Subdivide[-Pi/4,Pi/4,n\[Phi]]},
+		{pts=rOut*N@Tan@Subdivide[-Pi/4,Pi/4,nPhi]},
 		Map[Append[rOut], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	
 	flatMesh=MeshOrderAlteration[
-		StructuredMesh[{innerRaster,outerRaster},{n\[Phi],n\[Phi],nr}],
+		StructuredMesh[{innerRaster,outerRaster},{nPhi,nPhi,nr}],
 		order
 	];
 	curvedMesh=ToElementMesh[
@@ -1484,18 +1506,16 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{n\[Phi]_Integer,nr_Integer},opts:Opt
 	
 	rotations=Join[
 		RotationTransform[#,{1,0,0},{x,y,z}]&/@(Range[4]*Pi/2),
-		RotationTransform[#,{0,1,0},{x,y,z}]&/@{Pi/2,3Pi/2}
+		RotationTransform[#,{0,1,0},{x,y,z}]&/@{Pi/2,3*Pi/2}
 	];
 		
 	MergeMesh@(TransformMesh[curvedMesh,#]&/@rotations)
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*BallMesh*)
 
-
-ballMeshBlock//ClearAll
 
 ballMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
 	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitBall},
@@ -1531,14 +1551,10 @@ ballMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
 		"Coordinates" ->Transpose[Transpose[r*unitBall["Coordinates"]]+{x,y,z}],
 		"MeshElements" -> unitBall["MeshElements"]
 	]
-]
+];
 
 
-(* 
-Some key ideas for this code come from the answer by "Michael E2" on topic: 
-https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
-*)
-ballMeshProjection//ClearAll
+(* Some key ideas come from: https://mathematica.stackexchange.com/a/103468 *)
 
 ballMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
 	{rescale,cuboidMesh,coordinates},
@@ -1559,7 +1575,7 @@ ballMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
 		"Coordinates" -> coordinates,
 		"MeshElements" -> cuboidMesh["MeshElements"]
 	]
-]
+];
 
 
 BallMesh::usage="BallMesh[{x, y, z}, r, n] creates structured mesh with n elements on Ball of radius r centered at {x,y,z}.";
@@ -1570,7 +1586,7 @@ BallMesh//Options={Method->Automatic};
 
 BallMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts]
+BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts];
 
 BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{order,method},
@@ -1587,7 +1603,7 @@ BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 		"Projection",ballMeshProjection[{x,y,z},r,n],
 		_,Message[BallMesh::method,method];$Failed
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1620,9 +1636,9 @@ SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern
 	edges have similar length. *)
 	basicMesh=StructuredMesh[{innerRaster,outerRaster},{n,n,Ceiling[n*(s/r/2)]}];
 
-	rt=RotationTransform[#*(2Pi/3),{1,1,1},{0,0,0}]&/@{0,1,2};
+	rt=RotationTransform[#*(2*Pi/3),{1,1,1},{0,0,0}]&/@{0,1,2};
 	MergeMesh[TransformMesh[basicMesh,#]&/@rt]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1633,12 +1649,9 @@ SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern
 (*This is a quick prototype, made for analysis of voids inside material (forging).*)
 
 
-(* 
-Projection (with RegionNearest) of points from one side of the cube to a sphere. 
+(* Projection (with RegionNearest) of points from one side of the cube to a sphere. 
 Argument f should be a Function to specify on which side of cube points are created (e.g. {1,#1,#2}& ). 
-It is assumed size of domain is 1.
-*)
-voidRaster//ClearAll
+It is assumed size of domain is 1. *)
 
 voidRaster[f_Function,semiAxis:{_,_,_}]:=Module[
 	{n=30,pts,sidePts,innerPts,middlePts},
@@ -1647,7 +1660,7 @@ voidRaster[f_Function,semiAxis:{_,_,_}]:=Module[
 	innerPts=RegionNearest[Ellipsoid[{0,0,0},semiAxis],sidePts];
 	middlePts=RegionNearest[Ellipsoid[{0,0,0},semiAxis*2],sidePts];
 	{Partition[sidePts,n],Partition[middlePts,n],Partition[innerPts,n]}
-]
+];
 
 
 EllipsoidVoidMesh::usage=
@@ -1668,14 +1681,14 @@ EllipsoidVoidMesh[{r1_,r2_,r3_},noElements_Integer]:=With[{
 		StructuredMesh[voidRaster[{#1,#2,1}&,dim],n{1,1,2}]
 		}
 	]
-]
+];
 
 (* Implementation for spherical void is faster, because (costly) StructuredMesh is generated
 only once and then rotated. *)
 EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 	dim=Clip[voidRadius,{0.01,0.8}]*{1,1,1},
 	n=Round@Clip[noElements,{1,100}],
-	rotations=RotationTransform[#,{1,1,1},{0,0,0}]&/@{0,2Pi/3,4Pi/3},
+	rotations=RotationTransform[#,{1,1,1},{0,0,0}]&/@{0,2*Pi/3,4*Pi/3},
 	basicMesh
 	},
 	basicMesh=StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}];
@@ -1683,7 +1696,7 @@ EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
 		MergeMesh[#1,#2]&,
 		TransformMesh[basicMesh,#]&/@rotations
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1724,17 +1737,19 @@ unitTetrahedronToHexahedra[n_Integer]:=Module[
 		StructuredMesh[#,{n,n,n}]&,
 		connectivity
 	]
-]
+];
 
 
 unitTetrahedronToTetrahedra[n_Integer]:=Module[
 	{},
 
 	SelectElements[
-		HexToTetrahedronMesh[CuboidMesh[n]],
+		HexToTetrahedronMesh[
+			CuboidMesh[{0,0,0},{1,1,1},{n,n,n}]
+		],
 		#1+#2+#3<=1&
 	]
-]
+];
 
 
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
@@ -1745,7 +1760,7 @@ TetrahedronMesh//Options={"MeshElementType"->HexahedronElement};
 
 TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
-TetrahedronMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts]
+TetrahedronMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts];
 
 TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 	{type,unitMesh,tf},
@@ -1770,7 +1785,7 @@ TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer?Positive,opts:OptionsPattern[]]:=Mod
 	];
 	
 	TransformMesh[unitMesh,tf]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1784,7 +1799,7 @@ reorientPrismQ[pts_]:=With[{
 	c=pts[[4]]-pts[[1]]
 	},
 	Negative[Cross[a,b].c]
-]
+];
 
 
 PrismMesh::usage="PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge.";
@@ -1793,7 +1808,7 @@ PrismMesh::alignerr="Warning! Corner alignment error `1` is larger than toleranc
 
 PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
-PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}]
+PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}];
 
 PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 	{pts,error,triangleMesh,standardPrism,tf},
@@ -1825,7 +1840,7 @@ PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 		"Coordinates" ->(tf@standardPrism["Coordinates"]),
 		"MeshElements" -> standardPrism["MeshElements"]
 	]
-]
+];
 
 
 (* ::Section::Closed:: *)
