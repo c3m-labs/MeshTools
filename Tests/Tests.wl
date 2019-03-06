@@ -652,6 +652,41 @@ With[{
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*SmoothenMesh*)
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.4,0.4},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
+		"MeshElements"->{QuadElement[{{1,2,5,4},{2,3,6,5},{4,5,8,7},{5,6,9,8}}]}
+	]
+	},
+	VerificationTest[
+		SmoothenMesh[mesh]["Coordinates"],
+		{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.5,0.5},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
+		TestID->"SmoothenMesh_1-quad"
+	]
+]
+
+
+With[{
+	mesh=QuadToTriangleMesh[
+		ToElementMesh[
+			"Coordinates"->{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.4,0.4},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
+			"MeshElements"->{QuadElement[{{1,2,5,4},{2,3,6,5},{4,5,8,7},{5,6,9,8}}]}
+		],
+		"SplitDirection"->Left
+	]
+	},
+	VerificationTest[
+		SmoothenMesh[mesh]["Coordinates"],
+		{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.5,0.5},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
+		TestID->"SmoothenMesh_1-triangle"
+	]
+]
+
+
 (* ::Subsection::Closed:: *)
 (*Mesh measurements*)
 
