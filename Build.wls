@@ -18,7 +18,7 @@ getGitRevision[dir_]:=Module[{description},
 	];
 	ResetDirectory[];
 	description
-]
+];
 
 
 getGitCommitCount[dir_]:=Module[{value},
@@ -30,7 +30,7 @@ getGitCommitCount[dir_]:=Module[{value},
 	];
 	ResetDirectory[];
 	value
-]
+];
 
 
 (* ::Subsubsection:: *)
@@ -38,10 +38,10 @@ getGitCommitCount[dir_]:=Module[{value},
 
 
 $name="MeshTools";
-(* Get the distribution directory by using this notebook\[CloseCurlyQuote]s directory. *)
-$source=If[$Notebooks,NotebookDirectory[],Directory[]];
-(* Construct the target directory from this notebooks base directory. *)
-$target=FileNameJoin[{$source,"build",$name}];
+(* Get the repository directory by using this notebook\[CloseCurlyQuote]s directory. *)
+$rootDir=If[$Notebooks,NotebookDirectory[],Directory[]];
+$source=FileNameJoin[{$rootDir}];
+$target=FileNameJoin[{$rootDir,"build",$name}];
 
 
 $helpMessage=("  Script to build the paclet and install it.
@@ -49,15 +49,16 @@ $helpMessage=("  Script to build the paclet and install it.
 
   Options:
     -h, --help                   Output usage information
-    --release                    Build public release")
+    -r, --release                Build public release");
 
 
-Module[{directories},
+Module[
+	{directories},
+	
 	If[
 		MemberQ[Rest@$ScriptCommandLine,"/?"|"-h"|"--help"],
 		Print[$helpMessage];Quit[1]
 	];
-	
 	If[
 		Not@DirectoryQ[$target],
 		CreateDirectory[$target,CreateIntermediateDirectories->True]
@@ -71,8 +72,14 @@ Module[{directories},
 		]&,
 		{"MeshTools.wl","PacletInfo.m"}
 	];
+
 	(* Delete old and copy the new source directories. 
-	"Documentation" directory is already created by documentation build procedure. *)
+	"Documentation" directory should be already created by documentation build procedure. *)
+	If[
+		Not@FileExistsQ[FileNameJoin[{$target,"Documentation"}]],
+		Print["  Warning! Documentation directory was not found in build folder."]
+	];
+	
 	directories={"FrontEnd","Kernel"};
 	Map[
 		If[
@@ -85,15 +92,16 @@ Module[{directories},
 		CopyDirectory[FileNameJoin[{$source,#}],FileNameJoin[{$target,#}]]&,
 		directories
 	];
-]
+];
 
 
-Module[{original, modified,noCommits,revision,internalQ},
+Module[
+	{original, modified,noCommits,revision,internalQ},
 
 	original=Import[FileNameJoin[{$source,"PacletInfo.m"}]];
-	noCommits=getGitCommitCount[$source];
-	revision=getGitRevision[$source];
-	internalQ=Not@MemberQ[Rest@$ScriptCommandLine,"--release"];
+	noCommits=getGitCommitCount[$rootDir];
+	revision=getGitRevision[$rootDir];
+	internalQ=Not@MemberQ[Rest@$ScriptCommandLine,"-r"|"--release"];
 		
 	(* Description of git repository (git describe ...) returns a string that cannot 
 	be used as BuildNumber because only integers are accepted. 
@@ -109,14 +117,15 @@ Module[{original, modified,noCommits,revision,internalQ},
 		modified,
 		"Comments"->{"Paclet Info File","Created on "<>DateString[]}
 	];
-]
+];
 
 
-Module[{pacletPath,newPaclet},
-	Needs["PacletManager`"];
+Module[
+	{pacletPath,newPaclet},
 	
+	Needs["PacletManager`"];
 	(* Change into the build directory and create the paclet. *)	
-	SetDirectory[FileNameJoin[{$source,"build"}]];
+	SetDirectory[FileNameJoin[{$rootDir,"build"}]];
 	pacletPath=PackPaclet[$name];
 	ResetDirectory[];
 	
@@ -127,7 +136,7 @@ Module[{pacletPath,newPaclet},
 	
 	If[
 		Length@PacletFind["MeshTools"]===1,
-		Print["Paclet build succesfull."];Quit[0],
-		Print["Paclet build failed."];Quit[1]
+		Print["  ",FileNameTake[pacletPath]," built and installed succesfully."];Quit[0],
+		Print["  Paclet build failed!"];Quit[1]
 	]
-]
+];
