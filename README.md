@@ -16,14 +16,14 @@ To use _MeshTools_ package you need Mathematica version 11. or later.
 _MeshTools_ package is released in the `.paclet` file format, which contains code,
 documentation and other necessary resources.
 Download the latest `.paclet` file from the
-[repository "releases" page](https://github.com/c3m-labs/MeshTools/releases)
+repository ["releases"](https://github.com/c3m-labs/MeshTools/releases) page
 to your computer and install it by evaluating the following command in the Mathematica:
 
 ```mathematica
-(* This is usually loaded automatically at kernel startup. *)
+(* This built-in package is usually loaded automatically at kernel startup. *)
 Needs["PacletManager`"]
 
-(* Download .paclet file from repository "releases" page. *)
+(* Path to .paclet file downloaded from repository "releases" page. *)
 PacletInstall["full/path/to/MeshTools-X.Y.Z.paclet"]
 ```
 
@@ -72,5 +72,5 @@ that enable you to perform the following tasks:
 
 Please use the repository [issues](https://github.com/c3m-labs/MeshTools/issues) page to submit bugs or feature ideas.
 
-Contributions to this repository are very welcome. 
+Contributions to this repository are very welcome.
 Guidelines on how to build paclet file from source code can be found in [Development.md]( Development.md ) file.
