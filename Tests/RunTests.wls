@@ -4,7 +4,7 @@
 $helpMessage=("  Usage: RunTests.wls [options]
 
   Options:
-    -h, --help                   Output usage information")
+    -h, --help                   Output usage information");
 
 
 If[

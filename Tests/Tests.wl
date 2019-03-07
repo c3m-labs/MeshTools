@@ -4,12 +4,11 @@
 (*Description*)
 
 
-(* ::Text:: *)
-(*These are unit test for "MeshTools" paclet. Each test should normally run fast enough (i.e. < 0.1 second),*)
-(*so that there can be many of them and the whole procedure doesn't take too long.*)
+(* These are unit test for "MeshTools" paclet. 
+Each test should normally run fast enough (i.e. < 0.1 second),
+so that there can be many of them and the whole procedure doesn't take too long.*)
 
-
-(* "MeshTools.wl" must be loaded before running these tests, otherwise testing is aborted. *)
+(* "MeshTools" package must be loaded before running these tests, otherwise testing is aborted. *)
 If[
 	Not@MemberQ[$Packages,"MeshTools`"],
 	Print["Error: Package is not loaded!"];Abort[];
@@ -17,7 +16,7 @@ If[
 
 
 (* Currently it is unclear what this line does, it is automatically generated during conversion to .wlt *)
-BeginTestSection["Tests"]
+BeginTestSection["Tests"];
 
 
 (* ::Subsection::Closed:: *)
@@ -42,7 +41,7 @@ With[{
 		{{1},{1}},
 		TestID->"AddMeshMarkers_MeshElements"
 	]
-]
+];
 
 
 With[{
@@ -59,7 +58,7 @@ With[{
 		{{2,2,2,2,2}},
 		TestID->"AddMeshMarkers_BoundaryElements"
 	]
-]
+];
 
 
 With[{
@@ -76,7 +75,7 @@ With[{
 		{{3,3,3,3,3}},
 		TestID->"AddMeshMarkers_PointElements"
 	]
-]
+];
 
 
 With[{
@@ -94,7 +93,7 @@ With[{
 		{AddMeshMarkers::badkey},
 		TestID->"AddMeshMarkers_bad-keyword"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -112,7 +111,7 @@ With[{
 		{1,2,3},
 		TestID->"IdentifyMeshBoundary_2D-holes"
 	]
-]
+];
 
 
 With[{
@@ -125,7 +124,7 @@ With[{
 		{1,2},
 		TestID->"IdentifyMeshBoundary_2D-2-quads"
 	]
-]
+];
 
 
 With[{
@@ -138,7 +137,7 @@ With[{
 		{1,2},
 		TestID->"IdentifyMeshBoundary-3D-2-cubes"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -168,7 +167,7 @@ With[{
 		],
 		TestID->"TransformMesh_2D-translation-1"
 	]
-]
+];
 
 
 With[{
@@ -184,7 +183,7 @@ With[{
 		mesh,
 		TestID->"TransformMesh_2D-default-mesh-double-reflection"
 	]
-]
+];
 
 
 With[{
@@ -206,7 +205,7 @@ With[{
 		],
 		TestID->"TransformMesh_2D-reflection-all-element-types"
 	]
-]
+];
 
 
 With[{
@@ -227,7 +226,7 @@ With[{
 		],
 		TestID->"TransformMesh_2D-reflection-order=2"
 	]
-]
+];
 
 
 With[{
@@ -243,7 +242,7 @@ With[{
 		mesh,
 		TestID->"TransformMesh_3D-double-reflection"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -270,7 +269,7 @@ With[
 		},
 		TestID->"SelectElements_2D-1"
 	]
-]
+];
 
 
 With[
@@ -280,7 +279,7 @@ With[
 		{QuadElement[{{1,2,4,3},{3,4,6,5}},{1,2}]},
 		TestID->"SelectElements_2D-2"
 	]
-]
+];
 
 
 With[
@@ -291,7 +290,7 @@ With[
 		{SelectElements::noelms},
 		TestID->"SelectElements_no-elements"
 	]
-]
+];
 
 
 With[
@@ -302,7 +301,7 @@ With[
 		{SelectElements::funslots},
 		TestID->"SelectElements_wrong-criterion"
 	]
-]
+];
 
 
 With[
@@ -312,7 +311,7 @@ With[
 		{TriangleElement[{{3,4,7},{4,8,7}}],QuadElement[{{1,2,6,5},{2,3,7,6}}]},
 		TestID->"SelectElements_marker=1"
 	]
-]
+];
 
 
 With[
@@ -322,7 +321,7 @@ With[
 		{TriangleElement[{{3,5,8},{3,4,5}}],QuadElement[{{1,2,7,6},{2,3,8,7}}]},
 		TestID->"SelectElements_marker=2"
 	]
-]
+];
 
 
 With[
@@ -335,7 +334,7 @@ With[
 		},
 		TestID->"SelectElements_marker-MeshOrder->2"
 	]
-]
+];
 
 
 With[
@@ -349,7 +348,7 @@ With[
 		{SelectElements::nomark},
 		TestID->"SelectElements_non-existent-marker"
 	]
-]
+];
 
 
 With[
@@ -362,7 +361,7 @@ With[
 		},
 		TestID->"SelectElements_two-markers"
 	]
-]
+];
 
 
 With[
@@ -373,7 +372,7 @@ With[
 		{SelectElements::intmark},
 		TestID->"SelectElements_non-integer-marker"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -389,7 +388,7 @@ With[{
 		4,
 		TestID->"MergeMesh_normal-1"
 	]
-]
+];
 
 
 With[{
@@ -404,7 +403,7 @@ With[{
 		4,
 		TestID->"MergeMesh_normal-2"
 	]
-]
+];
 
 
 With[{
@@ -420,7 +419,7 @@ With[{
 		8,
 		TestID->"MergeMesh_option-DeleteDuplicateCoordinates"
 	]
-]
+];
 
 
 With[{
@@ -433,7 +432,7 @@ With[{
 		{MergeMesh::order},
 		TestID->"MergeMesh_incompatible-order"
 	]
-]
+];
 
 
 With[{
@@ -446,7 +445,7 @@ With[{
 		{MergeMesh::dim},
 		TestID->"MergeMesh_incompatible-dimensions"
 	]
-]
+];
 
 
 (* Check special options that are needed for correct merging of boundary meshes. *)
@@ -474,7 +473,7 @@ Module[
 		],
 		TestID->"MergeMesh_boundary-mesh-1"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -492,7 +491,7 @@ With[{
 		{{0.,2.},{0.,1.},{0.,1.}},
 		TestID->"ExtrudeMesh_check-bounds"
 	]
-]
+];
 
 
 With[{
@@ -506,7 +505,7 @@ With[{
 		{11,22},
 		TestID->"ExtrudeMesh_check-markers"
 	]
-]
+];
 
 
 With[{
@@ -518,7 +517,7 @@ With[{
 		{ExtrudeMesh::order},
 		TestID->"ExtrudeMesh_wrong-MeshOrder"
 	]
-]
+];
 
 
 With[{
@@ -530,7 +529,7 @@ With[{
 		{ExtrudeMesh::eltype},
 		TestID->"ExtrudeMesh_wrong-EmbeddingDimension"
 	]
-]
+];
 
 
 With[{
@@ -542,7 +541,7 @@ With[{
 		{ExtrudeMesh::eltype},
 		TestID->"ExtrudeMesh_wrong-element-type"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -560,7 +559,7 @@ With[{
 		{TriangleElement[{{1,2,4},{2,3,4},{4,3,5},{4,5,6}},{1,1,2,2}]},
 		TestID->"QuadToTriangleMesh_direction-Automatic"
 	]
-]
+];
 
 
 With[{
@@ -574,7 +573,7 @@ With[{
 		{TriangleElement[{{1,2,3},{1,3,4},{4,3,5},{4,5,6}},{1,1,2,2}]},
 		TestID->"QuadToTriangleMesh_direction-Left"
 	]
-]
+];
 
 
 With[{
@@ -588,7 +587,7 @@ With[{
 		{TriangleElement[{{1,2,4},{2,3,4},{4,3,6},{3,5,6}},{1,1,2,2}]},
 		TestID->"QuadToTriangleMesh_direction-Rigth"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -610,7 +609,7 @@ With[{
 		],
 		TestID->"TriangleToQuadMesh_normal"
 	]
-]
+];
 
 
 With[{
@@ -628,7 +627,7 @@ With[{
 		{TriangleToQuadMesh::elmtype},
 		TestID->"TriangleToQuadMesh_mixed-element-type"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -649,7 +648,7 @@ With[{
 		]},
 		TestID->"HexToTetrahedronMesh_1-hex-6-tet"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -667,7 +666,7 @@ With[{
 		{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.5,0.5},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
 		TestID->"SmoothenMesh_1-quad"
 	]
-]
+];
 
 
 With[{
@@ -684,7 +683,7 @@ With[{
 		{{0.,0.},{0.5,0.},{1.,0.},{0.,0.5},{0.5,0.5},{1.,0.5},{0.,1.},{0.5,1.},{1.,1.}},
 		TestID->"SmoothenMesh_1-triangle"
 	]
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -707,7 +706,7 @@ With[{
 		mesh["MeshElementMeasure"],
 		TestID->"MeshElementMeasure_line"
 	]
-]
+];
 
 
 (* Area *)
@@ -722,7 +721,7 @@ With[{
 		mesh["MeshElementMeasure"],
 		TestID->"MeshElementMeasure_triangle"
 	]
-]
+];
 
 
 (* Area - 2nd order mesh *)
@@ -739,7 +738,7 @@ With[{
 		SameTest->(RootMeanSquare[Flatten[#1]-Flatten[#2]]<10^-8 &),
 		TestID->"MeshElementMeasure_triangle-order=2"
 	]
-]
+];
 
 
 (* Area - 2nd order mesh *)
@@ -756,7 +755,7 @@ With[{
 		SameTest->(RootMeanSquare[Flatten[#1]-Flatten[#2]]<10^-8 &),
 		TestID->"MeshElementMeasure_quad-order=2"
 	]
-]
+];
 
 
 (* Volume *)
@@ -771,7 +770,7 @@ With[{
 		mesh["MeshElementMeasure"],
 		TestID->"MeshElementMeasure_tetrahedron"
 	]
-]
+];
 
 
 (* Volume *)
@@ -786,7 +785,7 @@ With[{
 		mesh["MeshElementMeasure"],
 		TestID->"MeshElementMeasure_hexahedron"
 	]
-]
+];
 
 
 With[{
@@ -801,7 +800,7 @@ With[{
 		{MeshElementMeasure::meshelements},
 		TestID->"MeshElementMeasure_boundary-mesh-fail"
 	]
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -819,7 +818,7 @@ With[{
 		{{1.,1.,1.,1.}},
 		TestID->"BoundaryElementMeasure_triangle"
 	]
-]
+];
 
 
 With[{
@@ -834,7 +833,7 @@ With[{
 		{{1.,1.,1.,1.}},
 		TestID->"BoundaryElementMeasure_triangle-order=2"
 	]
-]
+];
 
 
 With[{
@@ -849,7 +848,7 @@ With[{
 		SameTest->(Abs[#1-#2]<10^-2&),
 		TestID->"BoundaryElementMeasure_disk-order=1"
 	]
-]
+];
 
 
 With[{
@@ -861,7 +860,7 @@ With[{
 		SameTest->(Abs[#1-#2]<10^-5&),
 		TestID->"BoundaryElementMeasure_disk-order=2"
 	]
-]
+];
 
 
 With[{
@@ -876,7 +875,7 @@ With[{
 		SameTest->(Abs[#1-#2]<10^-1&),
 		TestID->"BoundaryElementMeasure_sphere-order=1"
 	]
-]
+];
 
 
 (* It seems that even with "MeshOrder"\[Rule]2 sphere doesn't have curved edges and
@@ -890,7 +889,7 @@ With[{
 		SameTest->(Abs[#1-#2]<10^-1&),
 		TestID->"BoundaryElementMeasure_sphere-order=2"
 	]
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -910,7 +909,7 @@ VerificationTest[
 		{LineElement[{{1,3},{4,2},{2,1},{3,5},{5,6},{6,4}}]}
 	],
 	TestID->"StructuredMesh_2D-1"
-]
+];
 
 
 VerificationTest[
@@ -922,7 +921,7 @@ VerificationTest[
 		{PointElement[{{1},{2},{3},{4},{5},{6}}]}
 	],
 	TestID->"StructuredMesh_3D-1"
-]
+];
 
 
 With[
@@ -944,7 +943,7 @@ With[
 		}]},
 		TestID->"StructuredMesh_3D-2"
 	]
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -959,14 +958,14 @@ VerificationTest[
 	RectangleMesh[2]["Coordinates"]//Sort,
 	{{0.,0.},{0.,0.5},{0.,1.},{0.5,0.},{0.5,0.5},{0.5,1.},{1.,0.},{1.,0.5},{1.,1.}},
 	TestID->"RectangleMesh_unit-rectangle"
-]
+];
 
 
 VerificationTest[
 	RectangleMesh[{1,2},{3,4},{1,2}]["Coordinates"]//Sort,
 	{{1.,2.},{1.,3.},{1.,4.},{3.,2.},{3.,3.},{3.,4.}},
 	TestID->"RectangleMesh_arbitrary-rectangle"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -980,7 +979,7 @@ VerificationTest[
 	{{0,0},{0,1/2},{0,1},{1/3,1/3},{1/2,0},{1/2,1/2},{1,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_unit-triangle"
-]
+];
 
 
 VerificationTest[
@@ -992,7 +991,7 @@ VerificationTest[
 	{{0.,0.},{0.5,0.5},{1.,1.},{1.,0.},{1.5,0.5},{2.,0.}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_coordinates"
-]
+];
 
 
 VerificationTest[
@@ -1003,7 +1002,7 @@ VerificationTest[
 	]["Coordinates"]//Sort,
 	{{0.,0.},{0.,1.},{1.,0.}},
 	TestID->"TriangleMesh_triangles-n=1"
-]
+];
 
 
 VerificationTest[
@@ -1015,7 +1014,7 @@ VerificationTest[
 	]["Coordinates"]//Sort,
 	{{0.,0.},{0.,0.5},{0.,1.},{0.5,0.},{0.5,0.5},{1.,0.}},
 	TestID->"TriangleMesh_triangles-n=2"
-]
+];
 
 
 VerificationTest[
@@ -1027,7 +1026,7 @@ VerificationTest[
 	{{0,0},{0,1/3},{0,2/3},{0,1},{1/3,0},{1/3,1/3},{1/3,2/3},{2/3,0},{2/3,1/3},{1,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_triangles-n=3"
-]
+];
 
 
 VerificationTest[
@@ -1039,7 +1038,7 @@ VerificationTest[
 	{{0,0},{0,1/2},{0,1},{1/3,1/3},{1/2,0},{1/2,1/2},{1,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TriangleMesh_quads-n=2"
-]
+];
 
 
 VerificationTest[
@@ -1047,7 +1046,7 @@ VerificationTest[
 	$Failed,
 	{TriangleMesh::quadelms},
 	TestID->"TriangleMesh_too-few-elements"
-]
+];
 
 
 VerificationTest[
@@ -1055,7 +1054,7 @@ VerificationTest[
 	$Failed,
 	{TriangleMesh::badtype},
 	TestID->"TriangleMesh_wrong-option"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1067,7 +1066,7 @@ VerificationTest[
 	$Failed,
 	{DiskMesh::noelems},
 	TestID->"DiskMesh_too-few-elements"
-]
+];
 
 
 VerificationTest[
@@ -1075,7 +1074,7 @@ VerificationTest[
 	$Failed,
 	{DiskMesh::method},
 	TestID->"DiskMesh_unknown-method"
-]
+];
 
 
 VerificationTest[
@@ -1083,7 +1082,7 @@ VerificationTest[
 	_ElementMesh,
 	SameTest->MatchQ,
 	TestID->"DiskMesh_method-projection"
-]
+];
 
 
 VerificationTest[
@@ -1091,7 +1090,7 @@ VerificationTest[
 	_ElementMesh,
 	SameTest->MatchQ,
 	TestID->"DiskMesh_method-block"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1106,21 +1105,21 @@ VerificationTest[
 		{LineElement[{{1,3},{4,2},{3,5},{6,4},{5,7},{8,6},{7,1},{2,8}}]}
 	],
 	TestID->"AnnulusMesh_unit-annulus"
-]
+];
 
 
 VerificationTest[
 	Length@First@ElementIncidents@(AnnulusMesh[{0,0},{1/2,1},{8,2}]["MeshElements"]),
 	16,
 	TestID->"AnnulusMesh_arbitrary-annulus-1"
-]
+];
 
 
 VerificationTest[
 	AnnulusMesh[{0,0},{1/2,1},{0,Pi},{8,2}]["Bounds"],
 	{{-1.,1.},{0.,1.}},
 	TestID->"AnnulusMesh_arbitrary-annulus-2"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1131,14 +1130,14 @@ VerificationTest[
 	CircularVoidMesh[{0,0},0.2,1,2]["Bounds"],
 	{{-0.5,0.5},{-0.5,0.5}},
 	TestID->"CircularVoidMesh_arbitrary-void-1"
-]
+];
 
 
 VerificationTest[
 	CircularVoidMesh[{0.5,0.5},0.2,1,2]["Bounds"],
 	{{0.,1.},{0.,1.}},
 	TestID->"CircularVoidMesh_arbitrary-void-2"
-]
+];
 
 
 VerificationTest[
@@ -1146,7 +1145,7 @@ VerificationTest[
 	$Failed,
 	{CircularVoidMesh::ratio},
 	TestID->"CircularVoidMesh_bad-size-radius-ratio"
-]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -1161,14 +1160,14 @@ VerificationTest[
 	Length@First@ElementIncidents[CuboidMesh[2]["MeshElements"]],
 	8,
 	TestID->"CuboidMesh_unit-cube"
-]
+];
 
 
 VerificationTest[
 	CuboidMesh[{0,0,0},{3,2,1},{3,2,1}]["Bounds"],
 	{{0.,3.},{0.,2.},{0.,1.}},
 	TestID->"CuboidMesh_arbitrary-cuboid"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1179,7 +1178,7 @@ VerificationTest[
 	Length@First@ElementIncidents[HexahedronMesh[{2,3,4}]["MeshElements"]],
 	24,
 	TestID->"HexahedronMesh_unit-hexahedron"
-]
+];
 
 
 VerificationTest[
@@ -1189,7 +1188,7 @@ VerificationTest[
 	]["Coordinates"]//Length,
 	18,
 	TestID->"HexahedronMesh_arbitrary-hexahedron"
-]
+];
 
 
 (* The last two points in Hexahedron are switched. *)
@@ -1202,7 +1201,7 @@ VerificationTest[
 	{ToElementMesh::femimq,HexahedronMesh::ordering},
 	SameTest->MatchQ,
 	TestID->"HexahedronMesh_wrong-ordering"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1220,7 +1219,7 @@ VerificationTest[
 	{{0.,0.,2.},{2.,0.,0.},{2.,0.,2.},{2.,2.,2.}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TetrahedronMesh_coordinates"
-]
+];
 
 
 VerificationTest[
@@ -1231,7 +1230,7 @@ VerificationTest[
 	]["Coordinates"]//Sort,
 	{{0.,0.,0.},{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}},
 	TestID->"TetrahedronMesh_tetrahedron-n=1"
-]
+];
 
 
 VerificationTest[
@@ -1242,7 +1241,7 @@ VerificationTest[
 	]["Coordinates"]//Sort,
 	{{0.,0.,0.},{0.,0.,0.5},{0.,0.,1.},{0.,0.5,0.},{0.,0.5,0.5},{0.,1.,0.},{0.5,0.,0.},{0.5,0.,0.5},{0.5,0.5,0.},{1.,0.,0.}},
 	TestID->"TetrahedronMesh_tetrahedron-n=2"
-]
+];
 
 
 VerificationTest[
@@ -1255,7 +1254,7 @@ VerificationTest[
 	{1/3,0,1/3},{1/3,1/3,0},{1/3,1/3,1/3},{1/2,0,0},{1/2,0,1/2},{1/2,1/2,0},{1,0,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"TetrahedronMesh_hexahedron-n=2"
-]
+];
 
 
 VerificationTest[
@@ -1263,7 +1262,7 @@ VerificationTest[
 	$Failed,
 	{TetrahedronMesh::hexelms},
 	TestID->"TetrahedronMesh_hexahedron-too-few-elements"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1275,7 +1274,7 @@ VerificationTest[
 	{{0.,1.},{0.,1.},{0.,1.}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_unit-prism"
-]
+];
 
 
 VerificationTest[
@@ -1287,7 +1286,7 @@ VerificationTest[
 	{1,2,1/3},{1,0,1},{1,2,1},{3/2,0,1/2},{3/2,2,1/2},{2,0,0},{2,2,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_arbitrary-prism"
-]
+];
 
 
 (* Wrong number of elements on triangular face edge. *)
@@ -1296,7 +1295,7 @@ VerificationTest[
 	$Failed,
 	{PrismMesh::noelems},
 	TestID->"PrismMesh_wrong-element-specification"
-]
+];
 
 
 (* Prism with non-coplanar triangular faces. *)
@@ -1310,7 +1309,7 @@ VerificationTest[
 	{PrismMesh::alignerr},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-1&),
 	TestID->"PrismMesh_non-coplanar-faces"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1321,7 +1320,7 @@ VerificationTest[
 	CylinderMesh[{2,2}]["Bounds"],
 	{{-1.,1.},{-1.,1.},{-1.,1.}},
 	TestID->"CylinderMesh_unit-cylinder"
-]
+];
 
 
 VerificationTest[
@@ -1329,7 +1328,7 @@ VerificationTest[
 	{{-0.408248,1.40825},{-0.40474,1.40474},{-0.40474,1.40474}},
 	SameTest->(Norm[#1-#2]<10^-3&),
 	TestID->"CylinderMesh_arbitrary-cylinder"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1340,7 +1339,7 @@ VerificationTest[
 	SphereMesh[2]["Bounds"],
 	{{-1.,1.},{-1.,1.},{-1.,1.}},
 	TestID->"SphereMesh_unit-sphere"
-]
+];
 
 
 VerificationTest[
@@ -1348,14 +1347,14 @@ VerificationTest[
 	{{-1.80534,3.80534},{-0.805339,4.80534},{0.194661,5.80534}},
 	SameTest->(Norm[#1-#2]<10^-3&),
 	TestID->"SphereMesh_arbitrary-sphere"
-]
+];
 
 
 VerificationTest[
 	SphereMesh[2,"MeshOrder"->2]["MeshOrder"],
 	2,
 	TestID->"SphereMesh_order=2"
-]
+];
 
 
 VerificationTest[
@@ -1363,7 +1362,7 @@ VerificationTest[
 	$Failed,
 	{SphereMesh::noelems},
 	TestID->"SphereMesh_too-few-elements"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1376,7 +1375,7 @@ VerificationTest[
 	_ElementMesh,
 	SameTest->MatchQ,
 	TestID->"SphericalShellMesh_unit-shell"
-]
+];
 
 
 (* Test default SphericalShell with "MeshOrder"->2 *)
@@ -1385,7 +1384,7 @@ VerificationTest[
 	_ElementMesh,
 	SameTest->MatchQ,
 	TestID->"SphericalShellMesh_unit-shell-order=2"
-]
+];
 
 
 (* Test SphericalShell with arbitrary position and size. *)
@@ -1394,7 +1393,7 @@ VerificationTest[
 	_ElementMesh,
 	SameTest->MatchQ,
 	TestID->"SphericalShellMesh_arbitrary-shell"
-]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1405,7 +1404,7 @@ VerificationTest[
 	BallMesh[2]["Bounds"],
 	{{-1.,1.},{-1.,1.},{-1.,1.}},
 	TestID->"BallMesh_unit-ball"
-]
+];
 
 
 VerificationTest[
@@ -1413,11 +1412,11 @@ VerificationTest[
 	{{-1.80534,3.80534},{-0.805339,4.80534},{0.194661,5.80534}},
 	SameTest->(Norm[#1-#2]<10^-3&),
 	TestID->"BallMesh_arbitrary-ball"
-]
+];
 
 
 (* ::Subsection::Closed:: *)
 (*EndTestSection*)
 
 
-EndTestSection[]
+EndTestSection[];
