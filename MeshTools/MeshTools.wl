@@ -1185,7 +1185,7 @@ TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts];
 
 TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
-	{type,unitCorners,unitMesh,tf},
+	{type,unitMesh,tf},
 	
 	type=OptionValue["MeshElementType"];
 
@@ -1316,7 +1316,7 @@ CircularVoidMesh::ratio="Radius `1` should be smaller than the half of square do
 CircularVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_}};
 
 CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
-	{raster,eighth,quarter},
+	{raster,quarter},
 	(* This should also make sure that numerical quantities are compared. *)
 	If[
 		Not@TrueQ[radius<(size/2)],
@@ -1398,7 +1398,7 @@ CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 CylinderMesh[{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts];
 
 CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=Module[
-	{order,diskMesh,length,alignedCylinder,tf},
+	{diskMesh,length,alignedCylinder,tf},
 	If[
 		TrueQ[nr<2]||Not@IntegerQ[nr],
 		Message[CylinderMesh::noelems,nr];Return[$Failed]
@@ -1589,7 +1589,7 @@ BallMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts];
 
 BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{order,method},
+	{method},
 	
 	If[
 		Not@(TrueQ[n>=1]&&IntegerQ[n]),
