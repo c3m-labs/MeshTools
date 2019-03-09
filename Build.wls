@@ -40,7 +40,7 @@ getGitCommitCount[dir_]:=Module[{value},
 $name="MeshTools";
 (* Get the repository directory by using this notebook\[CloseCurlyQuote]s directory. *)
 $rootDir=If[$Notebooks,NotebookDirectory[],Directory[]];
-$source=FileNameJoin[{$rootDir}];
+$source=FileNameJoin[{$rootDir,"MeshTools"}];
 $target=FileNameJoin[{$rootDir,"build",$name}];
 
 
