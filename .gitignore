@@ -1,0 +1,9 @@
+# Build folder for Paclet
+build
+
+# Folder created by IntelliJ IDEA editor
+.idea
+*.iml
+
+# File created by Wolfram Workbench
+.WolframResources
