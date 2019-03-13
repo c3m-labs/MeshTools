@@ -47,6 +47,8 @@ ElementMeshCurvedWireframe;
 MeshElementMeasure;
 BoundaryElementMeasure;
 
+RefineMesh;
+
 StructuredMesh;
 RectangleMesh;
 TriangleMesh;
@@ -1005,6 +1007,166 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
 
 
 (* ::Subsection::Closed:: *)
+(*Edge refinement*)
+
+
+internalNodesCalculation[{n1_,n2_,n3_,n4_}]:={
+	n1+1/3(n2-n1),
+	n1+2/3(n2-n1),
+	n1+1/3(n2-n1)+1/4(n4-n1+n3-n2),
+	n1+2/3(n2-n1)+1/4(n4-n1+n3-n2)
+};
+
+internalNodesCalculation[{n1_,n2_,n3_,n4_},arcCenter_]:=Module[
+	{a,b,rotationAngle,testDir},
+	a=n1-arcCenter;
+	b=n2-arcCenter;
+	rotationAngle=VectorAngle[a,b]/3;
+	testDir=RotationTransform[3*rotationAngle,arcCenter][n1]-arcCenter;
+	If[VectorAngle[testDir,b]>3*rotationAngle,
+		rotationAngle*=-1
+	];
+	{
+		RotationTransform[rotationAngle,arcCenter][n1],
+		RotationTransform[2*rotationAngle,arcCenter][n1],
+		n1+1/3(n2-n1)+1/4(n4-n1+n3-n2),
+		n1+2/3(n2-n1)+1/4(n4-n1+n3-n2)
+	}
+];
+
+internalNodesCalculation[{n1_,n2_,n3_,n4_,n5_,n6_,n7_,n8_}]:={
+	n1+1/3(n2-n1)+1/3(n4-n1),
+	n1+2/3(n2-n1)+1/3(n3-n2),
+	n1+1/3(n2-n1)+2/3(n4-n1),
+	n1+2/3(n2-n1)+2/3(n3-n2),
+	n1+1/3(n2-n1)+1/3(n4-n1)+1/8(n5-n1+n6-n2+n7-n3+n8-n4),
+	n1+2/3(n2-n1)+1/3(n3-n2)+1/8(n5-n1+n6-n2+n7-n3+n8-n4),
+	n1+1/3(n2-n1)+2/3(n4-n1)+1/8(n5-n1+n6-n2+n7-n3+n8-n4),
+	n1+2/3(n2-n1)+2/3(n3-n2)+1/8(n5-n1+n6-n2+n7-n3+n8-n4)
+};
+
+reorderInternalNodesQuad[index_]:=Module[{reorder,backorder},
+	Switch[index,
+		1,reorder={1,2,3,4};backorder={1,2,3,4},
+		2,reorder={2,3,4,1};backorder={3,1,4,2},
+		3,reorder={3,4,1,2};backorder={4,3,2,1},
+		4,reorder={4,1,2,3};backorder={2,4,1,3}
+	];
+	{reorder,backorder}
+];
+
+reorderInternalNodesHex[index_]:=Module[{reorder,backorder},
+	Switch[index,
+		1,reorder={1,2,3,4,5,6,7,8};backorder={1,2,3,4,5,6,7,8},
+		2,reorder={8,7,6,5,4,3,2,1};backorder={7,8,5,6,3,4,1,2},
+		3,reorder={5,6,2,1,8,7,3,4};backorder={3,4,7,8,1,2,5,6},
+		4,reorder={2,6,7,3,1,5,8,4};backorder={5,1,7,3,6,2,8,4},
+		5,reorder={4,3,7,8,1,2,5,6};backorder={5,6,1,2,7,8,3,4},
+		6,reorder={5,1,4,8,6,2,3,7};backorder={2,6,4,8,1,5,3,7}
+	];
+	{reorder,backorder}
+];
+
+internalNodes[nodes_?(Length[#]==4&),index_]:=Module[{reorder,backorder},
+	{reorder,backorder}=reorderInternalNodesQuad[index];
+	internalNodesCalculation[nodes[[reorder]]][[backorder]]
+];
+
+internalNodes[nodes_?(Length[#]==4&),index_,arcCenter_]:=Module[{reorder,backorder},
+	{reorder,backorder}=reorderInternalNodesQuad[index];
+	internalNodesCalculation[nodes[[reorder]],arcCenter][[backorder]]
+];
+
+internalNodes[nodes_?(Length[#]==8&),index_]:=Module[{reorder,backorder},
+	{reorder,backorder}=reorderInternalNodesHex[index];
+	internalNodesCalculation[nodes[[reorder]]][[backorder]]
+];
+
+
+insertedElementNodes[nodes_?(Length[#]==4&),totalNodes_]:={
+	{nodes[[1]],nodes[[2]],totalNodes+2,totalNodes+1},
+	{nodes[[2]],nodes[[3]],totalNodes+4,totalNodes+2},
+	{nodes[[3]],nodes[[4]],totalNodes+3,totalNodes+4},
+	{nodes[[4]],nodes[[1]],totalNodes+1,totalNodes+3},
+	{totalNodes+1,totalNodes+2,totalNodes+4,totalNodes+3}
+};
+
+insertedElementNodes[nodes_?(Length[#]==8&),totalNodes_]:={
+	{nodes[[1]],nodes[[2]],nodes[[3]],nodes[[4]],
+	totalNodes+1,totalNodes+2,totalNodes+4,totalNodes+3},
+	{totalNodes+5,totalNodes+6,totalNodes+8,
+	totalNodes+7,nodes[[5]],nodes[[6]],nodes[[7]],nodes[[8]]},
+	{nodes[[1]],nodes[[2]],totalNodes+2,totalNodes+1,
+	nodes[[5]],nodes[[6]],totalNodes+6,totalNodes+5},
+	{totalNodes+2,nodes[[2]],nodes[[3]],totalNodes+4,
+	totalNodes+6,nodes[[6]],nodes[[7]],totalNodes+8},
+	{totalNodes+3,totalNodes+4,nodes[[3]],nodes[[4]],
+	totalNodes+7,totalNodes+8,nodes[[7]],nodes[[8]]},
+	{nodes[[1]],totalNodes+1,totalNodes+3,nodes[[4]],
+	nodes[[5]],totalNodes+5,totalNodes+7,nodes[[8]]},
+	{totalNodes+1,totalNodes+2,totalNodes+4,totalNodes+3,
+	totalNodes+5,totalNodes+6,totalNodes+8,totalNodes+7}
+};
+
+insertedElementNodes[nodes_,totalNodes_,index_]:=Delete[
+	insertedElementNodes[nodes,totalNodes],index
+];
+
+
+refineMesh[mesh_ElementMesh,index_Integer,arcCenter_:Null]:=Module[
+	{coordinates,elements,boundaryElements,elementsToConfigure,
+	totalNumberOfNodes,nodesOfElementToConfigure,selectedElement,
+	points,addedPoints,newElements,positions},
+	
+	coordinates=mesh["Coordinates"];
+	elements=First@ElementIncidents@mesh["MeshElements"];
+
+	boundaryElements=Position[First@mesh["ElementConnectivity"],0];
+	elementsToConfigure=Select[boundaryElements,#[[2]]==index&][[All,1]];
+
+	Do[
+		totalNumberOfNodes=Length@coordinates;
+		selectedElement=elementsToConfigure[[i]];
+		nodesOfElementToConfigure=elements[[selectedElement]];
+		points=mesh["Coordinates"][[nodesOfElementToConfigure]];
+		addedPoints=If[arcCenter===Null,
+			internalNodes[points,index],
+			internalNodes[points,index,arcCenter]
+		];
+		coordinates=Join[coordinates,addedPoints];
+		newElements=insertedElementNodes[nodesOfElementToConfigure,totalNumberOfNodes,index];
+		elements=Join[elements,newElements],
+		{i,Length@elementsToConfigure}
+	];
+
+	positions=ArrayReshape[elementsToConfigure,{Length@elementsToConfigure,1}];
+	elements=Delete[elements,positions];
+
+	If[mesh["EmbeddingDimension"]==2,
+		ToElementMesh[
+		"Coordinates"->coordinates,
+		"MeshElements"->{QuadElement[elements]}
+		],
+		ToElementMesh[
+			"Coordinates"->coordinates,
+			"MeshElements"->{HexahedronElement[elements]}
+		]
+	]
+];
+
+
+RefineMesh::usage="RefineMesh[mesh,side] adds new level of elements to the specified side.";
+
+RefineMesh[mesh_ElementMesh?(#["EmbeddingDimension"]==2&),
+	side_?(MemberQ[{Bottom,Top,Left,Right},#]&)]:=
+	refineMesh[mesh,Switch[side,Bottom,1,Right,2,Top,3,Left,4]];
+
+RefineMesh[mesh_ElementMesh?(#["EmbeddingDimension"]==3&),
+	side_?(MemberQ[{Bottom,Front,Right,Top,Back,Left},#]&)]:=
+	refineMesh[mesh,Switch[side,Bottom,1,Top,2,Front,3,Right,4,Back,5,Left,6]];
+
+
+(* ::Subsection::Closed:: *)
 (*Structured mesh*)
 
 
@@ -1130,13 +1292,22 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 RectangleMesh::usage="RectangleMesh[{xMin, yMin},{xMax, yMax},{nx, ny}] creates structured mesh 
 on axis-aligned Rectangle with corners {xMin,yMin} and {xMax,yMax}.";
 
-RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
+RectangleMesh//Options={"Refinement"->False};
 
-RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}];
+RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=StructuredMesh[
-	{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
-	{nx,ny}
+RectangleMesh[n_Integer,opts:OptionsPattern[]]:=RectangleMesh[{0,0},{1,1},{n,n},opts];
+
+RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer},
+			opts:OptionsPattern[]]:=Module[{mesh},
+	mesh=StructuredMesh[
+		{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
+		{nx,ny}
+	];
+	If[OptionValue["Refinement"]===False,
+		mesh,
+		RefineMesh[mesh,OptionValue["Refinement"]]
+	]
 ];
 
 
@@ -1256,14 +1427,14 @@ DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements 
 DiskMesh::method="Method \"`1`\" is not supported.";
 DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-DiskMesh//Options={Method->Automatic};
+DiskMesh//Options={Method->Automatic,"Refinement"->False};
 
 DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{method},
+	{method,mesh},
 	
 	If[
 		Not@TrueQ[n>=2&&IntegerQ[n]],
@@ -1272,10 +1443,15 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	
 	method=OptionValue[Method]/.Automatic->"Block";
 		
-	Switch[method,
+	mesh=Switch[method,
 		"Block",diskMeshBlock[{x,y},r,n],
 		"Projection",diskMeshProjection[{x,y},r,n],
 		_,Message[DiskMesh::method,method];Return[$Failed]
+	];
+	
+	If[OptionValue["Refinement"],
+		refineMesh[mesh,3,{x,y}],
+		mesh
 	]
 ];
 
@@ -1289,20 +1465,30 @@ AnnulusMesh::usage=
 and nr elements in radial direction."<>"\n"<>
 	"AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus from angle \[Phi]1 to \[Phi]2.";
 
-AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_.}};
+AnnulusMesh//Options={"Refinement"->False};
 
-AnnulusMesh[{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nPhi,nr}];
+AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_,OptionsPattern[]}};
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nPhi,nr}];
+AnnulusMesh[{nPhi_Integer,nr_Integer},
+			opts:OptionsPattern[]]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nPhi,nr},opts];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{phi1_,phi2_},{nPhi_Integer,nr_Integer}]:=Module[
-	{raster},
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{nPhi_Integer,nr_Integer},
+			opts:OptionsPattern[]]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nPhi,nr},opts];
+
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{phi1_,phi2_},
+			{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
+	{raster,mesh},
 	
 	raster=N@{
 		Table[rOut*{Cos[fi],Sin[fi]}+{x,y},{fi,phi1,phi2,(phi2-phi1)/nPhi}],
 		Table[rIn*{Cos[fi],Sin[fi]}+{x,y},{fi,phi1,phi2,(phi2-phi1)/nPhi}]
 	};
-	StructuredMesh[raster,{nPhi,nr}]
+	mesh=StructuredMesh[raster,{nPhi,nr}];
+	Switch[OptionValue["Refinement"],
+		False,mesh,
+		"Inner",refineMesh[mesh,3,{x,y}],
+		"Outer",refineMesh[mesh,1,{x,y}]
+	]
 ];
 
 
@@ -1313,10 +1499,13 @@ AnnulusMesh[{x_,y_},{rIn_,rOut_},{phi1_,phi2_},{nPhi_Integer,nr_Integer}]:=Modul
 CircularVoidMesh::usage="CircularVoidMesh[{x,y}, r, s, n] creates a square mesh of size s with circular void of radius r centered at {x,y}.";
 CircularVoidMesh::ratio="Radius `1` should be smaller than the half of square domain size `2`.";
 
-CircularVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_}};
+CircularVoidMesh//Options={"Refinement"->False};
 
-CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
-	{raster,quarter},
+CircularVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_,OptionsPattern[]}};
+
+CircularVoidMesh[{cx_,cy_},radius_,size_,
+				n_Integer?Positive,opts:OptionsPattern[]]:=Module[
+	{raster,quarter,mesh},
 	(* This should also make sure that numerical quantities are compared. *)
 	If[
 		Not@TrueQ[radius<(size/2)],
@@ -1329,12 +1518,17 @@ CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
 	};
 	quarter=StructuredMesh[raster,{n,Ceiling[(size/radius/8)*n]}];
 	
-	MergeMesh[{
+	mesh=MergeMesh[{
 		quarter,
 		TransformMesh[quarter,RotationTransform[Pi/2,{cx,cy}]],
 		TransformMesh[quarter,RotationTransform[Pi,{cx,cy}]],
 		TransformMesh[quarter,RotationTransform[3*Pi/2,{cx,cy}]]
-	}]
+	}];
+	Switch[OptionValue["Refinement"],
+		False,mesh,
+		"Inner",refineMesh[mesh,3,{cx,cy}],
+		"Outer",refineMesh[mesh,1]
+	]
 ];
 
 
