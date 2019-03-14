@@ -64,7 +64,7 @@ SphericalShellMesh;
 BallMesh;
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Code*)
 
 
@@ -1004,7 +1004,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Structured mesh*)
 
 
@@ -1040,20 +1040,179 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 ];
 
 
+internalNodesQuad[{nx_,ny_},{xInt_,yInt_},side_]:=Module[
+	{perm},
+	perm=Switch[side,
+		Bottom,Flatten@Table[4*(i-1)+{1,3,4,2},{i,nx}],
+		Left,Flatten@Table[4*(i-1)+{1,2,4,3},{i,ny}],
+		Top,Flatten@Table[4*(i-1)+{1,3,4,2},{i,nx}],
+		Right,Flatten@Table[4*(i-1)+{1,2,4,3},{i,ny}]
+	];
+	Switch[side,
+		Bottom,Flatten[Drop[Table[
+			{xInt[i+1/(3*nx),j],yInt[i+1/(3*nx),j]},
+			{i,0,1-2./(3*nx),1./(3*nx)},
+			{j,{0,1/(2*ny)}}
+		],{3,-1,3}],1][[perm]],
+		Left,Flatten[Drop[Table[
+			{xInt[i,j+1/(3*ny)],yInt[i,j+1/(3*ny)]},
+			{j,0,1-2./(3*ny),1./(3*ny)},
+			{i,{0,1/(2*nx)}}
+		],{3,-1,3}],1][[perm]],
+		Top,Flatten[Drop[Table[
+			{xInt[i+1/(3*nx),j],yInt[i+1/(3*nx),j]},
+			{i,0,1-2./(3*nx),1./(3*nx)},
+			{j,{(ny-1)/ny+1/(2*ny),1}}
+		],{3,-1,3}],1][[perm]],
+		Right,Flatten[Drop[Table[
+			{xInt[i,j+1/(3*ny)],yInt[i,j+1/(3*ny)]},
+			{j,0,1-2./(3*ny),1./(3*ny)},
+			{i,{(nx-1)/nx+1/(2*nx),1}}
+		],{3,-1,3}],1][[perm]],
+		None,{},
+		_,Message[StructuredMesh::refinement];Return[$Failed,Module]
+	]
+];
+
+internalNodesQuadCorner[{nx_,ny_},{xInt_,yInt_},cornerElement_]:=Switch[
+	cornerElement,
+	(nx-1)*ny+1,{
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),0},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),0},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1,1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),2/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1,2/(3*ny)}
+	},
+	nx*ny,{
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1-2/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1,1-2/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),1-1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1-1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1,1-1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),1},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1}
+	},
+	ny,{
+		{xInt[#1,#2],yInt[#1,#2]}&@@{0,1-2/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*ny),1-2/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{0,1-1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),1-1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),1-1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),1},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),1}
+	},
+	1,{
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),0},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),0},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{0,1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),1/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{0,2/(3*ny)},
+		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),2/(3*ny)}
+	}
+];
+
+
+structuredMeshEdgeElements[{nx_Integer,ny_Integer},side_]:=Switch[
+	side,
+	Left,Range[1,ny,1],
+	Right,Range[ny*(nx-1)+1,ny*nx,1],
+	Top,Range[ny,ny*nx,ny],
+	Bottom,Range[1,ny*(nx-1)+1,ny],
+	None,{},
+	_,Message[StructuredMesh::refinement];Return[$Failed,Module]
+];
+
+structuredMeshCornerElements[{nx_Integer,ny_Integer},sides_]:=Which[
+	SubsetQ[sides,{Bottom,Right,Top,Left}],{1,1+(nx-1)*ny,nx*ny,ny},
+	SubsetQ[sides,{Left,Bottom,Right}],{1,1+(nx-1)*ny},
+	SubsetQ[sides,{Bottom,Right,Top}],{1+(nx-1)*ny,nx*ny},
+	SubsetQ[sides,{Right,Top,Left}],{nx*ny,ny},
+	SubsetQ[sides,{Top,Left,Bottom}],{1,ny},
+	SubsetQ[sides,{Bottom,Right}],{1+(nx-1)*ny},
+	SubsetQ[sides,{Top,Right}],{nx*ny},
+	SubsetQ[sides,{Top,Left}],{ny},
+	SubsetQ[sides,{Bottom,Left}],{1},
+	True,{}
+]
+
+
+insertedElementNodes[nodes_,addedNodes_]:={
+	{nodes[[1]],nodes[[2]],addedNodes[[2]],addedNodes[[1]]},
+	{nodes[[2]],nodes[[3]],addedNodes[[3]],addedNodes[[2]]},
+	{nodes[[3]],nodes[[4]],addedNodes[[4]],addedNodes[[3]]},
+	{nodes[[4]],nodes[[1]],addedNodes[[1]],addedNodes[[4]]},
+	addedNodes
+};
+
+insertedElementNodes[nodes_,addedNodes_,side_]:=Module[
+	{index},
+	index=Switch[side,
+		Bottom,1,
+		Right,2,
+		Top,3,
+		Left,4
+	];
+	Delete[insertedElementNodes[nodes,addedNodes],index]
+];
+
+insertedElementCornerNodes[nodes_,cornerElement_,{nx_Integer,ny_Integer},totalNodes_]:=Switch[
+	cornerElement,
+	(nx-1)*ny+1,{
+		{nodes[[1]],totalNodes+1,totalNodes+3,nodes[[4]]},
+		{totalNodes+1,totalNodes+2,totalNodes+4,totalNodes+3},
+		{totalNodes+2,nodes[[2]],totalNodes+5,totalNodes+4},
+		{totalNodes+3,totalNodes+4,totalNodes+6,nodes[[4]]},
+		{totalNodes+4,totalNodes+5,totalNodes+7,totalNodes+6},
+		{totalNodes+6,totalNodes+7,nodes[[3]],nodes[[4]]}
+	},
+	nx*ny,{
+		{nodes[[1]],totalNodes+1,totalNodes+4,totalNodes+3},
+		{nodes[[1]],nodes[[2]],totalNodes+2,totalNodes+1},
+		{totalNodes+1,totalNodes+2,totalNodes+5,totalNodes+4},
+		{nodes[[1]],totalNodes+3,totalNodes+6,nodes[[4]]},
+		{totalNodes+3,totalNodes+4,totalNodes+7,totalNodes+6},
+		{totalNodes+4,totalNodes+5,nodes[[3]],totalNodes+7}
+	},
+	ny,{
+		{nodes[[1]],nodes[[2]],totalNodes+2,totalNodes+1},
+		{totalNodes+1,totalNodes+2,totalNodes+4,totalNodes+3},
+		{totalNodes+2,nodes[[2]],totalNodes+5,totalNodes+4},
+		{totalNodes+3,totalNodes+4,totalNodes+6,nodes[[4]]},
+		{totalNodes+4,totalNodes+5,totalNodes+7,totalNodes+6},
+		{totalNodes+7,totalNodes+5,nodes[[2]],nodes[[3]]}
+	},
+	1,{
+		{nodes[[1]],totalNodes+1,totalNodes+4,totalNodes+3},
+		{totalNodes+1,totalNodes+2,totalNodes+5,totalNodes+4},
+		{totalNodes+2,nodes[[2]],nodes[[3]],totalNodes+5},
+		{totalNodes+3,totalNodes+4,totalNodes+7,totalNodes+6},
+		{totalNodes+4,totalNodes+5,nodes[[3]],totalNodes+7},
+		{totalNodes+6,totalNodes+7,nodes[[3]],nodes[[4]]}
+	}
+];
+
+
 (* This function may cause shadowing with the same function in FEMAddOns paclet (https://github.com/WolframResearch/FEMAddOns). *)
 
 StructuredMesh::usage=(
 	"StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals."<>"\n"<>
 	"StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra."
 );
-StructuredMesh::array="Raster of input points must be full array of numbers with depth of `1`.";
 
-StructuredMesh//Options={InterpolationOrder->1};
+StructuredMesh::array="Raster of input points must be full array of numbers with depth of `1`.";
+StructuredMesh::refinement="\"Refinement\" option takes as argument {Left, Right, Top, Bottom, Front, Back, None}.";
+
+StructuredMesh//Options={InterpolationOrder->1, "Refinement"->{None}};
 
 StructuredMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
 StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
-	{order,dim,restructured,xInt,yInt,zInt,nodes,connectivity},
+	{order,dim,restructured,xInt,yInt,zInt,nodes,connectivity,
+	rfNodes,rfNodesIndices,edgeElements,rfElements,sideIndex,
+	cornerElements,pos,deletedIndices},
 	If[
 		Not@ArrayQ[raster,3,NumericQ],
 		Message[StructuredMesh::array,3+1];Return[$Failed,Module]
@@ -1072,8 +1231,73 @@ StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
 		Table[{xInt[i,j],yInt[i,j],zInt[i,j]},{i,0,1,1./nx},{j,0,1,1./ny}],
 		Table[{xInt[i,j],yInt[i,j]},{i,0,1,1./nx},{j,0,1,1./ny}]
 	];
-	
 	connectivity=getElementConnectivity[nx,ny];
+	
+	rfNodes={};
+	edgeElements={};
+	rfElements={};
+	sideIndex={};
+	Do[
+		AppendTo[rfNodes,internalNodesQuad[{nx,ny},{xInt,yInt},side]];
+		AppendTo[edgeElements,structuredMeshEdgeElements[{nx,ny},side]];
+		AppendTo[sideIndex,ConstantArray[side,Length@edgeElements[[-1]] ] ],
+		{side,OptionValue["Refinement"]}
+	];
+	
+	rfNodes=Flatten[rfNodes,1];
+	sideIndex=Flatten@sideIndex;
+	edgeElements=Flatten@edgeElements;
+	
+	rfNodesIndices=ArrayReshape[
+		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
+		{Length@edgeElements,4}
+	];
+	
+	cornerElements=structuredMeshCornerElements[{nx,ny},OptionValue["Refinement"]];
+	pos={};
+	Do[
+		AppendTo[pos,Position[edgeElements,corner]],
+		{corner,cornerElements}
+	];
+	pos=Flatten[pos,1];
+	
+	edgeElements=Delete[edgeElements,pos];
+	sideIndex=Delete[sideIndex,pos];
+	
+	pos=Flatten@pos;
+	
+	deletedIndices=Flatten@rfNodesIndices[[pos]];
+	deletedIndices=ArrayReshape[deletedIndices,{Length@deletedIndices,1}];
+	
+	rfNodes=Delete[rfNodes,deletedIndices-(nx+1)*(ny+1)];
+	
+	rfNodesIndices=ArrayReshape[
+		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
+		{Length@edgeElements,4}
+	];
+	
+	Do[
+		AppendTo[rfElements,insertedElementNodes[
+			connectivity[[edgeElements[[i]] ]],
+			rfNodesIndices[[i]],
+			sideIndex[[i]]
+		]],
+		{i,Length@edgeElements}
+	];
+	rfElements=Flatten[rfElements,1];
+		
+	nodes=Join[nodes,rfNodes];
+	connectivity=Join[connectivity,rfElements];
+	
+	Do[
+		connectivity=Join[
+			connectivity,
+			insertedElementCornerNodes[connectivity[[corner]],corner,{nx,ny},Length@nodes]
+		];
+		nodes=Join[nodes,internalNodesQuadCorner[{nx,ny},{xInt,yInt},corner]],
+		{corner,cornerElements}
+	];
+		
 	If[
 		dim==3,
 		ToBoundaryMesh[
