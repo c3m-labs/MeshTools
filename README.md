@@ -73,4 +73,4 @@ that enable you to perform the following tasks:
 Please use the repository [issues](https://github.com/c3m-labs/MeshTools/issues) page to submit bugs or feature ideas.
 
 Contributions to this repository are very welcome.
-Guidelines on how to build paclet file from source code can be found in [Development.md]( Development.md ) file.
+Guidelines on how to build paclet file from source code can be found in [CONTRIBUTING.md]( CONTRIBUTING.md ) file.
