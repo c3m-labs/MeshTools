@@ -1288,21 +1288,38 @@ AnnulusMesh::usage=
 	"AnnulusMesh[{x, y}, {rIn, rOut}, {n\[Phi], nr}] creates mesh on Annulus with n\[Phi] elements in circumferential 
 and nr elements in radial direction."<>"\n"<>
 	"AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus from angle \[Phi]1 to \[Phi]2.";
+AnnulusMesh::angle="Angle limits for Annulus must be distinct.";
+AnnulusMesh::division="There should be more than one element for each Pi/2 sector of Annulus.";
 
 AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_.}};
 
-AnnulusMesh[{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nPhi,nr}];
+AnnulusMesh[{nfi_Integer?Positive,nr_Integer?Positive}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nfi,nr}];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nPhi,nr}];
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{nfi_Integer?Positive,nr_Integer?Positive}]:=
+	AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nfi,nr}];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{phi1_,phi2_},{nPhi_Integer,nr_Integer}]:=Module[
-	{raster},
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{fi1_,fi2_},{nfi_Integer?Positive,nr_Integer?Positive}]:=Module[
+	{min,max,raster},
+	
+	(* Sorting angle by size solves potential problems with inverted elements. *)
+	{min,max}=MinMax[{fi1,fi2}];
+	If[
+		N[min]==N[max],
+		Message[AnnulusMesh::angle];Return[$Failed,Module]
+	];
+	max=Clip[max,{min,min+2*Pi}];
+	
+	(* It makes no sense if element division in angular direction is too small. *)
+	If[
+		(max-min)/nfi>Pi/2,
+		Message[AnnulusMesh::division];Return[$Failed,Module]
+	];
 	
 	raster=N@{
-		Table[rOut*{Cos[fi],Sin[fi]}+{x,y},{fi,phi1,phi2,(phi2-phi1)/nPhi}],
-		Table[rIn*{Cos[fi],Sin[fi]}+{x,y},{fi,phi1,phi2,(phi2-phi1)/nPhi}]
+		Table[rOut*{Cos[i],Sin[i]}+{x,y},{i,min,max,(max-min)/nfi}],
+		Table[rIn*{Cos[i],Sin[i]}+{x,y},{i,min,max,(max-min)/nfi}]
 	};
-	StructuredMesh[raster,{nPhi,nr}]
+	StructuredMesh[raster,{nfi,nr}]
 ];
 
 
@@ -1465,16 +1482,17 @@ SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 (*SphericalShellMesh*)
 
 
-SphericalShellMesh::usage="SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell, 
-with nPhi elements in circumferential and nr elements in radial direction.";
+SphericalShellMesh::usage=
+"SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell, 
+with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
 SphericalShellMesh//Options={"MeshOrder"->Automatic};
 
 SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-SphericalShellMesh[{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{nPhi,nr},opts];
+SphericalShellMesh[{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{nfi,nr},opts];
 
-SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
+SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
 	{order,rescale,innerRaster,outerRaster,rotations,flatMesh,curvedMesh},
 	
 	order=OptionValue["MeshOrder"]/.Automatic->1;
@@ -1487,16 +1505,16 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nPhi_Integer,nr_Integer},opts:Option
 	
 	(* This special raster makes all element edges on disk edge of the same length. *)
 	innerRaster=With[
-		{pts=rIn*N@Tan@Subdivide[-Pi/4,Pi/4,nPhi]},
+		{pts=rIn*N@Tan@Subdivide[-Pi/4,Pi/4,nfi]},
 		Map[Append[rIn], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	outerRaster=With[
-		{pts=rOut*N@Tan@Subdivide[-Pi/4,Pi/4,nPhi]},
+		{pts=rOut*N@Tan@Subdivide[-Pi/4,Pi/4,nfi]},
 		Map[Append[rOut], Outer[Reverse@*List,pts,pts], {2}]
 	];
 	
 	flatMesh=MeshOrderAlteration[
-		StructuredMesh[{innerRaster,outerRaster},{nPhi,nPhi,nr}],
+		StructuredMesh[{innerRaster,outerRaster},{nfi,nfi,nr}],
 		order
 	];
 	curvedMesh=ToElementMesh[
