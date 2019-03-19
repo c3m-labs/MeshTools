@@ -1050,68 +1050,69 @@ internalNodesQuad[{nx_,ny_},{xInt_,yInt_},side_]:=Module[
 	];
 	Switch[side,
 		Bottom,Flatten[Drop[Table[
-			{xInt[i+1/(3*nx),j],yInt[i+1/(3*nx),j]},
+			{xInt[i+1./(3*nx),j],yInt[i+1./(3*nx),j]},
 			{i,0,1-2./(3*nx),1./(3*nx)},
 			{j,{0,1/(2*ny)}}
 		],{3,-1,3}],1][[perm]],
 		Left,Flatten[Drop[Table[
 			{xInt[i,j+1/(3*ny)],yInt[i,j+1/(3*ny)]},
 			{j,0,1-2./(3*ny),1./(3*ny)},
-			{i,{0,1/(2*nx)}}
+			{i,{0,1./(2*nx)}}
 		],{3,-1,3}],1][[perm]],
 		Top,Flatten[Drop[Table[
-			{xInt[i+1/(3*nx),j],yInt[i+1/(3*nx),j]},
+			{xInt[i+1./(3*nx),j],yInt[i+1./(3*nx),j]},
 			{i,0,1-2./(3*nx),1./(3*nx)},
-			{j,{(ny-1)/ny+1/(2*ny),1}}
+			{j,{(ny-1)/ny+1./(2*ny),1}}
 		],{3,-1,3}],1][[perm]],
 		Right,Flatten[Drop[Table[
-			{xInt[i,j+1/(3*ny)],yInt[i,j+1/(3*ny)]},
+			{xInt[i,j+1./(3*ny)],yInt[i,j+1/(3*ny)]},
 			{j,0,1-2./(3*ny),1./(3*ny)},
-			{i,{(nx-1)/nx+1/(2*nx),1}}
+			{i,{(nx-1)/nx+1./(2*nx),1}}
 		],{3,-1,3}],1][[perm]],
 		None,{},
 		_,Message[StructuredMesh::refinement];Return[$Failed,Module]
 	]
 ];
 
+generateCorner2D[{dx_,dy_},position_]:=Module[
+	{coor},
+	coor={
+		{0*dx,0*dy},
+		{1*dx,0*dy},
+		{2*dx,0*dy},
+		{0*dx,1*dy},
+		{1*dx,1*dy},
+		{2*dx,1*dy},
+		{0*dx,2*dy},
+		{1*dx,2*dy},
+		{2*dx,2*dy}
+	};
+	Switch[position,
+		1,Delete[coor,{{1},{9}}],
+		2,Transpose[Transpose@Delete[coor,{{3},{7}}]+{1-2*dx,0}],
+		3,Transpose[Transpose@Delete[coor,{{3},{7}}]+{0,1-2*dy}],
+		4,Transpose[Transpose@Delete[coor,{{1},{9}}]+{1-2*dx,1-2*dy}]
+	]
+];
+
 internalNodesQuadCorner[{nx_,ny_},{xInt_,yInt_},cornerElement_]:=Switch[
 	cornerElement,
 	(nx-1)*ny+1,{
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),0},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),0},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1,1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),2/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1,2/(3*ny)}
-	},
+		xInt[#[[1]],#[[2]]],
+		yInt[#[[1]],#[[2]]]
+	}&/@generateCorner2D[{1/(3*nx),1/(3*ny)},2],
 	nx*ny,{
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1-2/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1,1-2/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),1-1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1-1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1,1-1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-2/(3*nx),1},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1-1/(3*nx),1}
-	},
+		xInt[#[[1]],#[[2]]],
+		yInt[#[[1]],#[[2]]]
+	}&/@generateCorner2D[{1/(3*nx),1/(3*ny)},4],
 	ny,{
-		{xInt[#1,#2],yInt[#1,#2]}&@@{0,1-2/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*ny),1-2/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{0,1-1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),1-1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),1-1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),1},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),1}
-	},
+		xInt[#[[1]],#[[2]]],
+		yInt[#[[1]],#[[2]]]
+	}&/@generateCorner2D[{1/(3*nx),1/(3*ny)},3],
 	1,{
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),0},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),0},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{0,1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{2/(3*nx),1/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{0,2/(3*ny)},
-		{xInt[#1,#2],yInt[#1,#2]}&@@{1/(3*nx),2/(3*ny)}
-	}
+		xInt[#[[1]],#[[2]]],
+		yInt[#[[1]],#[[2]]]
+	}&/@generateCorner2D[{1/(3*nx),1/(3*ny)},1]
 ];
 
 
@@ -1195,6 +1196,84 @@ insertedElementCornerNodes[nodes_,cornerElement_,{nx_Integer,ny_Integer},totalNo
 ];
 
 
+structuredMeshRefinement[{xInt_,yInt_},{nx_,ny_},sides_,nodesList_,connectivityList_]:=Module[
+	{rfNodes,edgeElements,rfElements,sideIndex,rfNodesIndices,
+	cornerElements,pos,deletedIndices,nodes,connectivity},
+	
+	nodes=nodesList;
+	connectivity=connectivityList;
+	
+	rfNodes={};
+	edgeElements={};
+	rfElements={};
+	sideIndex={};
+	
+	Do[
+		AppendTo[rfNodes,internalNodesQuad[{nx,ny},{xInt,yInt},side]];
+		AppendTo[edgeElements,structuredMeshEdgeElements[{nx,ny},side]];
+		AppendTo[sideIndex,ConstantArray[side,Length@edgeElements[[-1]] ] ],
+		{side,sides}
+	];
+	
+	rfNodes=Flatten[rfNodes,1];
+	sideIndex=Flatten@sideIndex;
+	edgeElements=Flatten@edgeElements;
+	
+	rfNodesIndices=ArrayReshape[
+		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
+		{Length@edgeElements,4}
+	];
+	
+	cornerElements=structuredMeshCornerElements[{nx,ny},sides];
+	pos={};
+	Do[
+		AppendTo[pos,Position[edgeElements,corner]],
+		{corner,cornerElements}
+	];
+	pos=Flatten[pos,1];
+	
+	edgeElements=Delete[edgeElements,pos];
+	sideIndex=Delete[sideIndex,pos];
+	
+	pos=Flatten@pos;
+	
+	deletedIndices=Flatten@rfNodesIndices[[pos]];
+	deletedIndices=ArrayReshape[deletedIndices,{Length@deletedIndices,1}];
+	
+	rfNodes=Delete[rfNodes,deletedIndices-(nx+1)*(ny+1)];
+	
+	rfNodesIndices=ArrayReshape[
+		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
+		{Length@edgeElements,4}
+	];
+	
+	Do[
+		AppendTo[rfElements,insertedElementNodes[
+			connectivity[[edgeElements[[i]] ]],
+			rfNodesIndices[[i]],
+			sideIndex[[i]]
+		]],
+		{i,Length@edgeElements}
+	];
+	rfElements=Flatten[rfElements,1];
+	
+	nodes=Join[nodes,rfNodes];
+	connectivity=Join[connectivity,rfElements];
+	
+	Do[
+		connectivity=Join[
+			connectivity,
+			insertedElementCornerNodes[connectivity[[corner]],corner,{nx,ny},Length@nodes]
+		];
+		nodes=Join[nodes,internalNodesQuadCorner[{nx,ny},{xInt,yInt},corner]],
+		{corner,cornerElements}
+	];
+	
+	{nodes,connectivity}
+	
+];
+
+
 (* This function may cause shadowing with the same function in FEMAddOns paclet (https://github.com/WolframResearch/FEMAddOns). *)
 
 StructuredMesh::usage=(
@@ -1233,71 +1312,16 @@ StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
 	];
 	connectivity=getElementConnectivity[nx,ny];
 	
-	rfNodes={};
-	edgeElements={};
-	rfElements={};
-	sideIndex={};
-	Do[
-		AppendTo[rfNodes,internalNodesQuad[{nx,ny},{xInt,yInt},side]];
-		AppendTo[edgeElements,structuredMeshEdgeElements[{nx,ny},side]];
-		AppendTo[sideIndex,ConstantArray[side,Length@edgeElements[[-1]] ] ],
-		{side,OptionValue["Refinement"]}
+	(*begin*)
+	
+	{nodes,connectivity}=structuredMeshRefinement[
+		{xInt,yInt},
+		{nx,ny},
+		OptionValue["Refinement"],
+		nodes,
+		connectivity
 	];
 	
-	rfNodes=Flatten[rfNodes,1];
-	sideIndex=Flatten@sideIndex;
-	edgeElements=Flatten@edgeElements;
-	
-	rfNodesIndices=ArrayReshape[
-		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
-		{Length@edgeElements,4}
-	];
-	
-	cornerElements=structuredMeshCornerElements[{nx,ny},OptionValue["Refinement"]];
-	pos={};
-	Do[
-		AppendTo[pos,Position[edgeElements,corner]],
-		{corner,cornerElements}
-	];
-	pos=Flatten[pos,1];
-	
-	edgeElements=Delete[edgeElements,pos];
-	sideIndex=Delete[sideIndex,pos];
-	
-	pos=Flatten@pos;
-	
-	deletedIndices=Flatten@rfNodesIndices[[pos]];
-	deletedIndices=ArrayReshape[deletedIndices,{Length@deletedIndices,1}];
-	
-	rfNodes=Delete[rfNodes,deletedIndices-(nx+1)*(ny+1)];
-	
-	rfNodesIndices=ArrayReshape[
-		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
-		{Length@edgeElements,4}
-	];
-	
-	Do[
-		AppendTo[rfElements,insertedElementNodes[
-			connectivity[[edgeElements[[i]] ]],
-			rfNodesIndices[[i]],
-			sideIndex[[i]]
-		]],
-		{i,Length@edgeElements}
-	];
-	rfElements=Flatten[rfElements,1];
-		
-	nodes=Join[nodes,rfNodes];
-	connectivity=Join[connectivity,rfElements];
-	
-	Do[
-		connectivity=Join[
-			connectivity,
-			insertedElementCornerNodes[connectivity[[corner]],corner,{nx,ny},Length@nodes]
-		];
-		nodes=Join[nodes,internalNodesQuadCorner[{nx,ny},{xInt,yInt},corner]],
-		{corner,cornerElements}
-	];
-		
 	If[
 		dim==3,
 		ToBoundaryMesh[
@@ -1515,7 +1539,7 @@ and nr elements in radial direction."<>"\n"<>
 
 AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_.}};
 
-AnnulusMesh[{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nPhi,nr}];
+AnnulusMesh[{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1./2,1},{0,2*Pi},{nPhi,nr}];
 
 AnnulusMesh[{x_,y_},{rIn_,rOut_},{nPhi_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nPhi,nr}];
 
@@ -1696,7 +1720,7 @@ SphericalShellMesh//Options={"MeshOrder"->Automatic};
 
 SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-SphericalShellMesh[{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{nPhi,nr},opts];
+SphericalShellMesh[{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1./2,1},{nPhi,nr},opts];
 
 SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nPhi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
 	{order,rescale,innerRaster,outerRaster,rotations,flatMesh,curvedMesh},
@@ -2067,7 +2091,7 @@ PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 ];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*End package*)
 
 
