@@ -64,7 +64,7 @@ SphericalShellMesh;
 BallMesh;
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Code*)
 
 
@@ -1004,7 +1004,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
 ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Structured mesh*)
 
 
@@ -1053,57 +1053,90 @@ nodeMaker[{nx_,ny_}]:=Flatten[
 ];
 
 nodeMakerRF1[{nx_,ny_,nz_}]:=Module[
-	{nodes},
+	{nodes,reorder,sel},
 	nodes=Table[
 		{(i-1)/(3nx),(j-1)/(3ny),(k-1)/(2nz)},
 		{i,3nx+1},
 		{j,3ny+1},
 		{k,2}
 	];
-	nodes[[1;;-1;;3]]=Drop[#,{1,-1,3}]&/@Take[nodes,{1,-1,3}];
+	nodes=Flatten[nodes,1];
+	reorder=Flatten[Table[{
+		1+3(j-1)+3*(3*ny+1)*(i-1),
+		2+3(j-1)+3*(3*ny+1)*(i-1),
+		3+3(j-1)+3*(3*ny+1)*(i-1),
+		4+3(j-1)+3*(3*ny+1)*(i-1),
+		2+3*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		3+3*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		4+3*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		5+3*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		3+6*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		4+6*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		5+6*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		6+6*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		4+9*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		5+9*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		6+9*ny+3(j-1)+3*(3*ny+1)*(i-1),
+		7+9*ny+3(j-1)+3*(3*ny+1)*(i-1)
+	},{i,nx},{j,ny}
+	]];
+	nodes=Flatten[nodes[[reorder]],1];
+	nodes=ArrayReshape[nodes,{nx*ny,16,2,3}];
+	nodes=Delete[#,{{1},{4},{13},{16}}]&/@nodes;
+	sel=Drop[Range[Length@nodes],{1,ny}];
+	nodes[[sel]]=Delete[#,{{1},{2}}]&/@nodes[[sel]];
+	sel=Drop[Range[Length@nodes],{1,-1,ny}];
+	nodes[[sel]]=Delete[#,{{-10},{-6}}]&/@nodes[[sel]];
 	Flatten[nodes,2]
 ];
 
-nodeMakerRF2x[{nx_,ny_,nz_}]:=Module[
-	{nodes},
-	nodes=Table[
-		{(i-1)/(3nx),(j-1)/ny,(k-1)/(2nz)},
-		{i,3nx+1},
-		{j,ny+1},
-		{k,2}
-	];
-	Flatten[Drop[nodes,{1,-1,3}],2]
+nodeMakerRF2x[{nx_,ny_,nz_}]:=Table[
+	{(i-1)/(3nx),(j-1)/ny,(k-1)/(2nz)},
+	{i,3nx+1},
+	{j,ny+1},
+	{k,2}
 ];
 
-nodeMakerRF2y[{nx_,ny_,nz_}]:=Module[
-	{nodes},
-	nodes=Table[
-		{(i-1)/nx,(j-1)/(3ny),(k-1)/(2nz)},
-		{i,nx+1},
-		{j,3ny+1},
-		{k,2}
-	];
-	Flatten[Drop[nodes,{1,-1,3}],2]
+nodeMakerRF2y[{nx_,ny_,nz_}]:=Table[
+	{(i-1)/nx,(j-1)/(3ny),(k-1)/(2nz)},
+	{i,nx+1},
+	{j,3ny+1},
+	{k,2}
 ];
+
 
 internalNodesQuad[{nx_,ny_},int_,side_]:=Module[
-	{perm,p},
-	perm=Switch[side,
+	{reorder,p},
+	reorder=Switch[side,
 		Bottom,Flatten@Table[4*(i-1)+{1,3,4,2},{i,nx}],
 		Left,Flatten@Table[4*(i-1)+{1,2,4,3},{i,ny}],
 		Top,Flatten@Table[4*(i-1)+{2,4,3,1},{i,nx}],
 		Right,Flatten@Table[4*(i-1)+{2,1,3,4},{i,ny}]
 	];
 	p=Switch[side,
-		Bottom,nodeMaker[{nx,ny}][[perm]],
-		Left,Reverse[nodeMaker[{ny,nx}],2][[perm]],
-		Top,{#[[1]],1-#[[2]]}&/@nodeMaker[{nx,ny}][[perm]],
-		Right,{1-#[[1]],#[[2]]}&/@Reverse[nodeMaker[{ny,nx}],2][[perm]],
+		Bottom,nodeMaker[{nx,ny}][[reorder]],
+		Left,Reverse[nodeMaker[{ny,nx}],2][[reorder]],
+		Top,{#[[1]],1-#[[2]]}&/@nodeMaker[{nx,ny}][[reorder]],
+		Right,{1-#[[1]],#[[2]]}&/@Reverse[nodeMaker[{ny,nx}],2][[reorder]],
 		None,{},
 		_,Message[StructuredMesh::refinement];Return[$Failed,Module]
 	];
 	Through/@MapThread[int,Transpose@p]
 ];
+
+internalNodesQuadRF1[{nx_,ny_,nz_},int_,side_]:=Module[
+	{p},
+	p=Switch[side,
+		Bottom,nodeMakerRF1[{nx,ny,nz}],
+		Left,nodeMakerRF1[{nz,ny,nx}][[All,{3,2,1}]],
+		Front,nodeMakerRF1[{nx,nz,ny}][[All,{1,3,2}]],
+		Top,{#[[1]],#[[2]],1-#[[3]]}&/@(nodeMakerRF1[{nx,ny,nz}]),
+		Right,{1-#[[1]],#[[2]],#[[3]]}&/@(nodeMakerRF1[{nz,ny,nx}][[All,{3,2,1}]]),
+		Back,{#[[1]],1-#[[2]],#[[3]]}&/@(nodeMakerRF1[{nx,nz,ny}][[All,{1,3,2}]])
+	];
+	Through/@MapThread[int,Transpose@p]
+];
+
 
 generateCorner2D[{dx_,dy_},position_]:=Module[
 	{coor},
@@ -1125,6 +1158,7 @@ generateCorner2D[{dx_,dy_},position_]:=Module[
 		4,Transpose[Transpose@Delete[coor,{{1},{9}}]+{1-2*dx,1-2*dy}]
 	]
 ];
+
 
 internalNodesQuadCorner[{nx_,ny_},int_,cornerElement_]:=Module[
 	{p},
