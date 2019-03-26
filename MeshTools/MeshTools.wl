@@ -1040,35 +1040,31 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 ];
 
 
+nodeMaker[{nx_,ny_}]:=Flatten[
+	Drop[
+		Table[
+			{(i-1)/(3nx),(j-1)/(2ny)},
+			{i,3nx+1},
+			{j,2}
+		],
+		{1,-1,3}
+	],
+	1
+];
+
 internalNodesQuad[{nx_,ny_},int_,side_]:=Module[
 	{perm,p},
 	perm=Switch[side,
 		Bottom,Flatten@Table[4*(i-1)+{1,3,4,2},{i,nx}],
 		Left,Flatten@Table[4*(i-1)+{1,2,4,3},{i,ny}],
-		Top,Flatten@Table[4*(i-1)+{1,3,4,2},{i,nx}],
-		Right,Flatten@Table[4*(i-1)+{1,2,4,3},{i,ny}]
+		Top,Flatten@Table[4*(i-1)+{2,4,3,1},{i,nx}],
+		Right,Flatten@Table[4*(i-1)+{2,1,3,4},{i,ny}]
 	];
 	p=Switch[side,
-		Bottom,Flatten[Drop[Table[
-			{i+1./(3*nx),j},
-			{i,0,1-2./(3*nx),1./(3*nx)},
-			{j,{0,1/(2*ny)}}
-		],{3,-1,3}],1][[perm]],
-		Left,Flatten[Drop[Table[
-			{i,j+1/(3*ny)},
-			{j,0,1-2./(3*ny),1./(3*ny)},
-			{i,{0,1./(2*nx)}}
-		],{3,-1,3}],1][[perm]],
-		Top,Flatten[Drop[Table[
-			{i+1./(3*nx),j},
-			{i,0,1-2./(3*nx),1./(3*nx)},
-			{j,{(ny-1)/ny+1./(2*ny),1}}
-		],{3,-1,3}],1][[perm]],
-		Right,Flatten[Drop[Table[
-			{i,j+1./(3*ny)},
-			{j,0,1-2./(3*ny),1./(3*ny)},
-			{i,{(nx-1)/nx+1./(2*nx),1}}
-		],{3,-1,3}],1][[perm]],
+		Bottom,nodeMaker[{nx,ny}][[perm]],
+		Left,Reverse[nodeMaker[{ny,nx}],2][[perm]],
+		Top,{#[[1]],1-#[[2]]}&/@nodeMaker[{nx,ny}][[perm]],
+		Right,{1-#[[1]],#[[2]]}&/@Reverse[nodeMaker[{ny,nx}],2][[perm]],
 		None,{},
 		_,Message[StructuredMesh::refinement];Return[$Failed,Module]
 	];
