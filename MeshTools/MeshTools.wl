@@ -64,7 +64,7 @@ SphericalShellMesh;
 BallMesh;
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Code*)
 
 
@@ -1004,7 +1004,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Structured mesh*)
 
 
@@ -1050,6 +1050,40 @@ nodeMaker[{nx_,ny_}]:=Flatten[
 		{1,-1,3}
 	],
 	1
+];
+
+nodeMakerRF1[{nx_,ny_,nz_}]:=Module[
+	{nodes},
+	nodes=Table[
+		{(i-1)/(3nx),(j-1)/(3ny),(k-1)/(2nz)},
+		{i,3nx+1},
+		{j,3ny+1},
+		{k,2}
+	];
+	nodes[[1;;-1;;3]]=Drop[#,{1,-1,3}]&/@Take[nodes,{1,-1,3}];
+	Flatten[nodes,2]
+];
+
+nodeMakerRF2x[{nx_,ny_,nz_}]:=Module[
+	{nodes},
+	nodes=Table[
+		{(i-1)/(3nx),(j-1)/ny,(k-1)/(2nz)},
+		{i,3nx+1},
+		{j,ny+1},
+		{k,2}
+	];
+	Flatten[Drop[nodes,{1,-1,3}],2]
+];
+
+nodeMakerRF2y[{nx_,ny_,nz_}]:=Module[
+	{nodes},
+	nodes=Table[
+		{(i-1)/nx,(j-1)/(3ny),(k-1)/(2nz)},
+		{i,nx+1},
+		{j,3ny+1},
+		{k,2}
+	];
+	Flatten[Drop[nodes,{1,-1,3}],2]
 ];
 
 internalNodesQuad[{nx_,ny_},int_,side_]:=Module[
