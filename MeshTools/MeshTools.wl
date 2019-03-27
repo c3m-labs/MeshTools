@@ -1040,6 +1040,8 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 ];
 
 
+(* Function nodeMaker determines the values for refinement 
+	points on unit square on bottom side. *)
 nodeMaker[{nx_,ny_}]:=Flatten[
 	Drop[
 		Table[
@@ -1105,6 +1107,9 @@ nodeMakerRF2y[{nx_,ny_,nz_}]:=Table[
 ];
 
 
+(* Function internalNodesQuad transforms points on unit square from
+	nodeMaker to actual coordinates. It rotates refinement points
+	to desired side and scales the points via interpolation. *)
 internalNodesQuad[{nx_,ny_},int_,side_]:=Module[
 	{reorder,p},
 	reorder=Switch[side,
@@ -1138,6 +1143,8 @@ internalNodesQuadRF1[{nx_,ny_,nz_},int_,side_]:=Module[
 ];
 
 
+(* Function generateCorner2D creates refinement points in corner
+	elements on unit square. *)
 generateCorner2D[{dx_,dy_},position_]:=Module[
 	{coor},
 	coor={
@@ -1160,6 +1167,8 @@ generateCorner2D[{dx_,dy_},position_]:=Module[
 ];
 
 
+(* Function internalNodesQuadCorner transforms points on unit 
+	square from generateCorner2D to actual coordinates. *)
 internalNodesQuadCorner[{nx_,ny_},int_,cornerElement_]:=Module[
 	{p},
 	p=Switch[
@@ -1173,6 +1182,8 @@ internalNodesQuadCorner[{nx_,ny_},int_,cornerElement_]:=Module[
 ];
 
 
+(* Function structuredMeshEdgeElements calculates the indices
+	of elements on selected edge. *)
 structuredMeshEdgeElements[{nx_Integer,ny_Integer},side_]:=Switch[
 	side,
 	Left,Range[1,ny,1],
@@ -1183,6 +1194,9 @@ structuredMeshEdgeElements[{nx_Integer,ny_Integer},side_]:=Switch[
 	_,Message[StructuredMesh::refinement];Return[$Failed,Module]
 ];
 
+
+(* Function structuredMeshCornerElements calculates the indices
+	of elements in applicable corners. *)
 structuredMeshCornerElements[{nx_Integer,ny_Integer},sides_]:=Which[
 	SubsetQ[sides,{Bottom,Right,Top,Left}],{1,1+(nx-1)*ny,nx*ny,ny},
 	SubsetQ[sides,{Left,Bottom,Right}],{1,1+(nx-1)*ny},
@@ -1197,6 +1211,8 @@ structuredMeshCornerElements[{nx_Integer,ny_Integer},sides_]:=Which[
 ]
 
 
+(* Function insertedElementNodes returns the elements created with
+	introduction of new nodes. *)
 insertedElementNodes[nodes_,addedNodes_]:={
 	{nodes[[1]],nodes[[2]],addedNodes[[2]],addedNodes[[1]]},
 	{nodes[[2]],nodes[[3]],addedNodes[[3]],addedNodes[[2]]},
@@ -1266,6 +1282,9 @@ structuredMeshRefinement[int_,{nx_,ny_},sides_,nodesList_,connectivityList_]:=Mo
 	rfElements={};
 	sideIndex={};
 	
+	(* For each side of refinement determine new nodes and elements. *)
+	(* List sideIndex includes side index associated with each edge 
+		for all new elements. *)
 	Do[
 		AppendTo[rfNodes,internalNodesQuad[{nx,ny},int,side]];
 		AppendTo[edgeElements,structuredMeshEdgeElements[{nx,ny},side]];
@@ -1277,11 +1296,15 @@ structuredMeshRefinement[int_,{nx_,ny_},sides_,nodesList_,connectivityList_]:=Mo
 	sideIndex=Flatten@sideIndex;
 	edgeElements=Flatten@edgeElements;
 	
+	(* Calculate indices of new nodes considering pre-existing nodes. *)
 	rfNodesIndices=ArrayReshape[
 		Range[(nx+1)*(ny+1)+1,(nx+1)*(ny+1)+1+Length@edgeElements*4],
 		{Length@edgeElements,4}
 	];
 	
+	(* Determine corners affected by refinement. Delete corner elements
+		to not get processed in refinement together with the rest of the
+		edge. Delete nodes in the corner created before and reindex them. *)
 	cornerElements=structuredMeshCornerElements[{nx,ny},sides];
 	pos={};
 	Do[
@@ -1305,6 +1328,8 @@ structuredMeshRefinement[int_,{nx_,ny_},sides_,nodesList_,connectivityList_]:=Mo
 		{Length@edgeElements,4}
 	];
 	
+	(* Find new elements created with introduction of new nodes on
+		refined edges. *)
 	Do[
 		AppendTo[rfElements,insertedElementNodes[
 			connectivity[[edgeElements[[i]] ]],
@@ -1315,6 +1340,8 @@ structuredMeshRefinement[int_,{nx_,ny_},sides_,nodesList_,connectivityList_]:=Mo
 	];
 	rfElements=Flatten[rfElements,1];
 	
+	(* Merge together manipulated lists of pre-existing nodes and elements
+		with those newly created. In second step also include corners. *)
 	nodes=Join[nodes,rfNodes];
 	connectivity=Join[connectivity,rfElements];
 	
@@ -1352,9 +1379,7 @@ StructuredMesh//Options={InterpolationOrder->1, "Refinement"->{}};
 StructuredMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
 StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
-	{order,dim,restructured,xInt,yInt,zInt,nodes,connectivity,
-	rfNodes,rfNodesIndices,edgeElements,rfElements,sideIndex,
-	cornerElements,pos,deletedIndices},
+	{order,dim,restructured,xInt,yInt,zInt,nodes,connectivity,refinement},
 	If[
 		Not@ArrayQ[raster,3,NumericQ],
 		Message[StructuredMesh::array,3+1];Return[$Failed,Module]
@@ -1375,18 +1400,24 @@ StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
 	];
 	connectivity=getElementConnectivity[nx,ny];
 	
+	refinement=If[
+		Head@OptionValue["Refinement"]===List,
+		OptionValue["Refinement"],
+		{OptionValue["Refinement"]}/.None->Nothing
+	];
+	
 	Switch[dim,
-	2,If[OptionValue["Refinement"]!={},
+	2,If[refinement!={},
 		{nodes,connectivity}=structuredMeshRefinement[
 			{xInt,yInt},{nx,ny},
-			OptionValue["Refinement"],
+			refinement,
 			nodes,connectivity
 		]
 	],
-	3,If[OptionValue["Refinement"]!={},
+	3,If[refinement!={},
 		{nodes,connectivity}=structuredMeshRefinement[
 			{xInt,yInt,zInt},{nx,ny},
-			OptionValue["Refinement"],
+			refinement,
 			nodes,connectivity
 		]
 	]];
