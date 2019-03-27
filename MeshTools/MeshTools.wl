@@ -1040,20 +1040,58 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 ];
 
 
-(* This function may cause shadowing with the same function in FEMAddOns paclet (https://github.com/WolframResearch/FEMAddOns). *)
+unitStructuredMesh[nx_,ny_]:=With[{
+	(* Vectorized (the fastest) way to get coordinates of unit square. *)
+	nodes=Flatten[
+		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny]],
+		1
+	],
+	connectivity=getElementConnectivity[nx,ny]
+	},
+	(* We can disable all error checks for this mesh, because we know it is correct. *)
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{QuadElement[connectivity]},
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
+];
 
+unitStructuredMesh[nx_,ny_,nz_]:=With[{
+	nodes=Flatten[
+		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny],Subdivide[0.,1.,nz]],
+		2
+	],
+	connectivity=getElementConnectivity[nx,ny,nz]
+	},
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{HexahedronElement[connectivity]},
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
+];
+
+
+(* We create structured mesh on unit square (or cube) and then reinterpolate nodal 
+coordinates over given raster points. Underlying unit mesh can also have refinement on 
+some edges and/or have "MeshOrder"\[Rule]2. *)
 StructuredMesh::usage=(
 	"StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals."<>"\n"<>
 	"StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra."
 );
-StructuredMesh::array="Raster of input points must be full array of numbers with depth of `1`.";
+StructuredMesh::array="Raster of input points must be a full (non-ragged) array of numbers with depth of `1`.";
 
-StructuredMesh//Options={InterpolationOrder->1};
+StructuredMesh//Options={InterpolationOrder->1,"MeshOrder"->1};
 
 StructuredMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
-StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
-	{order,dim,restructured,xInt,yInt,zInt,nodes,connectivity},
+StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPattern[]]:=Module[
+	{order,dim,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
 	If[
 		Not@ArrayQ[raster,3,NumericQ],
 		Message[StructuredMesh::array,3+1];Return[$Failed,Module]
@@ -1061,34 +1099,42 @@ StructuredMesh[raster_,{nx_,ny_},opts:OptionsPattern[]]:=Module[
 	
 	order=OptionValue[InterpolationOrder]/.Automatic->1;
 	dim=Last@Dimensions[raster];
+	(* We make sure to work with machine precison numbers. *)
+	restructured=Transpose[N[raster],{3,2,1}];
+	xInt=ListInterpolation[restructured[[1]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
+	yInt=ListInterpolation[restructured[[2]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
 	
-	restructured=Transpose[raster,{3,2,1}];
-	xInt=ListInterpolation[restructured[[1]],{{0,1},{0,1}},InterpolationOrder->order];
-	yInt=ListInterpolation[restructured[[2]],{{0,1},{0,1}},InterpolationOrder->order];
-	
-	nodes=Join@@If[
-		dim==3,
-		zInt=ListInterpolation[restructured[[3]],{{0,1},{0,1}},InterpolationOrder->order];
-		Table[{xInt[i,j],yInt[i,j],zInt[i,j]},{i,0,1,1./nx},{j,0,1,1./ny}],
-		Table[{xInt[i,j],yInt[i,j]},{i,0,1,1./nx},{j,0,1,1./ny}]
+	unitMesh=MeshOrderAlteration[
+		unitStructuredMesh[nx,ny],
+		OptionValue["MeshOrder"]/.(Except[1|2]->1)
 	];
 	
-	connectivity=getElementConnectivity[nx,ny];
+	unitCrds=unitMesh["Coordinates"];
+	crds=If[
+		dim==3,
+		zInt=ListInterpolation[restructured[[3]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
+		Transpose@{xInt@@@unitCrds,yInt@@@unitCrds,zInt@@@unitCrds},
+		Transpose@{xInt@@@unitCrds,yInt@@@unitCrds}
+	];
+	
+	(* Incidents are complete for sure, but we still check for quality and duplicate nodes. *)
 	If[
 		dim==3,
 		ToBoundaryMesh[
-			"Coordinates"->nodes,
-			"BoundaryElements"->{QuadElement[connectivity]}
+			"Coordinates"->crds,
+			"BoundaryElements"->unitMesh["MeshElements"],
+			"CheckIncidentsCompletness"->False
 		],
 		ToElementMesh[
-			"Coordinates"->nodes,
-			"MeshElements"->{QuadElement[connectivity]}
+			"Coordinates"->crds,
+			"MeshElements"->unitMesh["MeshElements"],
+			"CheckIncidentsCompletness"->False
 		]
 	]
 ];
 
-StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
-	{order,restructured,xInt,yInt,zInt,nodes,connectivity},
+StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Positive},opts:OptionsPattern[]]:=Module[
+	{order,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
 	
 	If[
 		Not@ArrayQ[raster,4,NumericQ],
@@ -1097,24 +1143,23 @@ StructuredMesh[raster_,{nx_,ny_,nz_},opts:OptionsPattern[]]:=Module[
 	
 	order=OptionValue[InterpolationOrder]/.Automatic->1;
 	
-	restructured=Transpose[raster,{4, 3, 2, 1}];
-	xInt=ListInterpolation[restructured[[1]],{{0,1},{0,1},{0,1}},InterpolationOrder->order];
-	yInt=ListInterpolation[restructured[[2]],{{0,1},{0,1},{0,1}},InterpolationOrder->order];
-	zInt=ListInterpolation[restructured[[3]],{{0,1},{0,1},{0,1}},InterpolationOrder->order];
+	restructured=Transpose[N[raster],{4, 3, 2, 1}];
+	xInt=ListInterpolation[restructured[[1]],{{0.,1.},{0.,1.},{0.,1.}},InterpolationOrder->order];
+	yInt=ListInterpolation[restructured[[2]],{{0.,1.},{0.,1.},{0.,1.}},InterpolationOrder->order];
+	zInt=ListInterpolation[restructured[[3]],{{0.,1.},{0.,1.},{0.,1.}},InterpolationOrder->order];
 	
-	nodes=Flatten[
-		Table[
-			{xInt[i,j,k],yInt[i,j,k],zInt[i,j,k]},
-			{i,0,1,1./nx},{j,0,1,1./ny},{k,0,1,1./nz}
-		],
-		2
+	unitMesh=MeshOrderAlteration[
+		unitStructuredMesh[nx,ny,nz],
+		OptionValue["MeshOrder"]/.(Except[1|2]->1)
 	];
 	
-	connectivity=getElementConnectivity[nx,ny,nz];
+	unitCrds=unitMesh["Coordinates"];
+	crds=Transpose@{xInt@@@unitCrds,yInt@@@unitCrds,zInt@@@unitCrds};
 	
 	ToElementMesh[
-		"Coordinates"->nodes,
-		"MeshElements"->{HexahedronElement[connectivity]}
+		"Coordinates"->crds,
+		"MeshElements"->unitMesh["MeshElements"],
+		"CheckIncidentsCompletness"->False
 	]
 ];
 
