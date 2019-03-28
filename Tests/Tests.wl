@@ -896,10 +896,6 @@ With[{
 (*Structured mesh*)
 
 
-(* ::Subsubsection::Closed:: *)
-(*StructuredMesh*)
-
-
 (* Explicitly test node and element ordering in this fundamental function. *)
 VerificationTest[
 	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{2,1}],
@@ -943,6 +939,30 @@ With[
 		}]},
 		TestID->"StructuredMesh_3D-2"
 	]
+];
+
+
+(* Function returns unevalueated for non-positive integer division. *)
+VerificationTest[
+	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{0,1}],
+	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{0,1}],
+	TestID->"StructuredMesh_non-positive-integer-division"
+];
+
+
+VerificationTest[
+	StructuredMesh[{{{0,0},{1,0}},{{0,1},{1,1,2}}},{1,1}],
+	$Failed,
+	{StructuredMesh::array},
+	TestID->"StructuredMesh_non-rectangular-array"
+];
+
+
+VerificationTest[
+	StructuredMesh[{{0,0},{1,0},{0,1},{1,1}},{1,1}],
+	$Failed,
+	{StructuredMesh::array},
+	TestID->"StructuredMesh_improper-depth-of-array"
 ];
 
 
