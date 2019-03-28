@@ -1122,6 +1122,31 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	Equal[
+		AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{8,1}],
+		AnnulusMesh[{0,0},{1/2,1},{0,3*Pi},{8,1}]
+	],
+	TestID->"AnnulusMesh_limit-angle-range"
+];
+
+
+VerificationTest[
+	AnnulusMesh[{3,1}],
+	$Failed,
+	{AnnulusMesh::division},
+	TestID->"AnnulusMesh_too-few-elements"
+];
+
+
+VerificationTest[
+	AnnulusMesh[{0,0},{1/2,1},{0,0},{8,2}],
+	$Failed,
+	{AnnulusMesh::angle},
+	TestID->"AnnulusMesh_coincident-angle-limits"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*CircularVoidMesh*)
 
