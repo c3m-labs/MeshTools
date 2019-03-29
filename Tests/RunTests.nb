@@ -59,7 +59,8 @@ Cell[BoxData[{
        RowBox[{"{", 
         RowBox[{"fields", "/.", "abbreviations"}], "}"}], ",", "results"}], 
       "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}], "Code",
- CellLabel->"In[14]:=",ExpressionUUID->"04d04d1e-87b9-4ec7-8c6f-ce8dec6e1622"],
+ CellLabel->
+  "In[1635]:=",ExpressionUUID->"04d04d1e-87b9-4ec7-8c6f-ce8dec6e1622"],
 
 Cell[BoxData[{
  RowBox[{
@@ -131,7 +132,9 @@ Cell[BoxData[{
            RowBox[{"Thread", "[", 
             RowBox[{"indx", "\[Rule]", "Pink"}], "]"}]}], "}"}]}]}], "\n", 
        "\t", "]"}]}], ";", "\n", "\t", "tr"}]}], "\[IndentingNewLine]", 
-   "]"}]}]}], "Code",ExpressionUUID->"7e06ad6f-eade-47b7-9992-593d8a7fb9ec"]
+   "]"}]}]}], "Code",
+ CellLabel->
+  "In[1637]:=",ExpressionUUID->"7e06ad6f-eade-47b7-9992-593d8a7fb9ec"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -141,13 +144,19 @@ Cell["Run tests", \
 
 Cell[BoxData[
  RowBox[{"PacletDirectoryAdd", "@", 
-  RowBox[{"ParentDirectory", "[", 
-   RowBox[{"NotebookDirectory", "[", "]"}], "]"}]}]], "Input",
- CellLabel->"In[18]:=",ExpressionUUID->"039342a1-1f22-4eb4-9904-3c765afb5aa4"],
+  RowBox[{"FileNameJoin", "[", "\[IndentingNewLine]", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"ParentDirectory", "[", 
+      RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ",", 
+     "\"\<MeshTools\>\""}], "}"}], "\[IndentingNewLine]", "]"}]}]], "Input",
+ CellLabel->
+  "In[1639]:=",ExpressionUUID->"039342a1-1f22-4eb4-9904-3c765afb5aa4"],
 
 Cell[BoxData[
  RowBox[{"Get", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
- CellLabel->"In[19]:=",ExpressionUUID->"14195be3-dd3b-43e0-8f94-0c5b462dbb58"],
+ CellLabel->
+  "In[1640]:=",ExpressionUUID->"14195be3-dd3b-43e0-8f94-0c5b462dbb58"],
 
 Cell[BoxData[{
  RowBox[{
@@ -162,7 +171,8 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"printTestResults", "[", "$testReport", "]"}], ";"}]}], "Code",
  InitializationCell->False,
- CellLabel->"In[20]:=",ExpressionUUID->"7f575fa4-4912-41ac-85ef-d7cd3cf3fa68"]
+ CellLabel->
+  "In[1641]:=",ExpressionUUID->"7f575fa4-4912-41ac-85ef-d7cd3cf3fa68"]
 }, Open  ]]
 },
 WindowSize->{958, 1086},
