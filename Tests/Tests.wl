@@ -893,6 +893,46 @@ With[{
 
 
 (* ::Subsection::Closed:: *)
+(*Mesh visualization*)
+
+
+With[{
+	mesh=ToElementMesh[Rectangle[],MaxCellMeasure->1/10]
+	},
+	VerificationTest[
+		ElementMeshCurvedWireframe[mesh],	
+		_Graphics,
+		SameTest->MatchQ,
+		TestID->"ElementMeshCurvedWireframe-quad"
+	]
+];
+
+
+With[{
+	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1/10]
+	},
+	VerificationTest[
+		ElementMeshCurvedWireframe[mesh],	
+		_Graphics,
+		SameTest->MatchQ,
+		TestID->"ElementMeshCurvedWireframe-tri"
+	]
+];
+
+
+With[{
+	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->1]
+	},
+	VerificationTest[
+		ElementMeshCurvedWireframe[mesh],	
+		$Failed,
+		{ElementMeshCurvedWireframe::type},
+		TestID->"ElementMeshCurvedWireframe-first-order-mesh"
+	]
+];
+
+
+(* ::Subsection::Closed:: *)
 (*Structured mesh*)
 
 

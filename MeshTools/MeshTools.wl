@@ -969,38 +969,51 @@ BoundaryElementMeasure[mesh_ElementMesh]:=Module[
 (*Mesh visualization*)
 
 
-(* 
-Function to visualize 2D second order FEM mesh. 
-Copied from: WTC 2017 talk "Finite Element Method: How to talk to it and make it your friend" by Paritosh Mokhasi 
-*)
+(* Based on https://mathematica.stackexchange.com/questions/176296 *)
 ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[mesh] plots second order mesh with curved edges.";
+ElementMeshCurvedWireframe::type="Only 2D ElementMesh objects with \"MeshOrder\"==2 are supported.";
 
-ElementMeshCurvedWireframe//SyntaxInformation={"ArgumentsPattern"->{_}};
+ElementMeshCurvedWireframe//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
-	{triIncidentsOrder,quadIncidentsOrder,interpolatingQuadBezierCurve,
-	interpolatingQuadBezierCurveComplex,triEdges,triIncidents,coordinates},
+ElementMeshCurvedWireframe//Options=Join[{PlotStyle->Automatic},Options[Graphics]];
 
-	triIncidentsOrder={1,4,2,5,3,6};
-	quadIncidentsOrder={1,5,2,6,3,7,4,8};
-
-	interpolatingQuadBezierCurve[pts_List]/;Length[pts]==3:=
-		BezierCurve[{pts[[1]],(1/2)(-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]}];
-	interpolatingQuadBezierCurve[pts_List,"ControlPoints"]/;(Length[pts]==3):=
-		{pts[[1]],(1/2)(-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]};
-	interpolatingQuadBezierCurve[ptslist_List]:=interpolatingQuadBezierCurve/@ptslist;
-
-	interpolatingQuadBezierCurveComplex[coords_,indices_]:=interpolatingQuadBezierCurve[
-		Map[coords[[#]]&,indices]
+ElementMeshCurvedWireframe[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
+	{triEdges,quadEdges,getEdges,interpolatingCurve,interpolatingCurveComplex,gr},
+	
+	If[
+		Or[
+			mesh["EmbeddingDimension"]=!=2,
+			mesh["MeshOrder"]=!=2
+		],
+		Message[ElementMeshCurvedWireframe::type];Return[$Failed,Module]
 	];
 
-	triEdges=Partition[triIncidentsOrder, 3, 2, {1,1}];
-	triIncidents=Join@@ElementIncidents[mesh["MeshElements"]];
-	coordinates=mesh["Coordinates"];
+	triEdges=MeshElementBaseFaceIncidents[TriangleElement,2][[All,{1,3,2}]];
+	quadEdges=MeshElementBaseFaceIncidents[QuadElement,2][[All,{1,3,2}]];
 	
-	Graphics[{
-		interpolatingQuadBezierCurveComplex[coordinates,triIncidents[[All, #]]]&/@triEdges
-	}]
+	getEdges[ele_TriangleElement]:=Join@@(ElementIncidents[ele][[All,#]]&/@triEdges);
+	getEdges[ele_QuadElement]:=Join@@(ElementIncidents[ele][[All,#]]&/@quadEdges);
+	getEdges[ele_List]:=getEdges/@ele;
+	
+	interpolatingCurve[pts_List]/;Length[pts]==3:=
+		BezierCurve[{pts[[1]],1/2 (-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]}];
+	interpolatingCurve[ptslist_List]:=interpolatingCurve/@ptslist;
+	
+	interpolatingCurveComplex[coords_,indices_]:=interpolatingCurve[
+		Map[coords[[#]]&,indices]
+	];
+	gr=Graphics[{
+		(OptionValue[PlotStyle]/.Automatic->Black),
+		Map[
+			interpolatingCurveComplex[mesh["Coordinates"],#]&,
+			Join@@getEdges[mesh["MeshElements"]]
+		]
+		},
+		FilterRules[{opts},Options@Graphics]
+	];
+	(* Explicity clear local symbols with DownValues to avoid memory leaks. *)
+	ClearAll[getEdges,interpolatingCurve,interpolatingCurveComplex];
+	gr
 ];
 
 
