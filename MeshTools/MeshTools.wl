@@ -64,7 +64,7 @@ SphericalShellMesh;
 BallMesh;
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Code*)
 
 
@@ -1004,7 +1004,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh]:=Module[
 ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Structured mesh*)
 
 
@@ -1044,7 +1044,7 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Refinement functions - method 1*)
 
 
@@ -1365,6 +1365,9 @@ structuredMeshRefinement[{nx_,ny_},sides_,nodesList_,connectivityList_]:=Module[
 
 unitStructuredMeshRefinement[mesh_,{nx_,ny_},refinement_]:=Module[
 	{nodesList,connectivityList,nodes,connectivity},
+	
+	If[refinement==={},Return[mesh]];
+	
 	nodesList=mesh["Coordinates"];
 	connectivityList=First@ElementIncidents@mesh["MeshElements"];
 	{nodes,connectivity}=structuredMeshRefinement[{nx,ny},refinement,nodesList,connectivityList];
@@ -1392,6 +1395,20 @@ refinementNodeMaker[{nx_,ny_}]:=Flatten[
 	1
 ];
 
+refinementNodeMaker[{nx_,ny_,nz_}]:=Module[
+	{data,i,j},
+	data=Outer[List,
+		Subdivide[0.,0.5/nx,1],		
+		Subdivide[0.,1.,3.ny],
+		Subdivide[0.,1.,3.nz]
+	];
+	i=Join[Range[2,Length@data[[1]],3],Range[3,Length@data[[1]],3]];
+	j=Join[Range[2,Length@data[[1,1]],3],Range[3,Length@data[[1,1]],3]];
+	data[[All,1;;-1;;3]]=Map[Drop[#,{1,-1,3}]&,data[[All,1;;-1;;3]],{2}];
+	data[[2,i,j,1]]=0.5*data[[2,i,j,1]];
+	Flatten[data,2]
+];
+
 
 refinementElementMaker[{nx_,ny_}]:=Module[
 	{n},
@@ -1410,58 +1427,134 @@ refinementElementMaker[{nx_,ny_}]:=Module[
 	]
 ];
 
+refinementSingleElement[nds_,add_]:={
+	{nds[[1]],add[[3]],add[[4]],add[[1]],nds[[5]],add[[15]],add[[16]],add[[13]]},
+	{add[[1]],add[[4]],add[[5]],add[[2]],add[[13]],add[[16]],add[[17]],add[[14]]},
+	{add[[2]],add[[5]],add[[6]],nds[[2]],add[[14]],add[[17]],add[[18]],nds[[6]]},
+	{add[[3]],add[[7]],add[[8]],add[[4]],add[[15]],add[[19]],add[[20]],add[[16]]},
+	{add[[4]],add[[8]],add[[9]],add[[5]],add[[16]],add[[20]],add[[21]],add[[17]]},
+	{add[[5]],add[[9]],add[[10]],add[[6]],add[[17]],add[[21]],add[[22]],add[[18]]},
+	{add[[7]],nds[[3]],add[[11]],add[[8]],add[[19]],nds[[7]],add[[23]],add[[20]]},
+	{add[[8]],add[[11]],add[[12]],add[[9]],add[[20]],add[[23]],add[[24]],add[[21]]},
+	{add[[9]],add[[12]],nds[[4]],add[[10]],add[[21]],add[[24]],nds[[8]],add[[22]]},
+	{add[[13]],add[[16]],add[[17]],add[[14]],nds[[5]],add[[15]],add[[18]],nds[[6]]},
+	{add[[16]],add[[20]],add[[21]],add[[17]],add[[15]],add[[19]],add[[22]],add[[18]]},
+	{add[[20]],add[[23]],add[[24]],add[[21]],add[[19]],nds[[7]],nds[[8]],add[[22]]},
+	{add[[15]],add[[19]],add[[22]],add[[18]],nds[[5]],nds[[7]],nds[[8]],nds[[6]]}
+};
 
-(* Refine left edge of unit structured mesh *)
-unitStructuredMeshRefinement2[mesh_ElementMesh,{nx_,ny_}]:=Module[
-	{meshNodes,meshElements,rfNodes,rfElements},
-		
-	(* Load mesh data *)
-	meshNodes=mesh["Coordinates"];
-	meshElements=First@ElementIncidents@mesh["MeshElements"];
-	
-	(* Delete elements on left edge *)
-	meshElements=Drop[meshElements,ny];
-	
-	(* New nodes and elements on left edge *)
-	rfNodes=refinementNodeMaker[{nx,ny}];
-	rfElements=refinementElementMaker[{nx,ny}];
-	
-	(* Create refined mesh data *)
-	meshNodes=Join[meshNodes,rfNodes];
-	meshElements=Join[meshElements,rfElements];
-		
-	{meshNodes,meshElements}
-	
+refinementElementMaker[{nx_,ny_,nz_}]:=Module[
+	{nodes,addedNodes,dummy,arr1,arr2,arr3,arr4},
+	nodes=getElementConnectivity[1,ny,nz];
+	dummy=ArrayReshape[Range[3*nz-1],{nz,2}];
+	arr1=Flatten[Table[dummy+(i-1)*2*(4*nz+1),{i,ny}],1];
+	dummy=2*nz+Table[{3*i-2,3*i-1,3*i,3*i+1},{i,nz}];
+	arr2=Flatten[Table[dummy+(i-1)*2*(4*nz+1),{i,ny}],1];
+	arr3=arr2+3*nz+1;
+	arr4=arr1+2*nz+2*(3*nz+1);
+	addedNodes=Join[arr1,arr2,arr3,arr4,2];
+	addedNodes=Join[addedNodes,Max[addedNodes]+addedNodes,2];
+	addedNodes=(nx+1)*(ny+1)*(nz+1)+addedNodes;
+	Flatten[MapThread[refinementSingleElement[Sort[#1],#2]&,{nodes,addedNodes}],1]
 ];
 
 
-(* Refine specified edge of unit structured mesh *)
-unitStructuredMeshRefinement2[mesh_ElementMesh,{nx_,ny_},refinement_]:=Module[
-	{meshNodes,meshElements},
+refinedUnitStructuredMesh[nx_,ny_,refinement_]:=Module[
+	{mesh,nodes,elements,n,rfNodes,rfElements,phi},
 	
-	Switch[refinement,
-		{Left},
-			{meshNodes,meshElements}=unitStructuredMeshRefinement[mesh,{nx,ny}],
-		{Bottom},
-			{meshNodes,meshElements}=unitStructuredMeshRefinement[mesh,{ny,nx}];
-			meshNodes=RotationTransform[0.5*Pi,{0.5,0.5}]/@meshNodes,
-		{Right},
-			{meshNodes,meshElements}=unitStructuredMeshRefinement[mesh,{nx,ny}];
-			meshNodes=RotationTransform[Pi,{0.5,0.5}]/@meshNodes,
-		{Top},
-			{meshNodes,meshElements}=unitStructuredMeshRefinement[mesh,{ny,nx}];
-			meshNodes=RotationTransform[1.5*Pi,{0.5,0.5}]/@meshNodes
+	(* Create unit mesh *)
+	If[refinement==={},Return@unitStructuredMesh[nx,ny]];
+	n=If[SubsetQ[{Left,Right},refinement],
+		{nx,ny},
+		{ny,nx}
 	];
+	mesh=unitStructuredMesh@@n;
+	
+	(* Store mesh data *)
+	nodes=mesh["Coordinates"];
+	elements=First@ElementIncidents@mesh["MeshElements"];
+	
+	(* New nodes and elements on left edge *)
+	rfNodes=refinementNodeMaker@n;
+	rfElements=refinementElementMaker@n;
+	
+	(* Delete elements on left edge *)
+	elements=Drop[elements,n[[2]]];
+	
+	(* Create refined mesh data *)
+	nodes=Join[nodes,rfNodes];
+	elements=Join[elements,rfElements];
+	
+	(* Rotate coordinates *)
+	phi=Switch[refinement,
+		{Left},0,
+		{Bottom},0.5*Pi,
+		{Right},Pi,
+		{Top},1.5*Pi
+	];
+	nodes=RotationTransform[phi,{0.5,0.5}]/@nodes;
 	
 	ToElementMesh[
-		"Coordinates"->meshNodes,
-		"MeshElements"->{QuadElement[meshElements]},
+		"Coordinates"->nodes,
+		"MeshElements"->{QuadElement[elements]},
 		"CheckIncidentsCompletness"->False,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
 	]
+];
+
+
+refinedUnitStructuredMesh[nx_,ny_,nz_,refinement_]:=Module[
+	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta},
 	
+	(* Create unit mesh *)
+	If[refinement===None,Return@unitStructuredMesh[nx,ny,nz]];
+	n=Switch[refinement,
+		Left,{nx,ny,nz},
+		Right,{nx,ny,nz},
+		Bottom,{nz,ny,nx},
+		Top,{nz,ny,nx},
+		Front,{ny,nx,nz},
+		Back,{ny,nx,nz}
+	];
+	mesh=unitStructuredMesh@@n;
+	
+	(* Store mesh data *)
+	nodes=mesh["Coordinates"];
+	elements=First@ElementIncidents@mesh["MeshElements"];
+	
+	(* New nodes and elements on left edge *)
+	rfNodes=refinementNodeMaker@n;
+	rfElements=refinementElementMaker@n;
+	
+	(* Delete elements on left edge *)
+	elements=Drop[elements,n[[2]]*n[[3]]];
+	
+	(* Create refined mesh data *)
+	nodes=Join[nodes,rfNodes];
+	elements=Join[elements,rfElements];
+	
+	(* Rotate coordinates *)
+	{phi,theta}=Switch[refinement,
+		Left,{0,0},
+		Front,{0.5*Pi,0},
+		Bottom,{0,1.5*Pi},
+		Right,{Pi,0},
+		Back,{1.5*Pi,0},
+		Top,{0,0.5*Pi}	
+	];
+	nodes=RotationTransform[phi,{0,0,1},{0.5,0.5,0.5}]/@nodes;
+	nodes=RotationTransform[theta,{0,1,0},{0.5,0.5,0.5}]/@nodes;
+	
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{HexahedronElement[elements]},
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
 ];
 
 
@@ -1513,7 +1606,7 @@ processRefinementOption[value_]:=If[
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*The main function*)
 
 
@@ -1541,6 +1634,14 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPat
 	
 	order=OptionValue[InterpolationOrder]/.Automatic->1;
 	
+	dim=Last@Dimensions[raster];	
+	(* We make sure to work with machine precison numbers. *)
+	restructured=Transpose[N[raster],{3,2,1}];
+	xInt=ListInterpolation[restructured[[1]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
+	yInt=ListInterpolation[restructured[[2]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
+	
+	(*mesh=unitStructuredMesh[nx,ny];
+	mesh=unitStructuredMeshRefinement[mesh,{nx,ny},refinement];*)
 	refinement=processRefinementOption@OptionValue["Refinement"];
 	(* An empty list is also subset of any list. *)
 	If[
@@ -1548,16 +1649,7 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPat
 		Message[StructuredMesh::refinement];refinement={}
 	];
 	
-	dim=Last@Dimensions[raster];	
-	(* We make sure to work with machine precison numbers. *)
-	restructured=Transpose[N[raster],{3,2,1}];
-	xInt=ListInterpolation[restructured[[1]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
-	yInt=ListInterpolation[restructured[[2]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
-	
-	(* TODO: Plug here function for refinement of unit structured mesh. *)
-	mesh=unitStructuredMesh[nx,ny];
-	mesh=unitStructuredMeshRefinement[mesh,{nx,ny},refinement];
-	(* END TODO *)
+	mesh=refinedUnitStructuredMesh[nx,ny,refinement];
 	unitMesh=MeshOrderAlteration[
 		mesh,
 		OptionValue["MeshOrder"]/.(Except[1|2]->1)
@@ -1590,7 +1682,7 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPat
 ];
 
 StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Positive},opts:OptionsPattern[]]:=Module[
-	{order,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
+	{order,refinement,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
 	
 	If[
 		Not@ArrayQ[raster,4,NumericQ],
@@ -1604,8 +1696,9 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Posit
 	yInt=ListInterpolation[restructured[[2]],{{0.,1.},{0.,1.},{0.,1.}},InterpolationOrder->order];
 	zInt=ListInterpolation[restructured[[3]],{{0.,1.},{0.,1.},{0.,1.}},InterpolationOrder->order];
 	
+	refinement=OptionValue["Refinement"];	
 	unitMesh=MeshOrderAlteration[
-		unitStructuredMesh[nx,ny,nz],
+		refinedUnitStructuredMesh[nx,ny,nz,refinement],
 		OptionValue["MeshOrder"]/.(Except[1|2]->1)
 	];
 	
