@@ -982,6 +982,66 @@ With[
 ];
 
 
+With[{
+	raster=N@Outer[Times,{1,0.75,0.5},({Cos[#],Sin[#]}&/@Subdivide[0,Pi/2,2])]
+	},
+	VerificationTest[
+		StructuredMesh[raster,{2,2},InterpolationOrder->2,"MeshOrder"->2]["Coordinates"],
+		{{1.,0.},{0.75,0.},{0.5,0.},{0.707107,0.707107},{0.53033,0.53033},{0.353553,0.353553},{0.,1.},{0.,0.75},{0.,0.5},{0.90533,0.40533},{0.618718,0.618718},{0.678998,0.303998},{0.875,0.},{0.441942,0.441942},{0.452665,0.202665},{0.625,0.},{0.40533,0.90533},{0.,0.875},{0.303998,0.678998},{0.,0.625},{0.202665,0.452665}},
+		SameTest->(Norm@Flatten[#1-#2]<10^-5&),
+		TestID->"StructuredMesh_2nd-order"
+	]
+];
+
+
+VerificationTest[
+	StructuredMesh[
+		{{{0,0},{1,0}},{{0,1},{1,1}}},
+		{1,1},
+		"Refinement"->Left
+	]["Coordinates"],
+	{{0,0},{0,1},{1,0},{1,1},{0,1/3},{0,2/3},{1/2,1/3},{1/2,2/3}},
+	SameTest->(Norm@Flatten[#1-#2]<10^-8&),
+	TestID->"StructuredMesh_refinement-2D-left"
+];
+
+
+VerificationTest[
+	StructuredMesh[
+		{{{0,0},{1,0}},{{0,1},{1,1}}},
+		{1,1},
+		"Refinement"->Top
+	]["Coordinates"],
+	{{0,1},{1,1},{0,0},{1,0},{1/3,1},{2/3,1},{1/3,1/2},{2/3,1/2}},
+	SameTest->(Norm@Flatten[#1-#2]<10^-8&),
+	TestID->"StructuredMesh_refinement-2D-top"
+];
+
+
+VerificationTest[
+	StructuredMesh[
+		{{{{0,0,0},{1,0,0}},{{0,1,0},{1,1,0}}},{{{0,0,1},{1,0,1}},{{0,1,1},{1,1,1}}}},
+		{1,1,1},
+		"Refinement"->Left
+	]["Coordinates"],
+	{{0,0,0},{0,0,1},{0,1,0},{0,1,1},{1,0,0},{1,0,1},{1,1,0},{1,1,1},{0,0,1/3},{0,0,2/3},{0,1/3,0},{0,1/3,1/3},{0,1/3,2/3},{0,1/3,1},{0,2/3,0},{0,2/3,1/3},{0,2/3,2/3},{0,2/3,1},{0,1,1/3},{0,1,2/3},{1/2,0,1/3},{1/2,0,2/3},{1/2,1/3,0},{1/4,1/3,1/3},{1/4,1/3,2/3},{1/2,1/3,1},{1/2,2/3,0},{1/4,2/3,1/3},{1/4,2/3,2/3},{1/2,2/3,1},{1/2,1,1/3},{1/2,1,2/3}},
+	SameTest->(Norm@Flatten[#1-#2]<10^-8&),
+	TestID->"StructuredMesh_refinement-3D-left"
+];
+
+
+VerificationTest[
+	StructuredMesh[
+		{{{{0,0,0},{1,0,0}},{{0,1,0},{1,1,0}}},{{{0,0,1},{1,0,1}},{{0,1,1},{1,1,1}}}},
+		{1,1,1},
+		"Refinement"->Top
+	]["Coordinates"],
+	{{0,0,1},{1,0,1},{0,1,1},{1,1,1},{0,0,0},{1,0,0},{0,1,0},{1,1,0},{1/3,0,1},{2/3,0,1},{0,1/3,1},{1/3,1/3,1},{2/3,1/3,1},{1,1/3,1},{0,2/3,1},{1/3,2/3,1},{2/3,2/3,1},{1,2/3,1},{1/3,1,1},{2/3,1,1},{1/3,0,1/2},{2/3,0,1/2},{0,1/3,1/2},{1/3,1/3,3/4},{2/3,1/3,3/4},{1,1/3,1/2},{0,2/3,1/2},{1/3,2/3,3/4},{2/3,2/3,3/4},{1,2/3,1/2},{1/3,1,1/2},{2/3,1,1/2}},
+	SameTest->(Norm@Flatten[#1-#2]<10^-8&),
+	TestID->"StructuredMesh_refinement-3D-top"
+];
+
+
 (* Function returns unevalueated for non-positive integer division. *)
 VerificationTest[
 	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{0,1}],
@@ -1003,6 +1063,18 @@ VerificationTest[
 	$Failed,
 	{StructuredMesh::array},
 	TestID->"StructuredMesh_improper-depth-of-array"
+];
+
+
+VerificationTest[
+	StructuredMesh[
+		{{{0,0},{1,0}},{{0,1},{1,1}}},
+		{1,1},
+		"Refinement"->"BadValue"
+	]["Coordinates"],
+	{{0.,0.},{0.,1.},{1.,0.},{1.,1.}},
+	{StructuredMesh::refinement},
+	TestID->"StructuredMesh_bad-refinement-value"
 ];
 
 
