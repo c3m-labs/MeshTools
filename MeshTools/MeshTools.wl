@@ -1058,6 +1058,47 @@ getElementConnectivity[nx_,ny_,nz_]:=Flatten[
 
 
 (* ::Subsubsection::Closed:: *)
+(*Unit structured mesh*)
+
+
+unitStructuredMesh[nx_,ny_]:=With[{
+	(* Vectorized (the fastest) way to get coordinates of unit square. *)
+	nodes=Flatten[
+		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny]],
+		1
+	],
+	connectivity=getElementConnectivity[nx,ny]
+	},
+	(* We can disable all error checks for this mesh, because we know it is correct. *)
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{QuadElement[connectivity]},
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
+];
+
+unitStructuredMesh[nx_,ny_,nz_]:=With[{
+	nodes=Flatten[
+		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny],Subdivide[0.,1.,nz]],
+		2
+	],
+	connectivity=getElementConnectivity[nx,ny,nz]
+	},
+	ToElementMesh[
+		"Coordinates"->nodes,
+		"MeshElements"->{HexahedronElement[connectivity]},
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
+];
+
+
+(* ::Subsubsection::Closed:: *)
 (*Refinement functions*)
 
 
@@ -1087,6 +1128,23 @@ refinementNodeMaker[{nx_,ny_,nz_}]:=Module[
 ];
 
 
+refinementSingleElement[nds_,add_]:={
+	{nds[[1]],add[[3]],add[[4]],add[[1]],nds[[5]],add[[15]],add[[16]],add[[13]]},
+	{add[[1]],add[[4]],add[[5]],add[[2]],add[[13]],add[[16]],add[[17]],add[[14]]},
+	{add[[2]],add[[5]],add[[6]],nds[[2]],add[[14]],add[[17]],add[[18]],nds[[6]]},
+	{add[[3]],add[[7]],add[[8]],add[[4]],add[[15]],add[[19]],add[[20]],add[[16]]},
+	{add[[4]],add[[8]],add[[9]],add[[5]],add[[16]],add[[20]],add[[21]],add[[17]]},
+	{add[[5]],add[[9]],add[[10]],add[[6]],add[[17]],add[[21]],add[[22]],add[[18]]},
+	{add[[7]],nds[[3]],add[[11]],add[[8]],add[[19]],nds[[7]],add[[23]],add[[20]]},
+	{add[[8]],add[[11]],add[[12]],add[[9]],add[[20]],add[[23]],add[[24]],add[[21]]},
+	{add[[9]],add[[12]],nds[[4]],add[[10]],add[[21]],add[[24]],nds[[8]],add[[22]]},
+	{add[[13]],add[[16]],add[[17]],add[[14]],nds[[5]],add[[15]],add[[18]],nds[[6]]},
+	{add[[16]],add[[20]],add[[21]],add[[17]],add[[15]],add[[19]],add[[22]],add[[18]]},
+	{add[[20]],add[[23]],add[[24]],add[[21]],add[[19]],nds[[7]],nds[[8]],add[[22]]},
+	{add[[15]],add[[19]],add[[22]],add[[18]],nds[[5]],nds[[7]],nds[[8]],nds[[6]]}
+};
+
+
 refinementElementMaker[{nx_,ny_}]:=Module[
 	{n},
 	n=(nx+1)*(ny+1);
@@ -1104,22 +1162,6 @@ refinementElementMaker[{nx_,ny_}]:=Module[
 	]
 ];
 
-refinementSingleElement[nds_,add_]:={
-	{nds[[1]],add[[3]],add[[4]],add[[1]],nds[[5]],add[[15]],add[[16]],add[[13]]},
-	{add[[1]],add[[4]],add[[5]],add[[2]],add[[13]],add[[16]],add[[17]],add[[14]]},
-	{add[[2]],add[[5]],add[[6]],nds[[2]],add[[14]],add[[17]],add[[18]],nds[[6]]},
-	{add[[3]],add[[7]],add[[8]],add[[4]],add[[15]],add[[19]],add[[20]],add[[16]]},
-	{add[[4]],add[[8]],add[[9]],add[[5]],add[[16]],add[[20]],add[[21]],add[[17]]},
-	{add[[5]],add[[9]],add[[10]],add[[6]],add[[17]],add[[21]],add[[22]],add[[18]]},
-	{add[[7]],nds[[3]],add[[11]],add[[8]],add[[19]],nds[[7]],add[[23]],add[[20]]},
-	{add[[8]],add[[11]],add[[12]],add[[9]],add[[20]],add[[23]],add[[24]],add[[21]]},
-	{add[[9]],add[[12]],nds[[4]],add[[10]],add[[21]],add[[24]],nds[[8]],add[[22]]},
-	{add[[13]],add[[16]],add[[17]],add[[14]],nds[[5]],add[[15]],add[[18]],nds[[6]]},
-	{add[[16]],add[[20]],add[[21]],add[[17]],add[[15]],add[[19]],add[[22]],add[[18]]},
-	{add[[20]],add[[23]],add[[24]],add[[21]],add[[19]],nds[[7]],nds[[8]],add[[22]]},
-	{add[[15]],add[[19]],add[[22]],add[[18]],nds[[5]],nds[[7]],nds[[8]],nds[[6]]}
-};
-
 refinementElementMaker[{nx_,ny_,nz_}]:=Module[
 	{nodes,addedNodes,dummy,arr1,arr2,arr3,arr4},
 	nodes=getElementConnectivity[1,ny,nz];
@@ -1132,11 +1174,14 @@ refinementElementMaker[{nx_,ny_,nz_}]:=Module[
 	addedNodes=Join[arr1,arr2,arr3,arr4,2];
 	addedNodes=Join[addedNodes,Max[addedNodes]+addedNodes,2];
 	addedNodes=(nx+1)*(ny+1)*(nz+1)+addedNodes;
-	Flatten[MapThread[refinementSingleElement[Sort[#1],#2]&,{nodes,addedNodes}],1]
+	Flatten[
+		MapThread[refinementSingleElement[Sort[#1],#2]&,{nodes,addedNodes}],
+		1
+	]
 ];
 
 
-refinedUnitStructuredMesh[nx_,ny_,refinement_]:=Module[
+refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
 	{mesh,nodes,elements,n,rfNodes,rfElements,phi},
 	
 	(* Create unit mesh *)
@@ -1181,7 +1226,7 @@ refinedUnitStructuredMesh[nx_,ny_,refinement_]:=Module[
 	]
 ];
 
-refinedUnitStructuredMesh[nx_,ny_,nz_,refinement_]:=Module[
+refinedUnitStructuredMesh[{nx_,ny_,nz_},refinement_]:=Module[
 	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta},
 	
 	(* Create unit mesh *)
@@ -1235,81 +1280,39 @@ refinedUnitStructuredMesh[nx_,ny_,nz_,refinement_]:=Module[
 
 
 (* ::Subsubsection::Closed:: *)
-(*Helper functions for unit structured mesh*)
-
-
-unitStructuredMesh[nx_,ny_]:=With[{
-	(* Vectorized (the fastest) way to get coordinates of unit square. *)
-	nodes=Flatten[
-		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny]],
-		1
-	],
-	connectivity=getElementConnectivity[nx,ny]
-	},
-	(* We can disable all error checks for this mesh, because we know it is correct. *)
-	ToElementMesh[
-		"Coordinates"->nodes,
-		"MeshElements"->{QuadElement[connectivity]},
-		"CheckIncidentsCompletness"->False,
-		"CheckIntersections"->False,
-		"CheckQuality"->False,
-		"DeleteDuplicateCoordinates"->False
-	]
-];
-
-unitStructuredMesh[nx_,ny_,nz_]:=With[{
-	nodes=Flatten[
-		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny],Subdivide[0.,1.,nz]],
-		2
-	],
-	connectivity=getElementConnectivity[nx,ny,nz]
-	},
-	ToElementMesh[
-		"Coordinates"->nodes,
-		"MeshElements"->{HexahedronElement[connectivity]},
-		"CheckIncidentsCompletness"->False,
-		"CheckIntersections"->False,
-		"CheckQuality"->False,
-		"DeleteDuplicateCoordinates"->False
-	]
-];
-
-
-processRefinementOption[value_]:=If[
-	Head@value===List,
-	value,
-	{value}/.None->Nothing
-];
-
-
-(* ::Subsubsection::Closed:: *)
 (*The main function*)
 
 
 (* We create structured mesh on unit square (or cube) and then reinterpolate nodal 
 coordinates over given raster points. Underlying unit mesh can also have refinement on 
 some edges and/or have "MeshOrder"\[Rule]2. *)
+
 StructuredMesh::usage=(
 	"StructuredMesh[raster,{nx,ny}] creates structured mesh of quadrilaterals.\n"<>
 	"StructuredMesh[raster,{nx,ny,nz}] creates structured mesh of hexahedra."
 );
 StructuredMesh::array="Raster of input points must be a full (non-ragged) array of numbers with depth of `1`.";
-StructuredMesh::refinement="\"Refinement\" option takes as argument a subset of {Left, Right, Top, Bottom, Front, Back} or None.";
+StructuredMesh::refinement="Value of \"Refinement\" option should be one of `1`.";
 
 StructuredMesh//Options={InterpolationOrder->1,"MeshOrder"->1,"Refinement"->None};
 
 StructuredMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
 StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPattern[]]:=Module[
-	{order,dim,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
+	{refinement,order,dim,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
 	
 	If[
 		Not@ArrayQ[raster,3,NumericQ],
 		Message[StructuredMesh::array,3+1];Return[$Failed,Module]
 	];
 	
-	order=OptionValue[InterpolationOrder]/.Automatic->1;
+	refinement=OptionValue["Refinement"];
+	If[
+		Not@MemberQ[{Left,Right,Top,Bottom,None},refinement],
+		Message[StructuredMesh::refinement,{Left,Right,Top,Bottom,None}];refinement=None
+	];
 	
+	order=OptionValue[InterpolationOrder]/.Automatic->1;
 	dim=Last@Dimensions[raster];	
 	(* We make sure to work with machine precison numbers. *)
 	restructured=Transpose[N[raster],{3,2,1}];
@@ -1317,7 +1320,7 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPat
 	yInt=ListInterpolation[restructured[[2]],{{0.,1.},{0.,1.}},InterpolationOrder->order];
 	
 	unitMesh=MeshOrderAlteration[
-		refinedUnitStructuredMesh[nx,ny,OptionValue["Refinement"]],
+		refinedUnitStructuredMesh[{nx,ny},refinement],
 		OptionValue["MeshOrder"]/.(Except[1|2]->1)
 	];
 	
@@ -1348,12 +1351,18 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPat
 ];
 
 StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Positive},opts:OptionsPattern[]]:=Module[
-	{order,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
+	{refinement,order,restructured,xInt,yInt,zInt,unitMesh,unitCrds,crds},
 	
 	If[
 		Not@ArrayQ[raster,4,NumericQ],
 		Message[StructuredMesh::array,4+1];Return[$Failed,Module]
 	];
+	refinement=OptionValue["Refinement"];
+	If[
+		Not@MemberQ[{Left,Right,Top,Bottom,Front,Back,None},refinement],
+		Message[StructuredMesh::refinement,{Left,Right,Top,Bottom,Front,Back,None}];refinement=None
+	];
+	
 	
 	order=OptionValue[InterpolationOrder]/.Automatic->1;
 	
@@ -1363,7 +1372,7 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Posit
 	zInt=ListInterpolation[restructured[[3]],{{0.,1.},{0.,1.},{0.,1.}},InterpolationOrder->order];
 	
 	unitMesh=MeshOrderAlteration[
-		refinedUnitStructuredMesh[nx,ny,nz,OptionValue["Refinement"]],
+		refinedUnitStructuredMesh[{nx,ny,nz},refinement],
 		OptionValue["MeshOrder"]/.(Except[1|2]->1)
 	];
 	
