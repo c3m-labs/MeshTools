@@ -36,6 +36,7 @@ SelectElements;
 MergeMesh;
 TransformMesh;
 ExtrudeMesh;
+RevolveMesh;
 
 SmoothenMesh;
 QuadToTriangleMesh;
@@ -503,6 +504,83 @@ ExtrudeMesh[mesh_ElementMesh,thickness_?Positive,layers_Integer?Positive]:=Modul
 	ToElementMesh[
 		"Coordinates"->nodes3D,
 		"MeshElements"->{HexahedronElement[elements3D,markers3D]}
+	]
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*RevolveMesh*)
+
+
+RevolveMesh::usage=
+	"RevolveMesh[mesh, {fi1, fi2}, layers] revolves 2D quadrilateral mesh to 3D hexahedron mesh around Y axis.";
+RevolveMesh::order="Only first order mesh is supported.";
+RevolveMesh::eltype="Only mesh with QuadElement(s) is supported.";
+RevolveMesh::angle="Angle limits for body of revolution must be distinct.";
+RevolveMesh::division="There should be more than one element for each Pi/2 sector.";
+RevolveMesh::axis="Non-positive first coordinate (X) of nodes causes self-intersecting elements.";
+
+RevolveMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
+
+RevolveMesh[mesh_ElementMesh,{fi1_,fi2_},layers_Integer?Positive]:=Module[
+	{min,max,n,nodes2D,nodes3DInitial,nodes3D,elements2D,elements3D,markers2D,markers3D},
+
+	If[
+		mesh["MeshOrder"]=!=1,
+		Message[RevolveMesh::order];Return[$Failed,Module]
+	];
+	(* Mesh "EmbeddingDimension" is already checked with correct "MeshElements" type. *)
+	If[
+		(Head/@mesh["MeshElements"])=!={QuadElement},
+		Message[RevolveMesh::eltype];Return[$Failed,Module]
+	];
+	(* Sorting angle by size solves potential problems with inverted elements. *)
+	{min,max}=MinMax[{fi1,fi2}];
+	If[
+		N[min]==N[max],
+		Message[RevolveMesh::angle];Return[$Failed,Module]
+	];
+	max=Clip[max,{min,min+2*Pi}];
+	(* It makes no sense if element division in angular direction is too small. *)
+	If[
+		(max-min)/layers>Pi/2,
+		Message[RevolveMesh::division];Return[$Failed,Module]
+	];
+	(* If some nodes lie in non-positive half plane elements get self-intersected. *)
+	nodes2D=mesh["Coordinates"];
+	If[
+		Min[nodes2D[[All,1]]]<=0.,
+		Message[RevolveMesh::axis];Return[$Failed,Module]
+	];
+
+	elements2D=First@ElementIncidents[mesh["MeshElements"]];
+	markers2D=First@ElementMarkers[mesh["MeshElements"]];
+	n=Length[nodes2D];
+
+	nodes3DInitial=Transpose@Join[Transpose[nodes2D],{ConstantArray[0.,n]}];
+	nodes3D=Flatten[
+		Map[
+			(RotationTransform[#,{0,1,0}]@nodes3DInitial)&,
+			Reverse@Subdivide[min,max,layers]
+		],
+		1
+	];
+
+	elements3D=Flatten[
+		Table[
+			Map[Join[n*(i-1)+#,n*i+#]&,elements2D],
+			{i,layers}
+		],
+		1
+	];
+
+	markers3D=Flatten@ConstantArray[markers2D,layers];
+
+	ToElementMesh[
+		"Coordinates"->nodes3D,
+		"MeshElements"->{HexahedronElement[elements3D,markers3D]},
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False
 	]
 ];
 
