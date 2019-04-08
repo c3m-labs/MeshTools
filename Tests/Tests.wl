@@ -545,6 +545,48 @@ With[{
 
 
 (* ::Subsubsection::Closed:: *)
+(*RevolveMesh*)
+
+
+With[{
+	mesh=ToElementMesh[Rectangle[{1,0},{2,1}],"MeshOrder"->1,MaxCellMeasure->1/2]
+	},
+	VerificationTest[
+		RevolveMesh[mesh,{0,2*Pi},12]["Bounds"],	
+		{{-2.,2.},{0.,1.},{-2.,2.}},
+		TestID->"RevolveMesh_check-bounds"
+	]
+];
+
+
+With[{
+	mesh=ToElementMesh[
+		"Coordinates"->{{1.,0.},{1.,1.},{2.,0.},{2.,1.}},
+		"MeshElements"->{QuadElement[{{1,3,4,2}}]}
+	]
+	},
+	(* Duplicate coodrinates are deleted, to get full body of revolution. *)
+	VerificationTest[
+		Length[RevolveMesh[mesh,{0,2*Pi},12]["Coordinates"]],	
+		48,
+		TestID->"ExtrudeMesh_full-revolution-check"
+	]
+];
+
+
+With[{
+	mesh=ToElementMesh[Rectangle[{-0.1,0},{1,1}],"MeshOrder"->1,MaxCellMeasure->1/2]
+	},
+	VerificationTest[
+		RevolveMesh[mesh,{0,2*Pi},12],	
+		$Failed,
+		{RevolveMesh::axis},
+		TestID->"RevolveMesh_negative-Y-axis"
+	]
+];
+
+
+(* ::Subsubsection::Closed:: *)
 (*QuadToTriangleMesh*)
 
 
