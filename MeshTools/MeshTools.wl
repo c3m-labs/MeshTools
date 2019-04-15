@@ -1560,41 +1560,33 @@ TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 (*DiskMesh*)
 
 
-diskMeshProjection[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
-	{square,rescale,coordinates},
-	
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	(* This special raster makes all element edges on disk edge of the same length. *)
-	square=With[
-		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
-		StructuredMesh[Outer[Reverse@*List,pts,pts],{n,n}]
+unitSquareProjection[n_]:=RectangleMesh[{-1, -1},{1, 1},{n, n}];
+
+
+unitSquareBlock[n_,refinement_?BooleanQ]:=Module[
+	{squareMesh,sideMesh,d,raster,rotations},
+	(* Size of internal square. Value around 1/2 creates nice element size distribution. *)
+	d=N[1/2];
+	squareMesh=RectangleMesh[d*{-1,-1},d*{1, 1},{n,n}];
+
+	sideMesh=StructuredMesh[
+		{{{d,-d},{1,-1}},{{d,d},{1,1}}},
+		{Ceiling[n/2],n},
+		"Refinement"->(refinement/.{True->Right,False->None})
 	];
+	rotations=RotationTransform[#,{0.,0.}]&/@(Range[4.]*Pi/2);
 	
-	coordinates=Transpose[Transpose[rescale/@square["Coordinates"]]+{x,y}];
-	
-	ToElementMesh[
-		"Coordinates" ->coordinates,
-		"MeshElements" -> square["MeshElements"]
-	]
+	MergeMesh@Join[{squareMesh},TransformMesh[sideMesh,#]&/@rotations]	
 ];
 
 
-diskMeshBlock[{x_,y_},r_,n_Integer/;(n>=2)]:=Module[
-	{square,sideMesh,d,raster,rotations},
+unitSquareTriangle[n_]:=Module[
+	{sideMesh,rotations},
 	
-	(* Size of internal square. Optimial minimal element quality is obtained at 0.2.
-	Value of 0.3 creates nicer element size distribution. *)
-	d=0.3*r;
-	square=RectangleMesh[{x-d,y-d},{x+d,y+d},{n,n}];
-
-	raster={
-		Thread[{x+Subdivide[-d,d,90],y+d}],
-		N@Table[{x+r*Cos[fi],y+r*Sin[fi]},{fi,3*Pi/4,Pi/4,-Pi/180}]
-	};
-	sideMesh=StructuredMesh[raster,{n,n}];
-	rotations=RotationTransform[#,{x,y}]&/@(Range[4]*Pi/2);
+	sideMesh=TriangleMesh[{{-1,-1},{1,-1},{0,0}},n];
+	rotations=RotationTransform[#,{0,0}]&/@(Range[4.]*Pi/2);
 	
-	MergeMesh@Join[{square},TransformMesh[sideMesh,#]&/@rotations]	
+	MergeMesh[TransformMesh[sideMesh,#]&/@rotations]
 ];
 
 
@@ -1602,26 +1594,39 @@ DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements 
 DiskMesh::method="Method \"`1`\" is not supported.";
 DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-DiskMesh//Options={Method->Automatic};
+DiskMesh//Options={Method->Automatic,"Refinement"->False};
 
 DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{method},
+	{method,unitMesh,rescale,unitCrds,crds},
 	
 	If[
-		Not@TrueQ[n>=2&&IntegerQ[n]],
-		Message[DiskMesh::noelems,n];Return[$Failed]
+		Not@TrueQ[n>=2],
+		Message[DiskMesh::noelems,n];Return[$Failed,Module]
 	];
 	
 	method=OptionValue[Method]/.Automatic->"Block";
 		
-	Switch[method,
-		"Block",diskMeshBlock[{x,y},r,n],
-		"Projection",diskMeshProjection[{x,y},r,n],
-		_,Message[DiskMesh::method,method];Return[$Failed]
+	unitMesh=Switch[method,
+		"Block",unitSquareBlock[n,TrueQ@OptionValue["Refinement"]],
+		"Projection",unitSquareProjection[n],
+		"Triangle",unitSquareTriangle[n],
+		_,Message[DiskMesh::method,method];Return[$Failed,Module]
+	];
+	
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	(* Scaling with Tan causes equal length of edges after projection to disk. *)
+	unitCrds=rescale/@Tan[Pi/4*unitMesh["Coordinates"]];
+	crds=(N[r]*unitCrds)+ConstantArray[N@{x,y},Length@unitCrds];
+	
+	SmoothenMesh@ToElementMesh[
+		"Coordinates"->crds,
+		"MeshElements"->unitMesh["MeshElements"],
+		"CheckIncidentsCompletness"->False,
+		"CheckIntersections"->False
 	]
 ];
 
