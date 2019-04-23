@@ -145,25 +145,18 @@ With[{
 
 
 With[{
-	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1,"MeshOrder"->1]
+	mesh=ToElementMesh[
+		"Coordinates"->{{0.,0.},{0.,1.},{1.,0.},{1.,1.}},
+		"MeshElements"->{TriangleElement[{{1,3,2},{3,4,2}},{1,2}]}
+	]
 	},
 	VerificationTest[
 		TransformMesh[mesh,TranslationTransform[{1,0}]],
-		(* Default markers and element ordering has changed between versions. *)
-		If[
-		$VersionNumber>11.1,
 		ElementMesh[
-			{{1., 0.}, {2., 0.}, {1., 1.}}, 
-			{TriangleElement[{{1, 2, 3}}, {0}]}, 
-			{LineElement[{{2, 1}, {3, 2}, {1, 3}}, {1, 2, 3}]}, 
-			{PointElement[{{1}, {2}, {3}}, {1, 1, 2}]}
-		],
-		ElementMesh[
-			{{1., 0.}, {2., 0.}, {1., 1.}},
-			{TriangleElement[{{1, 2, 3}}, {0}]},
-			{LineElement[{{3, 2}, {1, 3}, {2, 1}}, {0, 0, 0}]},
-			{PointElement[{{1}, {2}, {3}}, {0, 0, 0}]}
-		]
+			{{1.,0.},{1.,1.},{2.,0.},{2.,1.}},
+			{TriangleElement[{{1,3,2},{3,4,2}},{1,2}]},
+			{LineElement[{{3,2},{2,1},{1,3},{4,2},{3,4}},{0,0,0,0,0}]},
+			{PointElement[{{1},{2},{3},{4}},{0,0,0,0}]}
 		],
 		TestID->"TransformMesh_2D-translation-1"
 	]
@@ -1476,12 +1469,14 @@ VerificationTest[
 ];
 
 
+(* Using combination of Chop, Rationalize and N somehow makes the Sort stable between  versions.
+This test should be rewritten to be made more reliable. *)
 VerificationTest[
 	PrismMesh[
 		{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0}},
 		{2,1}
-	]["Coordinates"]//Sort,
-	{{0,0,0},{0,2,0},{1/2,0,1/2},{1/2,2,1/2},{1,0,0},{1,2,0},{1,0,1/3},
+	]["Coordinates"]//Chop//Rationalize//N//Sort,
+	Sort@N@{{0,0,0},{0,2,0},{1/2,0,1/2},{1/2,2,1/2},{1,0,0},{1,2,0},{1,0,1/3},
 	{1,2,1/3},{1,0,1},{1,2,1},{3/2,0,1/2},{3/2,2,1/2},{2,0,0},{2,2,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_arbitrary-prism"
