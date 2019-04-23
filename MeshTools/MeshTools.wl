@@ -1558,18 +1558,20 @@ TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 (*DiskMesh*)
 
 
-unitSquareProjection[n_]:=RectangleMesh[{-1, -1},{1, 1},{n, n}];
+unitMeshSquareMethod[n_]:=RectangleMesh[{-1, -1},{1, 1},{n, n}];
 
 
-unitSquareBlock[n_,refinement_?BooleanQ]:=Module[
+unitMeshPolygonMethod[n_,refinement_?BooleanQ]:=Module[
 	{squareMesh,sideMesh,d,raster,rotations},
-	(* Size of internal square. Value around 1/2 creates nice element size distribution. *)
+	(* Size of internal square. If mesh smoothing is used in the end, then this value is not important. *)
 	d=N[1/2];
 	squareMesh=RectangleMesh[d*{-1,-1},d*{1, 1},{n,n}];
 
+	(* Division in radial direction is chosen heuristicaly to give nice element size
+	distribution (after Laplacian mesh smoothing). *)
 	sideMesh=StructuredMesh[
 		{{{d,-d},{1,-1}},{{d,d},{1,1}}},
-		{Ceiling[n/2],n},
+		{Ceiling[n/4],n},
 		"Refinement"->(refinement/.{True->Right,False->None})
 	];
 	rotations=RotationTransform[#,{0.,0.}]&/@(Range[4.]*Pi/2);
@@ -1578,41 +1580,29 @@ unitSquareBlock[n_,refinement_?BooleanQ]:=Module[
 ];
 
 
-unitSquareTriangle[n_]:=Module[
-	{sideMesh,rotations},
-	
-	sideMesh=TriangleMesh[{{-1,-1},{1,-1},{0,0}},n];
-	rotations=RotationTransform[#,{0,0}]&/@(Range[4.]*Pi/2);
-	
-	MergeMesh[TransformMesh[sideMesh,#]&/@rotations]
-];
-
-
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
-DiskMesh::method="Method \"`1`\" is not supported.";
+DiskMesh::method="Values for option Method should be \"Polygon\" or \"Square\".";
 DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-DiskMesh//Options={Method->Automatic,"Refinement"->False};
+DiskMesh//Options={"Refinement"->False,Method->Automatic};
 
 DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{method,unitMesh,rescale,unitCrds,crds},
+	{method,order,unitMesh,rescale,unitCrds,crds},
 	
 	If[
 		Not@TrueQ[n>=2],
 		Message[DiskMesh::noelems,n];Return[$Failed,Module]
 	];
 	
-	method=OptionValue[Method]/.Automatic->"Block";
-		
+	method=OptionValue[Method]/.(Automatic->"Polygon");	
 	unitMesh=Switch[method,
-		"Block",unitSquareBlock[n,TrueQ@OptionValue["Refinement"]],
-		"Projection",unitSquareProjection[n],
-		"Triangle",unitSquareTriangle[n],
-		_,Message[DiskMesh::method,method];Return[$Failed,Module]
+		"Polygon",unitMeshPolygonMethod[n,TrueQ@OptionValue["Refinement"]],
+		"Square",unitMeshSquareMethod[n],
+		_,Message[DiskMesh::method];Return[$Failed,Module]
 	];
 	
 	rescale=(Max[Abs@#]*Normalize[#])&;
@@ -1623,7 +1613,6 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	SmoothenMesh@ToElementMesh[
 		"Coordinates"->crds,
 		"MeshElements"->unitMesh["MeshElements"],
-		"CheckIncidentsCompletness"->False,
 		"CheckIntersections"->False
 	]
 ];
