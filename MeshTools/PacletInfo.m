@@ -4,7 +4,7 @@
 (* BuildNumber and Internal values should be inserted during build procedure. *)
 Paclet[
 	Name -> "MeshTools",
-	Version -> "0.7.0",
+	Version -> "0.7.1",
 	WolframVersion -> "11.+",
 	Description -> "Utilities for creating and manipulating ElementMesh objects.",
 	Creator -> "Matevz Pintar",
