@@ -579,7 +579,6 @@ RevolveMesh[mesh_ElementMesh,{fi1_,fi2_},layers_Integer?Positive]:=Module[
 	ToElementMesh[
 		"Coordinates"->nodes3D,
 		"MeshElements"->{HexahedronElement[elements3D,markers3D]},
-		"CheckIncidentsCompletness"->False,
 		"CheckIntersections"->False
 	]
 ];
@@ -627,7 +626,7 @@ SmoothenMesh[mesh_ElementMesh]:=Module[
 	newCoords = LinearSolve[stiffness, load];
 	
 	typoOpt = If[
-		$VersionNumber <= 11.3,
+		$VersionNumber < 12.,
 		"CheckIncidentsCompletness" -> False,
 		"CheckIncidentsCompleteness" -> False
 	];
@@ -1145,13 +1144,14 @@ unitStructuredMesh[nx_,ny_]:=With[{
 		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny]],
 		1
 	],
-	connectivity=getElementConnectivity[nx,ny]
+	connectivity=getElementConnectivity[nx,ny],
+	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False]
 	},
 	(* We can disable all error checks for this mesh, because we know it is correct. *)
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{QuadElement[connectivity]},
-		"CheckIncidentsCompletness"->False,
+		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1163,12 +1163,13 @@ unitStructuredMesh[nx_,ny_,nz_]:=With[{
 		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny],Subdivide[0.,1.,nz]],
 		2
 	],
-	connectivity=getElementConnectivity[nx,ny,nz]
+	connectivity=getElementConnectivity[nx,ny,nz],
+	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False]
 	},
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{HexahedronElement[connectivity]},
-		"CheckIncidentsCompletness"->False,
+		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1260,7 +1261,7 @@ refinementElementMaker[{nx_,ny_,nz_}]:=Module[
 
 
 refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
-	{mesh,nodes,elements,n,rfNodes,rfElements,phi},
+	{mesh,nodes,elements,n,rfNodes,rfElements,phi,typoOpt},
 	
 	(* Create unit mesh *)
 	If[refinement===None,Return@unitStructuredMesh[nx,ny]];
@@ -1293,11 +1294,12 @@ refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
 		Top,1.5*Pi
 	];
 	nodes=RotationTransform[phi,{0.5,0.5}]/@nodes;
+	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False];
 	
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{QuadElement[elements]},
-		"CheckIncidentsCompletness"->False,
+		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1305,7 +1307,7 @@ refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
 ];
 
 refinedUnitStructuredMesh[{nx_,ny_,nz_},refinement_]:=Module[
-	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta},
+	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta,typoOpt},
 	
 	(* Create unit mesh *)
 	If[refinement===None,Return@unitStructuredMesh[nx,ny,nz]];
@@ -1345,11 +1347,12 @@ refinedUnitStructuredMesh[{nx_,ny_,nz_},refinement_]:=Module[
 	];
 	nodes=RotationTransform[phi,{0,0,1},{0.5,0.5,0.5}]/@nodes;
 	nodes=RotationTransform[theta,{0,1,0},{0.5,0.5,0.5}]/@nodes;
+	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False];
 	
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{HexahedronElement[elements]},
-		"CheckIncidentsCompletness"->False,
+		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1410,20 +1413,16 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive},opts:OptionsPat
 		Transpose@{xInt@@@unitCrds,yInt@@@unitCrds}
 	];
 	
-	(* We transfer all elements (connectivity) from unit mesh to actual mesh, to avoid 
-	their recalculation. There is no need to check incidents completeness, 
-	but we still check for quality and duplicate nodes. *)
+	(* We still check for quality and duplicate nodes, because of possible mesh distortions. *)
 	If[
 		dim==3,
 		ToBoundaryMesh[
 			"Coordinates"->crds,
-			"BoundaryElements"->unitMesh["MeshElements"],
-			"CheckIncidentsCompletness"->False
+			"BoundaryElements"->unitMesh["MeshElements"]
 		],
 		ToElementMesh[
 			"Coordinates"->crds,
-			"MeshElements"->unitMesh["MeshElements"],
-			"CheckIncidentsCompletness"->False
+			"MeshElements"->unitMesh["MeshElements"]
 		]
 	]
 ];
@@ -1459,8 +1458,7 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Posit
 	
 	ToElementMesh[
 		"Coordinates"->crds,
-		"MeshElements"->unitMesh["MeshElements"],
-		"CheckIncidentsCompletness"->False
+		"MeshElements"->unitMesh["MeshElements"]
 	]
 ];
 
