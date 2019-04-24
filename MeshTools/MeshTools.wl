@@ -2166,42 +2166,45 @@ reorientPrismQ[pts_]:=With[{
 
 PrismMesh::usage="PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge.";
 PrismMesh::noelems="Specificaton of elements `1` must be even integer equal or larger than 2.";
-PrismMesh::alignerr="Warning! Corner alignment error `1` is larger than tolerance.";
 
 PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_}};
 
 PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}];
 
 PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
-	{pts,error,triangleMesh,standardPrism,tf},
+	{c,m1,m2,m3},
 	If[
 		Not@(TrueQ[n1>=2]&&EvenQ[n1]),
-		Message[PrismMesh::noelems,n1];Return[$Failed]
+		Message[PrismMesh::noelems,n1];Return[$Failed,Module]
 	];
 	
-	pts=If[
+	c=If[
 		reorientPrismQ[corners],
 		Join@@Reverse@TakeDrop[corners,3],
 		corners
 	];
-	(* Smoothing TriangleMesh before extrusion seems to even worsen the quality of hex mesh. *)
-	triangleMesh=TriangleMesh[{{0,0},{1,0},{0,1}},n1,"MeshElementType"->QuadElement];
-	standardPrism=ExtrudeMesh[triangleMesh,1,n2];
-	(* Find TransformationFunction between standard and arbitrary prism. "Linear" method
-	is much faster than others. *)
-	{error,tf}=FindGeometricTransform[
-		pts,
-		{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},
-		Method->"Linear"
+	(* We make 3 meshes on hexahedron and merge them. This way also prism with 
+	non-coplanar faces can be created accurately. *)
+	m1=StructuredMesh[{
+		{{c[[1]],Mean@c[[{1,2}]]},{Mean@c[[{1,3}]],Mean@c[[{1,2,3}]]}},
+		{{c[[4]],Mean@c[[{4,5}]]},{Mean@c[[{4,6}]],Mean@c[[{4,5,6}]]}}
+		},
+		{n1/2,n1/2,n2}
 	];
-	(* Alignment error is non-zero in case of non-homogenous transformation. 
-	Currently the tolerance is chosen arbitrarily. *)
-	If[error>10^-4,Message[PrismMesh::alignerr,ScientificForm[error,4]]];
-		
-	ToElementMesh[
-		"Coordinates" ->(tf@standardPrism["Coordinates"]),
-		"MeshElements" -> standardPrism["MeshElements"]
-	]
+	m2=StructuredMesh[{
+		{{c[[2]],Mean@c[[{2,3}]]},{Mean@c[[{1,2}]],Mean@c[[{1,2,3}]]}},
+		{{c[[5]],Mean@c[[{5,6}]]},{Mean@c[[{4,5}]],Mean@c[[{4,5,6}]]}}
+		},
+		{n1/2,n1/2,n2}
+	];
+	m3=StructuredMesh[{
+		{{c[[3]],Mean@c[[{1,3}]]},{Mean@c[[{2,3}]],Mean@c[[{1,2,3}]]}},
+		{{c[[6]],Mean@c[[{4,6}]]},{Mean@c[[{5,6}]],Mean@c[[{4,5,6}]]}}
+		},
+		{n1/2,n1/2,n2}
+	];
+	
+	MergeMesh[{m1,m2,m3}]
 ];
 
 

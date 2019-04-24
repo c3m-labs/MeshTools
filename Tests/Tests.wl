@@ -1469,15 +1469,13 @@ VerificationTest[
 ];
 
 
-(* Using combination of Chop, Rationalize and N somehow makes the Sort stable between  versions.
-This test should be rewritten to be made more reliable. *)
 VerificationTest[
 	PrismMesh[
 		{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0}},
 		{2,1}
-	]["Coordinates"]//Chop//Rationalize//N//Sort,
-	Sort@N@{{0,0,0},{0,2,0},{1/2,0,1/2},{1/2,2,1/2},{1,0,0},{1,2,0},{1,0,1/3},
-	{1,2,1/3},{1,0,1},{1,2,1},{3/2,0,1/2},{3/2,2,1/2},{2,0,0},{2,2,0}},
+	]["Coordinates"]//Sort,
+	{{0,0,0},{0,2,0},{1/2,0,1/2},{1/2,2,1/2},{1,0,0},{1,0,1/3},{1,0,1},{1,2,0},
+	{1,2,1/3},{1,2,1},{3/2,0,1/2},{3/2,2,1/2},{2,0,0},{2,2,0}},
 	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_arbitrary-prism"
 ];
@@ -1495,13 +1493,12 @@ VerificationTest[
 (* Prism with non-coplanar triangular faces. *)
 VerificationTest[
 	PrismMesh[
-		{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,0.1}},
+		{{1,0,1},{0,0,0},{2,0,0},{1,2,1},{0,2,0},{2,2,1}},
 		{2,1}
 	]["Coordinates"]//Sort,
-	{{0,0,-(1/52)},{0,2,1/53},{1/2,0,10/21},{1/2,2,11/21},{1,0,0},{1,2,1/22},{1,0,1/3},
-	{1,2,3/8},{1,0,44/45},{1,2,81/80},{3/2,2,6/11},{3/2,0,13/25},{2,2,1/14},{2,0,1/31}},
-	{PrismMesh::alignerr},
-	SameTest->(Norm[Flatten[#1-#2]]<10^-1&),
+	{{0,0,0},{0,2,0},{1/2,0,1/2},{1/2,2,1/2},{1,0,0},{1,0,1/3},{1,0,1},
+	{1,2,1/2},{1,2,2/3},{1,2,1},{3/2,0,1/2},{3/2,2,1},{2,0,0},{2,2,1}},
+	SameTest->(Norm[Flatten[#1-#2]]<10^-8&),
 	TestID->"PrismMesh_non-coplanar-faces"
 ];
 
