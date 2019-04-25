@@ -588,18 +588,15 @@ RevolveMesh[mesh_ElementMesh,{fi1_,fi2_},layers_Integer?Positive]:=Module[
 (*Mesh smoothing*)
 
 
-(* 
-This implements Laplacian mesh smoothing method as described in 
-https://mathematica.stackexchange.com/a/156669 
-*)
+(* This implements Laplacian mesh smoothing method as described in 
+https://mathematica.stackexchange.com/a/156669 *)
 SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
 SmoothenMesh::badType="Smoothing is only supported for first order 2D meshes.";
 
 SmoothenMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
 
 SmoothenMesh[mesh_ElementMesh]:=Module[
-	{n,vec,mat,adjacencyMatrix,mass,typoOpt,
-	bndVertices,interiorvertices,stiffness,load,newCoords},
+	{n,vec,mat,adjacencyMatrix,mass,bndVertices,interiorVertices,stiffness,load,newCoords},
 	
 	If[
 		Or[mesh["MeshOrder"]=!=1,mesh["EmbeddingDimension"]=!=2],
@@ -617,7 +614,7 @@ SmoothenMesh[mesh_ElementMesh]:=Module[
 	mass = Null;
 	
 	bndVertices = Flatten[Join @@ ElementIncidents[mesh["PointElements"]]];
-	interiorvertices = Complement[Range[1, n], bndVertices];
+	interiorVertices = Complement[Range[1, n], bndVertices];
 	
 	stiffness[[bndVertices]] = IdentityMatrix[n, SparseArray][[bndVertices]];
 	
@@ -625,18 +622,11 @@ SmoothenMesh[mesh_ElementMesh]:=Module[
 	load[[bndVertices]] = mesh["Coordinates"][[bndVertices]];
 	newCoords = LinearSolve[stiffness, load];
 	
-	typoOpt = If[
-		$VersionNumber < 12.,
-		"CheckIncidentsCompletness" -> False,
-		"CheckIncidentsCompleteness" -> False
-	];
-	
 	ToElementMesh[
 		"Coordinates" -> newCoords,
 		"MeshElements" -> mesh["MeshElements"],
 		"BoundaryElements" -> mesh["BoundaryElements"],
 		"PointElements" -> mesh["PointElements"],
-		typoOpt,
 		"CheckIntersections" -> False,
 		"DeleteDuplicateCoordinates" -> False,
 		"RegionHoles" -> mesh["RegionHoles"]
@@ -1144,14 +1134,12 @@ unitStructuredMesh[nx_,ny_]:=With[{
 		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny]],
 		1
 	],
-	connectivity=getElementConnectivity[nx,ny],
-	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False]
+	connectivity=getElementConnectivity[nx,ny]
 	},
 	(* We can disable all error checks for this mesh, because we know it is correct. *)
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{QuadElement[connectivity]},
-		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1163,13 +1151,11 @@ unitStructuredMesh[nx_,ny_,nz_]:=With[{
 		Outer[List,Subdivide[0.,1.,nx],Subdivide[0.,1.,ny],Subdivide[0.,1.,nz]],
 		2
 	],
-	connectivity=getElementConnectivity[nx,ny,nz],
-	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False]
+	connectivity=getElementConnectivity[nx,ny,nz]
 	},
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{HexahedronElement[connectivity]},
-		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1261,7 +1247,7 @@ refinementElementMaker[{nx_,ny_,nz_}]:=Module[
 
 
 refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
-	{mesh,nodes,elements,n,rfNodes,rfElements,phi,typoOpt},
+	{mesh,nodes,elements,n,rfNodes,rfElements,phi},
 	
 	(* Create unit mesh *)
 	If[refinement===None,Return@unitStructuredMesh[nx,ny]];
@@ -1294,12 +1280,10 @@ refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
 		Top,1.5*Pi
 	];
 	nodes=RotationTransform[phi,{0.5,0.5}]/@nodes;
-	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False];
 	
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{QuadElement[elements]},
-		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
@@ -1307,7 +1291,7 @@ refinedUnitStructuredMesh[{nx_,ny_},refinement_]:=Module[
 ];
 
 refinedUnitStructuredMesh[{nx_,ny_,nz_},refinement_]:=Module[
-	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta,typoOpt},
+	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta},
 	
 	(* Create unit mesh *)
 	If[refinement===None,Return@unitStructuredMesh[nx,ny,nz]];
@@ -1347,12 +1331,10 @@ refinedUnitStructuredMesh[{nx_,ny_,nz_},refinement_]:=Module[
 	];
 	nodes=RotationTransform[phi,{0,0,1},{0.5,0.5,0.5}]/@nodes;
 	nodes=RotationTransform[theta,{0,1,0},{0.5,0.5,0.5}]/@nodes;
-	typoOpt=If[$VersionNumber<12.,"CheckIncidentsCompletness"->False,"CheckIncidentsCompleteness"->False];
-	
+		
 	ToElementMesh[
 		"Coordinates"->nodes,
 		"MeshElements"->{HexahedronElement[elements]},
-		typoOpt,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
