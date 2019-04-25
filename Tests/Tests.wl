@@ -1245,18 +1245,16 @@ VerificationTest[
 
 
 VerificationTest[
-	DiskMesh[2,Method->"Projection"],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"DiskMesh_method-projection"
+	DiskMesh[2,Method->"Square"]["Bounds"],
+	{{-1.,1.},{-1.,1.}},
+	TestID->"DiskMesh_method-Square"
 ];
 
 
 VerificationTest[
-	DiskMesh[2,Method->"Block"],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"DiskMesh_method-block"
+	DiskMesh[2,Method->"Polygon"]["Bounds"],
+	{{-1.,1.},{-1.,1.}},
+	TestID->"DiskMesh_method-Polygon"
 ];
 
 
