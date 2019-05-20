@@ -1757,43 +1757,38 @@ CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:Optio
 (*SphereMesh*)
 
 
-(* 
-Some key ideas for this code come from the answer by "Michael E2" on topic: 
-https://mathematica.stackexchange.com/questions/85592/how-to-create-an-elementmesh-of-a-sphere
-*)
+(* Some key ideas come from: https://mathematica.stackexchange.com/questions/85592 *)
 SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
 SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-SphereMesh//Options={"MeshOrder"->Automatic};
+SphereMesh//Options={"MeshOrder"->1};
 
 SphereMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts];
 
 SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{order,rescale,cuboid,cuboidShell,coordinates},
-	If[TrueQ[n<2]||Not@IntegerQ[n],Message[SphereMesh::noelems,n];Return[$Failed]];
-	order=OptionValue["MeshOrder"]/.Automatic->1;
-	If[Not@MatchQ[order,1|2],Message[ToElementMesh::femmonv,order,1];Return[$Failed]];
+	{order,rescale,cuboid,cuboidShell,crds},
 	
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	(* This special raster makes all element edges on sphere edge of the same length. *)
-	cuboid=With[
-		{pts=r*N@Tan@Subdivide[-Pi/4,Pi/4,n]},
-		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
-	];
-	(* If we do order alteration (more than 1st order) before projection, then geometry is
-	more accurate and elements have curved edges. *)
+	If[TrueQ[n<2],Message[SphereMesh::noelems,n];Return[$Failed,Module]];
+	order=OptionValue["MeshOrder"]/.(Except[1|2]->1);
+	
 	cuboidShell=MeshOrderAlteration[
-		ToBoundaryMesh[cuboid],
+		ToBoundaryMesh@CuboidMesh[{-1,-1,-1},{1,1,1},{n,n,n}],
 		order
 	];
-	
-	coordinates=Transpose[Transpose[rescale/@cuboidShell["Coordinates"]]+{x,y,z}];
+	(* This special rescaling makes all element edges on sphere edge of the same length. *)
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	crds=cuboidShell["Coordinates"];
+	crds=rescale/@(r*Tan[N[Pi/4]*crds])+ConstantArray[{x,y,z},Length[crds]];
 	
 	ToBoundaryMesh[
-		"Coordinates" -> coordinates,
-		"BoundaryElements" -> cuboidShell["BoundaryElements"]
+		"Coordinates"->crds,
+		"BoundaryElements"->cuboidShell["BoundaryElements"],
+		"CheckIncidentsCompleteness"->False,
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
 	]
 ];
 
