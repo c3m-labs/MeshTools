@@ -1270,6 +1270,13 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	Length@ElementIncidents@First@DiskMesh[2,"Refinement"->True]["MeshElements"],
+	36,
+	TestID->"DiskMesh_edge-refinement"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*AnnulusMesh*)
 
