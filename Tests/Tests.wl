@@ -1258,6 +1258,18 @@ VerificationTest[
 ];
 
 
+(* Check if all boundary nodes of unit disk are on theoretical circle. *)
+VerificationTest[
+	Module[
+		{mesh,boundaryNodes},
+		mesh=DiskMesh[{0,0},1,4,"MeshOrder"->2];
+		boundaryNodes=Union@Flatten@ElementIncidents@mesh["BoundaryElements"];
+		Equal@@(Norm/@mesh["Coordinates"][[boundaryNodes]])
+	],
+	TestID->"DiskMesh_MeshOrder==2"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*AnnulusMesh*)
 

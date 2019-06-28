@@ -1540,6 +1540,30 @@ TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
 (*DiskMesh*)
 
 
+(* This function makes sense only for 2nd order mesh. It makes all boundary nodes 
+lie on theoretical circle or sphere and improves geometry of boundary. It works 
+also for 3D. *)
+improveUnitBallBoundary[mesh_ElementMesh]:=Module[
+	{boundaryNodes,correctedNodes},
+	boundaryNodes=Union@Flatten@ElementIncidents@mesh["BoundaryElements"];
+	correctedNodes=MapAt[
+		Normalize,
+		mesh["Coordinates"],
+		Partition[boundaryNodes,1]
+	];
+	
+	ToElementMesh[
+		"Coordinates"->correctedNodes,
+		"MeshElements"->mesh["MeshElements"],
+		"BoundaryElements"->mesh["BoundaryElements"],
+		"PointElements"->mesh["PointElements"],
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
+];
+
+
 unitMeshSquareMethod[n_]:=RectangleMesh[{-1, -1},{1, 1},{n, n}];
 
 
@@ -1563,17 +1587,17 @@ unitMeshPolygonMethod[n_,refinement_?BooleanQ]:=Module[
 
 
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
-DiskMesh::method="Values for option Method should be \"Polygon\" or \"Square\".";
+DiskMesh::method="Values for option Method should be \"Polygon\", \"Square\" or Automatic.";
 DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-DiskMesh//Options={"Refinement"->False,Method->Automatic};
+DiskMesh//Options={"Refinement"->False,"MeshOrder"->1,Method->Automatic};
 
 DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{method,order,unitMesh,rescale,unitCrds,crds},
+	{method,order,unitSquare,unitDisk,rescale,unitCrds,crds},
 	
 	If[
 		Not@TrueQ[n>=2],
@@ -1581,7 +1605,7 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	];
 	
 	method=OptionValue[Method]/.(Automatic->"Polygon");	
-	unitMesh=Switch[method,
+	unitSquare=Switch[method,
 		"Polygon",unitMeshPolygonMethod[n,TrueQ@OptionValue["Refinement"]],
 		"Square",unitMeshSquareMethod[n],
 		_,Message[DiskMesh::method];Return[$Failed,Module]
@@ -1589,13 +1613,27 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	
 	rescale=(Max[Abs@#]*Normalize[#])&;
 	(* Scaling with Tan causes equal length of edges after projection to disk. *)
-	unitCrds=rescale/@Tan[Pi/4*unitMesh["Coordinates"]];
+	unitDisk=SmoothenMesh@ToElementMesh[
+		"Coordinates"->rescale/@Tan[Pi/4*unitSquare["Coordinates"]],
+		"MeshElements"->unitSquare["MeshElements"],
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	];
+	(* In case of "MeshOrder"\[Rule]2 position of boundary nodes has to be fixed again,
+	because mesh smoothing works only on 1st order mesh. *)
+	If[
+		OptionValue["MeshOrder"]===2,
+		unitDisk=improveUnitBallBoundary@MeshOrderAlteration[unitDisk,2]
+	];
+	unitCrds=unitDisk["Coordinates"];
 	crds=(N[r]*unitCrds)+ConstantArray[N@{x,y},Length@unitCrds];
 	
-	SmoothenMesh@ToElementMesh[
+	ToElementMesh[
 		"Coordinates"->crds,
-		"MeshElements"->unitMesh["MeshElements"],
-		"CheckIntersections"->False
+		"MeshElements"->unitDisk["MeshElements"],
+		"CheckIntersections"->False,
+		"DeleteDuplicateCoordinates"->False
 	]
 ];
 
