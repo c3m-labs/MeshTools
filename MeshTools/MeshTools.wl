@@ -588,20 +588,75 @@ RevolveMesh[mesh_ElementMesh,{fi1_,fi2_},layers_Integer?Positive]:=Module[
 (*Mesh smoothing*)
 
 
-(* This implements Laplacian mesh smoothing method as described in 
-https://mathematica.stackexchange.com/a/156669 *)
-SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
-SmoothenMesh::badType="Smoothing is only supported for first order 2D meshes.";
+mkFindConnectedNodes[mesh_ElementMesh] := Block[
+	{vec, vecTvec, nzv, nzp, neigbours, temp2, sa}, 
 
-SmoothenMesh//SyntaxInformation={"ArgumentsPattern"->{_}};
-
-SmoothenMesh[mesh_ElementMesh]:=Module[
-	{n,vec,mat,adjacencyMatrix,mass,bndVertices,interiorVertices,stiffness,load,newCoords},
-	
-	If[
-		Or[mesh["MeshOrder"]=!=1,mesh["EmbeddingDimension"]=!=2],
-		Message[SmoothenMesh::badType];Return[$Failed]
+	vec = mesh["VertexElementConnectivity"];
+	vecTvec = vec.Transpose[vec];
+	nzv = vecTvec["NonzeroValues"];
+	nzp = vecTvec["NonzeroPositions"];
+	neigbours = Join @@ Position[nzv, 2];
+	temp2 = Transpose[nzp[[neigbours]]];
+	sa = SparseArray[
+			Transpose[
+				Developer`ToPackedArray[{temp2[[1]],Range[Length[temp2[[1]]]]}]
+			] -> 1,
+			{Length[mesh["Coordinates"]], Length[neigbours]}
 	];
+
+	With[
+		{lookup = sa, ids = temp2[[2]]},
+		Function[theseNodes, 
+			ids[[Flatten[lookup[[#]]["NonzeroPositions"]]]] & /@ theseNodes
+		]
+	]
+];
+
+
+findInteriorNodes[mesh_ElementMesh] := With[{
+	allNodes = Range[Length[mesh["Coordinates"]]],
+	boundaryNodes = Join @@ (Flatten /@ ElementIncidents[mesh["BoundaryElements"]])
+	},
+	Complement[allNodes, boundaryNodes]
+];
+
+
+$defaultMaxIter = 100;
+
+iterativeMeshSmoothing//Options = {MaxIterations -> $defaultMaxIter};
+
+(* Source of this fuction is https://mathematica.stackexchange.com/a/156669
+and https://github.com/WolframResearch/FEMAddOns *)
+iterativeMeshSmoothing[mesh_ElementMesh,opts:OptionsPattern[iterativeMeshSmoothing]]:=Block[
+	{inodes, connectedNodes, temp, crds, movedCoords, iter},
+
+	iter = OptionValue["MaxIterations"];
+	If[ Not@(IntegerQ[iter] && iter > 0), iter = $defaultMaxIter];
+  
+	inodes = findInteriorNodes[mesh];
+	(* Compute connectivity only once. *)
+	connectedNodes = mkFindConnectedNodes[mesh];
+	temp = connectedNodes[inodes];
+	crds = mesh["Coordinates"];
+	Do[
+		movedCoords = Developer`ToPackedArray[Mean[crds[[#]]] & /@ temp];
+		crds[[inodes]] = movedCoords,
+		{iter}
+	];
+
+	ToElementMesh[
+		"Coordinates" -> crds,
+		"MeshElements" -> mesh["MeshElements"],
+		"BoundaryElements" -> mesh["BoundaryElements"],
+		"PointElements" -> mesh["PointElements"],
+		"RegionHoles" -> mesh["RegionHoles"]
+	]
+];
+
+
+(* This implements Laplacian mesh smoothing. Source: https://mathematica.stackexchange.com/a/156669 *)
+directMeshSmoothing[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
+	{n,vec,mat,adjacencyMatrix,mass,bndVertices,interiorVertices,stiffness,load,newCoords},
 	
 	n = Length[mesh["Coordinates"]];
 	vec = mesh["VertexElementConnectivity"];
@@ -630,6 +685,34 @@ SmoothenMesh[mesh_ElementMesh]:=Module[
 		"CheckIntersections" -> False,
 		"DeleteDuplicateCoordinates" -> False,
 		"RegionHoles" -> mesh["RegionHoles"]
+	]
+];
+
+
+SmoothenMesh::usage="SmoothenMesh[mesh] improves the quality of 2D mesh.";
+SmoothenMesh::badmtd="Values for option Method should be \"Direct\", \"Iterative\" or Automatic.";
+SmoothenMesh::fail="Failure in mesh smoothing. Possible solution is Method->{\"Iterative\",MaxIterations->1}.";
+
+SmoothenMesh//Options={Method->Automatic};
+
+SmoothenMesh//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPattern[]}};
+
+SmoothenMesh[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
+	{method,fun,subOpts,result},
+	
+	method=Flatten[{OptionValue[Method]/.Automatic->"Direct"}];
+	Switch[
+		First[method],
+		"Iterative",fun=iterativeMeshSmoothing,
+		"Direct",fun=directMeshSmoothing,
+		_,Message[SmoothenMesh::badmtd];Return[$Failed,Module]			
+	 ];
+
+	subOpts = {};
+	If[ Length[method] > 1, subOpts=Rest@method ];
+	Check[
+		result=fun[mesh,FilterRules[subOpts,Options@fun]],
+		Message[SmoothenMesh::fail];result
 	]
 ];
 
