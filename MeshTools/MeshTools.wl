@@ -1971,91 +1971,78 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nfi_Integer,nr_Integer},opts:Options
 (*BallMesh*)
 
 
-ballMeshBlock[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
-	{rescale,bottomRaster,topRaster,cubeMesh,sideMesh,d,rotations,unitBall},
+unitCubeMeshMethodCube[n_]:=CuboidMesh[{-1,-1,-1},{1,1,1},{n,n,n}];
+
+
+unitCubeMeshMethodPolyhedron[n_,refinement_?BooleanQ]:=Module[
+	{d,internalCubeMesh,sideMesh,rotations},
 	
-	(* Size of internal square. Optimial minimal element quality is obtained at 0.2.
-	Value of 0.3 creates nicer element size distribution. *)
-	d=0.3;
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	
-	bottomRaster=With[
-		{pts=d*N@Subdivide[-1,1,n]},
-		Map[Append[d], Outer[Reverse@*List,pts,pts], {2}]
+	d=0.5;
+	internalCubeMesh=CuboidMesh[-d*{1,1,1},d*{1,1,1},{n,n,n}];
+	sideMesh=StructuredMesh[
+		{{{{d,-d,-d},{d,d,-d}},{{d,-d,d},{d,d,d}}},{{{1,-1,-1},{1,1,-1}},{{1,-1,1},{1,1,1}}}},
+		{n,n,Ceiling[n/4]},
+		"Refinement"->(refinement/.{True->Top,False->None})
 	];
-	
-	(* This special raster makes all element edges on disk edge of the same length. *)
-	topRaster=With[
-		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
-		Map[rescale@*Append[1.], Outer[Reverse@*List,pts,pts], {2}]
-	];
-	
-	cubeMesh=CuboidMesh[-d*{1,1,1},d*{1,1,1},{n,n,n}];
-	(* TODO: Figure out how many elements should be in radial direction. *)
-	sideMesh=StructuredMesh[{bottomRaster,topRaster},{n,n,n}];
-	
 	rotations=Join[
-		RotationTransform[#,{0,1,0}]&/@({0,1,2,3}*Pi/2),
-		RotationTransform[#,{1,0,0}]&/@({1,3}*Pi/2)
+		RotationTransform[#,{0,1,0}]&/@(Range[4.]*Pi/2),
+		RotationTransform[#,{0,0,1}]&/@({1.,3.}*Pi/2)
 	];
 	
-	unitBall=MergeMesh@Join[{cubeMesh},TransformMesh[sideMesh,#]&/@rotations];
-	
-	ToElementMesh[
-		"Coordinates" ->Transpose[Transpose[r*unitBall["Coordinates"]]+{x,y,z}],
-		"MeshElements" -> unitBall["MeshElements"]
-	]
-];
-
-
-(* Some key ideas come from: https://mathematica.stackexchange.com/a/103468 *)
-
-ballMeshProjection[{x_,y_,z_},r_,n_Integer/;(n>=1)]:=Module[
-	{rescale,cuboidMesh,coordinates},
-	
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	(* This special raster makes all element edges on sphere edge of the same length. *)
-	cuboidMesh=With[
-		{pts=N@Tan@Subdivide[-Pi/4,Pi/4,n]},
-		StructuredMesh[Outer[Reverse@*List,pts,pts,pts],{n,n,n}]
-	];
-	(* If we do order alteration (more than 1st order) before projection, then geometry is
-	more accurate and elements have curved edges. *)
-	(*cuboidMesh=MeshOrderAlteration[cuboidMesh,order];*)
-	
-	coordinates=Transpose[Transpose[r*(rescale/@cuboidMesh["Coordinates"])]+{x,y,z}];
-	
-	ToElementMesh[
-		"Coordinates" -> coordinates,
-		"MeshElements" -> cuboidMesh["MeshElements"]
-	]
+	MergeMesh@Join[{internalCubeMesh},TransformMesh[sideMesh,#]&/@rotations]
 ];
 
 
 BallMesh::usage="BallMesh[{x, y, z}, r, n] creates structured mesh with n elements on Ball of radius r centered at {x,y,z}.";
-BallMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 1.";
-BallMesh::method="Method \"`1`\" is not supported.";
+BallMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+BallMesh::method="Values for option Method should be \"Polyhedron\", \"Cube\" or Automatic.";
 
-BallMesh//Options={Method->Automatic};
+BallMesh//Options={"MeshOrder"->1,"Refinement"->False,Method->Automatic};
 
 BallMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts];
 
 BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{method},
+	{method,unitCube,rescale,unitBall,unitCrds,crds},
 	
 	If[
-		Not@(TrueQ[n>=1]&&IntegerQ[n]),
-		Message[BallMesh::noelems,n];Return[$Failed]
+		Not@TrueQ[n>=2],
+		Message[BallMesh::noelems,n];Return[$Failed,Module]
 	];
 	
-	method=OptionValue[Method]/.Automatic->"Block";
+	method=OptionValue[Method]/.Automatic->"Polyhedron";
+	unitCube=Switch[method,
+		"Cube",unitCubeMeshMethodCube[n],
+		"Polyhedron",unitCubeMeshMethodPolyhedron[n,TrueQ@OptionValue["Refinement"]],
+		_,Message[BallMesh::method,method];Return[$Failed,Module]
+	];
 	
-	Switch[method,
-		"Block",ballMeshBlock[{x,y,z},r,n],
-		"Projection",ballMeshProjection[{x,y,z},r,n],
-		_,Message[BallMesh::method,method];$Failed
+	rescale=(Max[Abs@#]*Normalize[#])&;
+	(* Scaling with Tan causes equal length of edges after projection to ball. *)
+	unitBall=SmoothenMesh@ToElementMesh[
+		"Coordinates"->rescale/@Tan[Pi/4*unitCube["Coordinates"]],
+		"MeshElements"->unitCube["MeshElements"],
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	];
+	(* In case of "MeshOrder"\[Rule]2 position of boundary nodes has to be fixed again,
+	because mesh smoothing works only on 1st order mesh. *)
+	If[
+		OptionValue["MeshOrder"]===2,
+		unitBall=improveUnitBallBoundary@MeshOrderAlteration[unitBall,2]
+	];
+	unitCrds=unitBall["Coordinates"];
+	crds=(N[r]*unitCrds)+ConstantArray[N@{x,y,z},Length@unitCrds];
+	
+	ToElementMesh[
+		"Coordinates"->crds,
+		"MeshElements"->unitBall["MeshElements"],
+		"BoundaryElements"->unitBall["BoundaryElements"],
+		"PointElements"->unitBall["PointElements"],
+		"CheckIntersections"->False,
+		"DeleteDuplicateCoordinates"->False
 	]
 ];
 
