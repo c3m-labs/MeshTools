@@ -2088,64 +2088,6 @@ SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern
 
 
 (* ::Subsubsection::Closed:: *)
-(*EllipsoidVoidMesh*)
-
-
-(* ::Text:: *)
-(*This is a quick prototype, made for analysis of voids inside material (forging).*)
-
-
-(* Projection (with RegionNearest) of points from one side of the cube to a sphere. 
-Argument f should be a Function to specify on which side of cube points are created (e.g. {1,#1,#2}& ). 
-It is assumed size of domain is 1. *)
-
-voidRaster[f_Function,semiAxis:{_,_,_}]:=Module[
-	{n=30,pts,sidePts,innerPts,middlePts},
-	pts=N@Subdivide[0,1,n-1];
-	sidePts=Flatten[Outer[f,pts,pts],1];
-	innerPts=RegionNearest[Ellipsoid[{0,0,0},semiAxis],sidePts];
-	middlePts=RegionNearest[Ellipsoid[{0,0,0},semiAxis*2],sidePts];
-	{Partition[sidePts,n],Partition[middlePts,n],Partition[innerPts,n]}
-];
-
-
-EllipsoidVoidMesh::usage=
-	"EllipsoidVoidMesh[radius, noElements] creates a mesh with spherical void."<>"\n"<>
-	"EllipsoidVoidMesh[{r1, r2, r3}, noElements] creates a mesh with ellipsoid void with semi-axis radii r1, r2 and r3.";
-
-EllipsoidVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_}};
-
-EllipsoidVoidMesh[{r1_,r2_,r3_},noElements_Integer]:=With[{
-	dim=Clip[#,{0.01,0.8}]&/@{r1,r2,r3},
-	n=Round@Clip[noElements,{1,100}]
-	},
-	Fold[
-		MergeMesh[#1,#2]&,
-		{
-		StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}],
-		StructuredMesh[voidRaster[{#2,1,#1}&,dim],n{1,1,2}],
-		StructuredMesh[voidRaster[{#1,#2,1}&,dim],n{1,1,2}]
-		}
-	]
-];
-
-(* Implementation for spherical void is faster, because (costly) StructuredMesh is generated
-only once and then rotated. *)
-EllipsoidVoidMesh[voidRadius_,noElements_Integer]:=Module[{
-	dim=Clip[voidRadius,{0.01,0.8}]*{1,1,1},
-	n=Round@Clip[noElements,{1,100}],
-	rotations=RotationTransform[#,{1,1,1},{0,0,0}]&/@{0,2*Pi/3,4*Pi/3},
-	basicMesh
-	},
-	basicMesh=StructuredMesh[voidRaster[{1,#1,#2}&,dim],n{1,1,2}];
-	Fold[
-		MergeMesh[#1,#2]&,
-		TransformMesh[basicMesh,#]&/@rotations
-	]
-];
-
-
-(* ::Subsubsection::Closed:: *)
 (*TetrahedronMesh*)
 
 
