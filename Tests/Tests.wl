@@ -935,9 +935,8 @@ With[{
 	mesh=ToElementMesh[Rectangle[],MaxCellMeasure->1/10]
 	},
 	VerificationTest[
-		ElementMeshCurvedWireframe[mesh],	
-		_Graphics,
-		SameTest->MatchQ,
+		Head@ElementMeshCurvedWireframe[mesh],	
+		Graphics,
 		TestID->"ElementMeshCurvedWireframe-quad"
 	]
 ];
@@ -947,9 +946,8 @@ With[{
 	mesh=ToElementMesh[Triangle[],MaxCellMeasure->1/10]
 	},
 	VerificationTest[
-		ElementMeshCurvedWireframe[mesh],	
-		_Graphics,
-		SameTest->MatchQ,
+		Head@ElementMeshCurvedWireframe[mesh],	
+		Graphics,
 		TestID->"ElementMeshCurvedWireframe-tri"
 	]
 ];
