@@ -1922,48 +1922,53 @@ SphericalShellMesh::usage=
 "SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell, 
 with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
-SphericalShellMesh//Options={"MeshOrder"->Automatic};
+SphericalShellMesh//Options={"MeshOrder"->1,"Refinement"->False};
 
 SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 SphericalShellMesh[{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{nfi,nr},opts];
 
 SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
-	{order,rescale,innerRaster,outerRaster,rotations,flatMesh,curvedMesh},
-	
-	order=OptionValue["MeshOrder"]/.Automatic->1;
-	If[
-		Not@MatchQ[order,1|2],
-		Message[ToElementMesh::femmonv,order,1];Return[$Failed]
+	{d,sideMesh,rotations,unitCube,projection,unitBall,unitCrds,crds},
+	(* This factor neutralizes rescaling after projection from hollow cube to spherical shell. *)
+	d=ArcTan[N[rIn/rOut]]/(Pi/4);
+	sideMesh=StructuredMesh[
+		{{{{d,-d,-d},{d,d,-d}},{{d,-d,d},{d,d,d}}},{{{1,-1,-1},{1,1,-1}},{{1,-1,1},{1,1,1}}}},
+		{nfi,nfi,nr},
+		"Refinement"->(TrueQ@OptionValue["Refinement"]/.{True->Top,False->None})
 	];
-	
-	rescale=(Max[Abs@#]*Normalize[#])&;
-	
-	(* This special raster makes all element edges on disk edge of the same length. *)
-	innerRaster=With[
-		{pts=rIn*N@Tan@Subdivide[-Pi/4,Pi/4,nfi]},
-		Map[Append[rIn], Outer[Reverse@*List,pts,pts], {2}]
-	];
-	outerRaster=With[
-		{pts=rOut*N@Tan@Subdivide[-Pi/4,Pi/4,nfi]},
-		Map[Append[rOut], Outer[Reverse@*List,pts,pts], {2}]
-	];
-	
-	flatMesh=MeshOrderAlteration[
-		StructuredMesh[{innerRaster,outerRaster},{nfi,nfi,nr}],
-		order
-	];
-	curvedMesh=ToElementMesh[
-		"Coordinates" ->Transpose[Transpose[rescale/@flatMesh["Coordinates"]]+{x,y,z}],
-		"MeshElements" -> flatMesh["MeshElements"]
-	];
-	
 	rotations=Join[
-		RotationTransform[#,{1,0,0},{x,y,z}]&/@(Range[4]*Pi/2),
-		RotationTransform[#,{0,1,0},{x,y,z}]&/@{Pi/2,3*Pi/2}
+		RotationTransform[#,{0,1,0}]&/@(Range[4.]*Pi/2),
+		RotationTransform[#,{0,0,1}]&/@({1.,3.}*Pi/2)
 	];
-		
-	MergeMesh@(TransformMesh[curvedMesh,#]&/@rotations)
+	unitCube=MergeMesh[TransformMesh[sideMesh,#]&/@rotations];
+	(* With this If we avoid problems in "MeshOrder" value is not 1 or 2. *)
+	If[
+		OptionValue["MeshOrder"]===2,
+		unitCube=MeshOrderAlteration[unitCube,2]
+	];
+
+	projection=(Max[Abs@#]*Normalize[#])&;
+	(* Scaling with Tan causes equal length of edges after projection to spherical shell. *)
+	unitBall=ToElementMesh[
+		"Coordinates"->projection/@Tan[Pi/4*unitCube["Coordinates"]],
+		"MeshElements"->unitCube["MeshElements"],
+		"CheckIntersections"->False,
+		"CheckQuality"->False,
+		"DeleteDuplicateCoordinates"->False
+	];
+
+	unitCrds=unitBall["Coordinates"];
+	crds=(N[rOut]*unitCrds)+ConstantArray[N@{x,y,z},Length@unitCrds];
+	
+	ToElementMesh[
+		"Coordinates"->crds,
+		"MeshElements"->unitBall["MeshElements"],
+		"BoundaryElements"->unitBall["BoundaryElements"],
+		"PointElements"->unitBall["PointElements"],
+		"CheckIntersections"->False,
+		"DeleteDuplicateCoordinates"->False
+	]
 ];
 
 
