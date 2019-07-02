@@ -1540,7 +1540,7 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Posit
 RectangleMesh::usage="RectangleMesh[{xMin, yMin},{xMax, yMax},{nx, ny}] creates structured mesh 
 on axis-aligned Rectangle with corners {xMin,yMin} and {xMax,yMax}.";
 
-RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
+RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 
 RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}];
 
@@ -1590,7 +1590,7 @@ TriangleMesh::badtype="Unknown option value for \"MeshElementType\"->`1`.";
 
 TriangleMesh//Options={"MeshElementType"->QuadElement};
 
-TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
+TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 
 TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts];
 
@@ -1676,7 +1676,7 @@ DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larg
 
 DiskMesh//Options={"Refinement"->False,"MeshOrder"->1,Method->Automatic};
 
-DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
@@ -1733,7 +1733,7 @@ and nr elements in radial direction."<>"\n"<>
 AnnulusMesh::angle="Angle limits for Annulus must be distinct.";
 AnnulusMesh::division="There should be more than one element for each Pi/2 sector of Annulus.";
 
-AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_.}};
+AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,_.}};
 
 AnnulusMesh[{nfi_Integer?Positive,nr_Integer?Positive}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nfi,nr}];
 
@@ -1807,7 +1807,7 @@ CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
 
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
 
-CuboidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
+CuboidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 
 CuboidMesh[n_Integer]:=CuboidMesh[{0,0,0},{1,1,1},{n,n,n}];
 
@@ -1852,7 +1852,7 @@ HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integ
 CylinderMesh::usage="CylinderMesh[{{x1, y1, z1}, {x2, y2, z2}}, r, {nr,nz}] creates structured mesh on Cylinder.";
 CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
 
-CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
 CylinderMesh[{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,-1},{0,0,1}},1,{nr,nz},opts];
 
@@ -1885,7 +1885,7 @@ SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or la
 
 SphereMesh//Options={"MeshOrder"->1};
 
-SphereMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+SphereMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
 SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts];
 
@@ -1925,7 +1925,7 @@ with n\[Phi] elements in circumferential and nr elements in radial direction.";
 
 SphericalShellMesh//Options={"MeshOrder"->1,"Refinement"->False};
 
-SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+SphericalShellMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
 SphericalShellMesh[{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShellMesh[{0,0,0},{1/2,1},{nfi,nr},opts];
 
@@ -2005,7 +2005,7 @@ BallMesh::method="Values for option Method should be \"Polyhedron\", \"Cube\" or
 
 BallMesh//Options={"MeshOrder"->1,"Refinement"->False,Method->Automatic};
 
-BallMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+BallMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
 BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts];
 
@@ -2149,7 +2149,7 @@ TetrahedronMesh::badtype="Unknown value `1` for option \"MeshElementType\".";
 
 TetrahedronMesh//Options={"MeshElementType"->HexahedronElement};
 
-TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
+TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 
 TetrahedronMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts];
 
@@ -2196,7 +2196,7 @@ reorientPrismQ[pts_]:=With[{
 PrismMesh::usage="PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge.";
 PrismMesh::noelems="Specificaton of elements `1` must be even integer equal or larger than 2.";
 
-PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_}};
+PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
 
 PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}];
 
