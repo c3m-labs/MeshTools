@@ -426,11 +426,11 @@ MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
 	
 	If[
 		mesh1["MeshOrder"]=!=mesh2["MeshOrder"],
-		Message[MergeMesh::order];Return[$Failed]
+		Message[MergeMesh::order];Return[$Failed,Module]
 	];
 	If[
 		mesh1["EmbeddingDimension"]=!=mesh2["EmbeddingDimension"],
-		Message[MergeMesh::dim];Return[$Failed]
+		Message[MergeMesh::dim];Return[$Failed,Module]
 	];
 		
 	{elementType,head}=If[
@@ -1378,7 +1378,7 @@ refinedUnitStructuredMesh[{nx_,ny_,nz_},refinement_]:=Module[
 	{mesh,nodes,elements,n,rfNodes,rfElements,phi,theta},
 	
 	(* Create unit mesh *)
-	If[refinement===None,Return@unitStructuredMesh[nx,ny,nz]];
+	If[refinement===None,Return[unitStructuredMesh[nx,ny,nz],Module]];
 	n=Switch[refinement,
 		Left,{nx,ny,nz},
 		Right,{nx,ny,nz},
@@ -1779,7 +1779,7 @@ CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
 	(* This should also make sure that numerical quantities are compared. *)
 	If[
 		Not@TrueQ[radius<(size/2)],
-		Message[CircularVoidMesh::ratio,radius,size];Return[$Failed]
+		Message[CircularVoidMesh::ratio,radius,size];Return[$Failed,Module]
 	];
 		
 	raster=N@{
@@ -1860,7 +1860,7 @@ CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:Optio
 	{diskMesh,length,alignedCylinder,tf},
 	If[
 		TrueQ[nr<2]||Not@IntegerQ[nr],
-		Message[CylinderMesh::noelems,nr];Return[$Failed]
+		Message[CylinderMesh::noelems,nr];Return[$Failed,Module]
 	];
 
 	length=Norm[{x2,y2,z2}-{x1,y1,z1}];
