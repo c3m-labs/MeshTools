@@ -62,6 +62,7 @@ PrismMesh;
 CylinderMesh;
 SphereMesh;
 SphericalShellMesh;
+SphericalVoidMesh;
 BallMesh;
 
 
@@ -2057,14 +2058,16 @@ BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 
 
 SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius, cuboidSize, noElements] creates a mesh with spherical void in cuboid domain.";
+SphericalVoidMesh::radius="Void diameter should be smaller than cuboid size.";
 
 SphericalVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern[]]:=Module[
 	{r,s,n,rescale,outerRaster,innerRaster,basicMesh,rt},
 	
-	rescale=(Max[Abs@#]*Normalize[#])&;
+	If[voidRadius>=cuboidSize,Message[SphericalVoidMesh::radius];Return[$Failed,Module]];
 	
+	rescale=(Max[Abs@#]*Normalize[#])&;
 	s=cuboidSize;
 	r=Clip[voidRadius,{0.01,Infinity}];
 	n=noElements;
