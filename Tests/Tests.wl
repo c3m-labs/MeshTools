@@ -1577,30 +1577,45 @@ VerificationTest[
 (*SphericalShellMesh*)
 
 
-(* Test default SphericalShell with default "MeshOrder" *)
 VerificationTest[
-	SphericalShellMesh[{4,2}],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"SphericalShellMesh_unit-shell"
-];
-
-
-(* Test default SphericalShell with "MeshOrder"->2 *)
-VerificationTest[
-	SphericalShellMesh[{2,1},"MeshOrder"->2],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"SphericalShellMesh_unit-shell-order=2"
+	SphericalShellMesh[{4,2}]["Bounds"],
+	{{-1.,1.},{-1.,1.},{-1.,1.}},
+	SameTest->(Norm[#1-#2]<10^-8&),
+	TestID->"SphericalShellMesh_unit-shell-bounds"
 ];
 
 
 (* Test SphericalShell with arbitrary position and size. *)
 VerificationTest[
-	SphericalShellMesh[{1,2,3},{2,3},{4,2}],
-	_ElementMesh,
-	SameTest->MatchQ,
-	TestID->"SphericalShellMesh_arbitrary-shell"
+	SphericalShellMesh[{1,2,3},{2,3},{4,2}]["Bounds"],
+	{{-2.,4.},{-1.,5.},{0.,6.}},
+	SameTest->(Norm[#1-#2]<10^-8&),
+	TestID->"SphericalShellMesh_arbitrary-shell-bounds"
+];
+
+
+(* Check if all boundary nodes (inner and outer) of 2nd order mesh lie on theoretical sphere. *)
+VerificationTest[
+	Module[
+		{mesh,boundaryNodes},
+		mesh=SphericalShellMesh[{0,0,0},{2,3},{8,2},"MeshOrder"->2];
+		boundaryNodes=Union@@First@ElementIncidents[mesh["BoundaryElements"]];
+		Sort@DeleteDuplicates[
+			Norm/@mesh["Coordinates"][[boundaryNodes]],
+			(Abs[#1-#2]<10^-8)&
+		]
+	],
+	{2.,3.},
+	SameTest->(Norm[#1-#2]<10^-8&),
+	TestID->"SphericalShellMesh_MeshOrder==2"
+];
+
+
+(* Check for correct number of elements. *)
+VerificationTest[
+	SphericalShellMesh[{4,2},"Refinement"->True]["MeshElements"][[1,1]]//Length,
+	1344,
+	TestID->"SphericalShellMesh_refinement-option"
 ];
 
 
