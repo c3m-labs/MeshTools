@@ -1611,15 +1611,59 @@ VerificationTest[
 VerificationTest[
 	BallMesh[2]["Bounds"],
 	{{-1.,1.},{-1.,1.},{-1.,1.}},
-	TestID->"BallMesh_unit-ball"
+	TestID->"BallMesh_unit-ball-bounds"
 ];
 
 
 VerificationTest[
-	BallMesh[{1,2,3},3,3]["Bounds"],
-	{{-1.80534,3.80534},{-0.805339,4.80534},{0.194661,5.80534}},
-	SameTest->(Norm[#1-#2]<10^-3&),
-	TestID->"BallMesh_arbitrary-ball"
+	BallMesh[{1,2,3},3,4]["Bounds"],
+	{{-2.,4.},{-1.,5.},{0.,6.}},
+	SameTest->(Norm[#1-#2]<10^-8&),
+	TestID->"BallMesh_arbitrary-ball-bounds"
+];
+
+
+(* Check for correct number of elements. *)
+VerificationTest[
+	BallMesh[2,Method->"Cube"]["MeshElements"][[1,1]]//Length,
+	8,
+	TestID->"BallMesh_method-1"
+];
+
+
+(* Check for correct number of elements. *)
+VerificationTest[
+	BallMesh[2,Method->"Polyhedron"]["MeshElements"][[1,1]]//Length,
+	32,
+	TestID->"BallMesh_method-2"
+];
+
+
+(* Check for correct number of elements. *)
+VerificationTest[
+	BallMesh[2,"Refinement"->True]["MeshElements"][[1,1]]//Length,
+	320,
+	TestID->"BallMesh_refinement-option"
+];
+
+
+(* Check if all boundary nodes of 2nd order mesh lie on theoretical sphere. *)
+VerificationTest[
+	Module[
+		{mesh,boundaryNodes},
+		mesh=BallMesh[{0,0,0},1,4,"MeshOrder"->2];
+		boundaryNodes=Union@@First@ElementIncidents[mesh["BoundaryElements"]];
+		Equal@@(Norm/@mesh["Coordinates"][[boundaryNodes]])
+	],
+	TestID->"BallMesh_MeshOrder==2"
+];
+
+
+VerificationTest[
+	BallMesh[2,Method->"BadValue"],
+	$Failed,
+	{BallMesh::method},
+	TestID->"BallMesh_wrong-method"
 ];
 
 
