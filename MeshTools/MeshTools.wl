@@ -1539,14 +1539,22 @@ StructuredMesh[raster_,{nx_Integer?Positive,ny_Integer?Positive,nz_Integer?Posit
 
 RectangleMesh::usage="RectangleMesh[{xMin, yMin},{xMax, yMax},{nx, ny}] creates structured mesh 
 on axis-aligned Rectangle with corners {xMin,yMin} and {xMax,yMax}.";
+RectangleMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 
 RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}];
 
-RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=StructuredMesh[
-	{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
-	{nx,ny}
+RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=Module[
+	{},
+	If[
+		Or[nx<1,ny<1],
+		Message[RectangleMesh::elms,1];Return[$Failed,Module]
+	];
+	StructuredMesh[
+		{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
+		{nx,ny}
+	]
 ];
 
 
@@ -1587,18 +1595,20 @@ unitTriangleToTriangles[n_Integer]:=Module[
 TriangleMesh::usage="TriangleMesh[{p1, p2, p3}, n] creates triangular mesh on Triangle with corners p1, p2 and p3.";
 TriangleMesh::quadelms="Only even number of elements per edge is allowed for \"MeshElementType\"->QuadElement.";
 TriangleMesh::badtype="Unknown option value for \"MeshElementType\"->`1`.";
+TriangleMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 TriangleMesh//Options={"MeshElementType"->QuadElement};
 
 TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 
-TriangleMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts];
+TriangleMesh[n_Integer,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts];
 
-TriangleMesh[{p1_,p2_,p3_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
+TriangleMesh[{p1_,p2_,p3_},n_Integer,opts:OptionsPattern[]]:=Module[
 	{type,unitMesh,tf},
 	
+	If[n<1,Message[TriangleMesh::elms,1];Return[$Failed,Module]];
+	
 	type=OptionValue["MeshElementType"];
-
 	If[
 		(type===QuadElement)&&OddQ[n],
 		Message[TriangleMesh::quadelms];Return[$Failed,Module]
@@ -1672,7 +1682,7 @@ unitMeshPolygonMethod[n_,refinement_?BooleanQ]:=Module[
 
 DiskMesh::usage="DiskMesh[{x, y}, r, n] creates structured mesh with n elements on Disk of radius r centered at {x,y}.";
 DiskMesh::method="Values for option Method should be \"Polygon\", \"Square\" or Automatic.";
-DiskMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+DiskMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 DiskMesh//Options={"Refinement"->False,"MeshOrder"->1,Method->Automatic};
 
@@ -1683,10 +1693,7 @@ DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{method,order,unitSquare,unitDisk,rescale,unitCrds,crds},
 	
-	If[
-		Not@TrueQ[n>=2],
-		Message[DiskMesh::noelems,n];Return[$Failed,Module]
-	];
+	If[n<2,Message[DiskMesh::elms,2];Return[$Failed,Module]];
 	
 	method=OptionValue[Method]/.(Automatic->"Polygon");	
 	unitSquare=Switch[method,
@@ -1732,17 +1739,21 @@ and nr elements in radial direction."<>"\n"<>
 	"AnnulusMesh[{x, y}, {rIn, rOut}, {\[Phi]1, \[Phi]2}, {n\[Phi], nr}] creates mesh on Annulus from angle \[Phi]1 to \[Phi]2.";
 AnnulusMesh::angle="Angle limits for Annulus must be distinct.";
 AnnulusMesh::division="There should be more than one element for each Pi/2 sector of Annulus.";
+AnnulusMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 AnnulusMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,_.}};
 
-AnnulusMesh[{nfi_Integer?Positive,nr_Integer?Positive}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nfi,nr}];
+AnnulusMesh[{nfi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nfi,nr}];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{nfi_Integer?Positive,nr_Integer?Positive}]:=
-	AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nfi,nr}];
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{nfi_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nfi,nr}];
 
-AnnulusMesh[{x_,y_},{rIn_,rOut_},{fi1_,fi2_},{nfi_Integer?Positive,nr_Integer?Positive}]:=Module[
+AnnulusMesh[{x_,y_},{rIn_,rOut_},{fi1_,fi2_},{nfi_Integer,nr_Integer}]:=Module[
 	{min,max,raster},
 	
+	If[
+		Or[nfi<1,nr<1],
+		Message[AnnulusMesh::elms,1];Return[$Failed,Module]
+	];
 	(* Sorting angle by size solves potential problems with inverted elements. *)
 	{min,max}=MinMax[{fi1,fi2}];
 	If[
@@ -1771,11 +1782,13 @@ AnnulusMesh[{x_,y_},{rIn_,rOut_},{fi1_,fi2_},{nfi_Integer?Positive,nr_Integer?Po
 
 CircularVoidMesh::usage="CircularVoidMesh[{x,y}, r, s, n] creates a square mesh of size s with circular void of radius r centered at {x,y}.";
 CircularVoidMesh::ratio="Radius `1` should be smaller than the half of square domain size `2`.";
+CircularVoidMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 CircularVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_}};
 
-CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
+CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer]:=Module[
 	{raster,quarter},
+	If[n<1,Message[CircularVoidMesh::elms,1];Return[$Failed,Module]];
 	(* This should also make sure that numerical quantities are compared. *)
 	If[
 		Not@TrueQ[radius<(size/2)],
@@ -1806,16 +1819,22 @@ CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer?Positive]:=Module[
 
 
 CuboidMesh::usage="CuboidMesh[{x1, y1, z1}, {x2, y2, z2}, {nx, ny, nz}] creates structured mesh of hexahedra on Cuboid.";
+CuboidMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 CuboidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 
 CuboidMesh[n_Integer]:=CuboidMesh[{0,0,0},{1,1,1},{n,n,n}];
 
-CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
-	{{{x1,y1,z1},{x2,y1,z1}},{{x1,y2,z1},{x2,y2,z1}}},
-	{{{x1,y1,z2},{x2,y1,z2}},{{x1,y2,z2},{x2,y2,z2}}}
-	},
-	{nx,ny,nz}
+CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=Module[
+	{},
+	If[Or[nx<1,ny<1,nz<1],Message[CuboidMesh::elms,1];Return[$Failed,Module]];
+	
+	StructuredMesh[{
+		{{{x1,y1,z1},{x2,y1,z1}},{{x1,y2,z1},{x2,y2,z1}}},
+		{{{x1,y1,z2},{x2,y1,z2}},{{x1,y2,z2},{x2,y2,z2}}}
+		},
+		{nx,ny,nz}
+	]
 ];
 
 
@@ -1825,6 +1844,7 @@ CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=StructuredMesh[{
 
 HexahedronMesh::usage="HexahedronMesh[{p1, p2, ..., p8}, {nx, ny, nz}] creates structured mesh on Hexahedron.";
 HexahedronMesh::ordering="Warning! Ordering of corners may be incorrect.";
+HexahedronMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 HexahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
 
@@ -1835,6 +1855,7 @@ HexahedronMesh[{nx_Integer,ny_Integer,nz_Integer}]:=HexahedronMesh[
 
 HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integer}]:=Module[
 	{mesh},
+	If[Or[nx<1,ny<1,nz<1],Message[HexahedronMesh::elms,1];Return[$Failed,Module]];
 	Check[
 		mesh=StructuredMesh[
 			{{{p1,p2},{p4,p3}},{{p5,p6},{p8,p7}}},
@@ -1850,7 +1871,7 @@ HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integ
 
 
 CylinderMesh::usage="CylinderMesh[{{x1, y1, z1}, {x2, y2, z2}}, r, {nr,nz}] creates structured mesh on Cylinder.";
-CylinderMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+CylinderMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 CylinderMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
@@ -1859,8 +1880,8 @@ CylinderMesh[{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=CylinderMesh[{{0,0,
 CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:OptionsPattern[]]:=Module[
 	{diskMesh,length,alignedCylinder,tf},
 	If[
-		TrueQ[nr<2]||Not@IntegerQ[nr],
-		Message[CylinderMesh::noelems,nr];Return[$Failed,Module]
+		Or[nr<2,nz<1],
+		Message[CylinderMesh::elms,2];Return[$Failed,Module]
 	];
 
 	length=Norm[{x2,y2,z2}-{x1,y1,z1}];
@@ -1881,7 +1902,7 @@ CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:Optio
 
 (* Some key ideas come from: https://mathematica.stackexchange.com/questions/85592 *)
 SphereMesh::usage="SphereMesh[{x, y, z}, r, n] creates structured mesh with n elements on Sphere of radius r centered at {x,y,z}.";
-SphereMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+SphereMesh::elms="Number of elements should be an integer equal or larger than `1`."
 
 SphereMesh//Options={"MeshOrder"->1};
 
@@ -1892,7 +1913,7 @@ SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts];
 SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{order,rescale,cuboid,cuboidShell,crds},
 	
-	If[TrueQ[n<2],Message[SphereMesh::noelems,n];Return[$Failed,Module]];
+	If[n<2,Message[SphereMesh::elms,2];Return[$Failed,Module]];
 	order=OptionValue["MeshOrder"]/.(Except[1|2]->1);
 	
 	cuboidShell=MeshOrderAlteration[
@@ -1922,6 +1943,7 @@ SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 SphericalShellMesh::usage=
 "SphericalShellMesh[{x, y, z}, {rIn, rOut}, {n\[Phi], nr}] creates structured mesh on SphericalShell, 
 with n\[Phi] elements in circumferential and nr elements in radial direction.";
+SphericalShellMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 SphericalShellMesh//Options={"MeshOrder"->1,"Refinement"->False};
 
@@ -1931,6 +1953,10 @@ SphericalShellMesh[{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=SphericalShe
 
 SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nfi_Integer,nr_Integer},opts:OptionsPattern[]]:=Module[
 	{d,sideMesh,rotations,unitCube,projection,unitBall,unitCrds,crds},
+	If[
+		Or[nfi<2,nr<1],
+		Message[SphericalShellMesh::elms,2];Return[$Failed,Module]
+	];
 	(* This factor neutralizes rescaling after projection from hollow cube to spherical shell. *)
 	d=ArcTan[N[rIn/rOut]]/(Pi/4);
 	sideMesh=StructuredMesh[
@@ -2000,7 +2026,7 @@ unitCubeMeshMethodPolyhedron[n_,refinement_?BooleanQ]:=Module[
 
 
 BallMesh::usage="BallMesh[{x, y, z}, r, n] creates structured mesh with n elements on Ball of radius r centered at {x,y,z}.";
-BallMesh::noelems="Specificaton of elements `1` must be an integer equal or larger than 2.";
+BallMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 BallMesh::method="Values for option Method should be \"Polyhedron\", \"Cube\" or Automatic.";
 
 BallMesh//Options={"MeshOrder"->1,"Refinement"->False,Method->Automatic};
@@ -2012,10 +2038,7 @@ BallMesh[n_Integer,opts:OptionsPattern[]]:=BallMesh[{0,0,0},1,n,opts];
 BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	{method,unitCube,rescale,unitBall,unitCrds,crds},
 	
-	If[
-		Not@TrueQ[n>=2],
-		Message[BallMesh::noelems,n];Return[$Failed,Module]
-	];
+	If[n<2,Message[BallMesh::elms,2];Return[$Failed,Module]];
 	
 	method=OptionValue[Method]/.Automatic->"Polyhedron";
 	unitCube=Switch[method,
@@ -2059,12 +2082,14 @@ BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 
 SphericalVoidMesh::usage="SphericalVoidMesh[voidRadius, cuboidSize, noElements] creates a mesh with spherical void in cuboid domain.";
 SphericalVoidMesh::radius="Void diameter should be smaller than cuboid size.";
+SphericalVoidMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 SphericalVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern[]]:=Module[
 	{r,s,n,rescale,outerRaster,innerRaster,basicMesh,rt},
 	
+	If[n<2,Message[SphericalVoidMesh::elms,2];Return[$Failed,Module]];
 	If[voidRadius>=cuboidSize,Message[SphericalVoidMesh::radius];Return[$Failed,Module]];
 	
 	rescale=(Max[Abs@#]*Normalize[#])&;
@@ -2145,19 +2170,20 @@ unitTetrahedronToTetrahedra[n_Integer]:=Module[
 
 TetrahedronMesh::usage="TetrahedronMesh[{p1,p2,p3,p4}, n] creates tetrahedral mesh on Tetrahedron with corners p1, p2, p3 and p4.";
 TetrahedronMesh::hexelms="Only even number of elements per edge is allowed for hexahedral mesh.";
+TetrahedronMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 TetrahedronMesh::badtype="Unknown value `1` for option \"MeshElementType\".";
 
 TetrahedronMesh//Options={"MeshElementType"->HexahedronElement};
 
 TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 
-TetrahedronMesh[n_Integer?Positive,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts];
+TetrahedronMesh[n_Integer,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts];
 
-TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer?Positive,opts:OptionsPattern[]]:=Module[
+TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
 	{type,unitMesh,tf},
 	
+	If[n<1,Message[TetrahedronMesh::elms,1];Return[$Failed,Module]];
 	type=OptionValue["MeshElementType"];
-	
 	If[
 		(type===HexahedronElement)&&OddQ[n],
 		Message[TetrahedronMesh::hexelms];Return[$Failed,Module]
@@ -2194,7 +2220,8 @@ reorientPrismQ[pts_]:=With[{
 
 
 PrismMesh::usage="PrismMesh[{p1, ..., p6},{n1, n2}] creates structured mesh on Prism, with n1 and n2 elements per edge.";
-PrismMesh::noelems="Specificaton of elements `1` must be even integer equal or larger than 2.";
+PrismMesh::evenelms="Specificaton of elements `1` should be even integer.";
+PrismMesh::elms="Number of elements should be an integer equal or larger than `1`.";
 
 PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
 
@@ -2202,9 +2229,11 @@ PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{
 
 PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 	{c,m1,m2,m3},
+	
+	If[n2<1,Message[PrismMesh::elms,1];Return[$Failed,Module]];
 	If[
-		Not@(TrueQ[n1>=2]&&EvenQ[n1]),
-		Message[PrismMesh::noelems,n1];Return[$Failed,Module]
+		Or[n1<2,OddQ[n1]],
+		Message[PrismMesh::evenelms,n1];Return[$Failed,Module]
 	];
 	
 	c=If[

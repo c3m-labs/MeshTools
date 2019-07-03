@@ -1133,6 +1133,14 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	RectangleMesh[-1],
+	$Failed,
+	{RectangleMesh::elms},
+	TestID->"RectangleMesh_wrong-elements"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*TriangleMesh*)
 
@@ -1222,6 +1230,14 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	TriangleMesh[-1],
+	$Failed,
+	{TriangleMesh::elms},
+	TestID->"TriangleMesh_wrong-elements"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*DiskMesh*)
 
@@ -1229,7 +1245,7 @@ VerificationTest[
 VerificationTest[
 	DiskMesh[1],
 	$Failed,
-	{DiskMesh::noelems},
+	{DiskMesh::elms},
 	TestID->"DiskMesh_too-few-elements"
 ];
 
@@ -1322,6 +1338,14 @@ VerificationTest[
 
 
 VerificationTest[
+	AnnulusMesh[{0,0}],
+	$Failed,
+	{AnnulusMesh::elms},
+	TestID->"AnnulusMesh_wrong-elements"
+];
+
+
+VerificationTest[
 	AnnulusMesh[{0,0},{1/2,1},{0,0},{8,2}],
 	$Failed,
 	{AnnulusMesh::angle},
@@ -1355,6 +1379,14 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	CircularVoidMesh[{0,0},0.2,1,0],
+	$Failed,
+	{CircularVoidMesh::elms},
+	TestID->"CircularV;oidMesh_wrong-elements"
+];
+
+
 (* ::Subsection::Closed:: *)
 (*Named meshes 3D*)
 
@@ -1374,6 +1406,14 @@ VerificationTest[
 	CuboidMesh[{0,0,0},{3,2,1},{3,2,1}]["Bounds"],
 	{{0.,3.},{0.,2.},{0.,1.}},
 	TestID->"CuboidMesh_arbitrary-cuboid"
+];
+
+
+VerificationTest[
+	CuboidMesh[-1],
+	$Failed,
+	{CuboidMesh::elms},
+	TestID->"CuboidMesh_wrong-elements"
 ];
 
 
@@ -1408,6 +1448,15 @@ VerificationTest[
 	{ToElementMesh::femimq,HexahedronMesh::ordering},
 	SameTest->MatchQ,
 	TestID->"HexahedronMesh_wrong-ordering"
+];
+
+
+(* The last two points in Hexahedron are switched. *)
+VerificationTest[
+	HexahedronMesh[{-1,1,1}],
+	$Failed,
+	{HexahedronMesh::elms},
+	TestID->"HexahedronMesh_wrong-elements"
 ];
 
 
@@ -1472,6 +1521,14 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	TetrahedronMesh[-1],
+	$Failed,
+	{TetrahedronMesh::elms},
+	TestID->"TetrahedronMesh_wrong-elements"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*PrismMesh*)
 
@@ -1500,8 +1557,16 @@ VerificationTest[
 VerificationTest[
 	PrismMesh[{3,1}],
 	$Failed,
-	{PrismMesh::noelems},
-	TestID->"PrismMesh_wrong-element-specification"
+	{PrismMesh::evenelms},
+	TestID->"PrismMesh_odd-elements"
+];
+
+
+VerificationTest[
+	PrismMesh[{2,-1}],
+	$Failed,
+	{PrismMesh::elms},
+	TestID->"PrismMesh_wrong-elements"
 ];
 
 
@@ -1537,6 +1602,14 @@ VerificationTest[
 ];
 
 
+VerificationTest[
+	CylinderMesh[{-1,0}],
+	$Failed,
+	{CylinderMesh::elms},
+	TestID->"CylinderMesh_wrong-elements"
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*SphereMesh*)
 
@@ -1566,8 +1639,8 @@ VerificationTest[
 VerificationTest[
 	SphereMesh[1],
 	$Failed,
-	{SphereMesh::noelems},
-	TestID->"SphereMesh_too-few-elements"
+	{SphereMesh::elms},
+	TestID->"SphereMesh_wrong-elements"
 ];
 
 
@@ -1614,6 +1687,14 @@ VerificationTest[
 	SphericalShellMesh[{4,2},"Refinement"->True]["MeshElements"][[1,1]]//Length,
 	1344,
 	TestID->"SphericalShellMesh_refinement-option"
+];
+
+
+VerificationTest[
+	SphericalShellMesh[{-1,-1}],
+	$Failed,
+	{SphericalShellMesh::elms},
+	TestID->"SphericalShellMesh_wrong-elements"
 ];
 
 
@@ -1677,6 +1758,14 @@ VerificationTest[
 	$Failed,
 	{BallMesh::method},
 	TestID->"BallMesh_wrong-method"
+];
+
+
+VerificationTest[
+	BallMesh[1],
+	$Failed,
+	{BallMesh::elms},
+	TestID->"BallMesh_wrong-elements"
 ];
 
 
