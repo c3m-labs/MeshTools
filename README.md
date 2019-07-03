@@ -6,12 +6,12 @@
 _MeshTools_ is a [Mathematica](http://www.wolfram.com/mathematica/) package for creating and manipulating
 meshes for finite element method (`ElementMesh` objects). It helps you to do the following tasks:
 
-* Create structured meshes in 2D and 3D
+* Create structured mesh in 2D or 3D
 * Split, transform and merge meshes
 * Convert triangular to quadrilateral mesh
-* Create high quality meshes on basic geometric shapes
+* Create high quality mesh on basic geometric shapes
 
-![example1](Images/ExampleMeshes.png)
+![niceExample](Images/ExampleMeshes.png)
 
 ## Installation
 
@@ -47,33 +47,57 @@ PacletUninstall["MeshTools"]
 ## Usage
 
 After you have installed the paclet, load it to Mathematica session with `Needs`.
-Then you can, for example, make a `ElementMesh` object from basic geometric shape and visualize it.
+To access the documentation, open the notebook interface help viewer and search for "MeshTools".
+
+### Example of extruded mesh
 
 ```mathematica
 Needs["MeshTools`"]
 
-outerMesh = AnnulusMesh[{0, 0}, {2/3, 1}, {0, 3 Pi/2}, {24, 4}];
-innerMesh = AnnulusMesh[{0, 0}, {1/2, 2/3}, {0, 3 Pi/2}, {24, 2}];
-mesh = MergeMesh[{
-    AddMeshMarkers[outerMesh, "MeshElementsMarker" -> 1],
-    AddMeshMarkers[innerMesh, "MeshElementsMarker" -> 2]
-}];
-
-mesh["Wireframe"[
-    "MeshElementStyle" -> FaceForm /@ {ColorData[112, 3], ColorData[112, 2]}]
+(* Create MeshRegion object from Graphics. *)
+region = DiscretizeGraphics[
+  Text[Style["\[Pi]", FontWeight -> "Bold"]],
+  _Text,
+  MaxCellMeasure -> 1/10
 ]
+
+(* Convert MeshRegion object to ElementMesh object and smoothen mesh (improve quality). *)
+meshTri = SmoothenMesh@ToElementMesh[region, "MeshOrder" -> 1]
+meshTri["Wireframe"]
 ```
 
-![screenshot](Images/DoubleAnnulus.png )
+![screenshot1](Images/PiMeshTriangle.png )
 
-To access the documentation, open the notebook interface help viewer and search for "MeshTools".
+```mathematica
+(* Convert triangular mesh to quadrilateral and smoothen it again. *)
+meshQuad = SmoothenMesh@TriangleToQuadMesh@meshTri
+meshQuad["Wireframe"]
+```
+
+![screenshot2](Images/PiMeshQuad.png )
+
+```mathematica
+(* Extrude 2D quadrilateral mesh to 3D hexahedral mesh (with 8 layers). *)
+mesh3D = ExtrudeMesh[meshQuad, 1, 8];
+mesh3D["Wireframe"["MeshElementStyle" -> FaceForm@LightBlue]]
+```
+
+![screenshot3](Images/PiMesh3D.png )
+
+```mathematica
+(* Inspect the minimal, average and maximal quality of 3D mesh. *)
+Through[{Min, Mean, Max}@Flatten[mesh3D["Quality"]]]
+(* {0.47, 0.91, 0.99} *)
+```
 
 ## Contributing and feedback
 
-Please use the repository ["issues"](https://github.com/c3m-labs/MeshTools/issues) page to submit bugs or feature ideas. If you find this package useful, feel free to send us feedback by email to `github(at)c3m.si`.
+Please use the repository ["issues"](https://github.com/c3m-labs/MeshTools/issues) page to submit bugs or feature ideas.
+If you find this package useful, feel free to send us feedback by email to `github(at)c3m.si`.
 
 Pull requests to this repository are welcome.
-Guidelines on how to build `.paclet` file from the source code can be found in [CONTRIBUTING.md]( CONTRIBUTING.md ) file.
+For major changes, please open an issue first to discuss what you would like to change.
+Instructions on building the `.paclet` file from source code can be found in [CONTRIBUTING.md]( CONTRIBUTING.md ) file.
 
 ## License
 

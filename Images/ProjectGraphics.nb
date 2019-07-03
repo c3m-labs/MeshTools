@@ -6,13 +6,14 @@ Cell[BoxData[
     RowBox[{"version", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
   RowBox[{"PacletDirectoryAdd", "@", 
    RowBox[{"ParentDirectory", "[", 
-    RowBox[{"NotebookDirectory", "[", "]"}], 
-    "]"}]}]}]], \
-"Input",ExpressionUUID->"98a181c1-8163-4c70-bacc-491151bba889"],
+    RowBox[{"NotebookDirectory", "[", "]"}], "]"}]}]}]], "Input",
+ CellLabel->
+  "In[224]:=",ExpressionUUID->"98a181c1-8163-4c70-bacc-491151bba889"],
 
 Cell[BoxData[
  RowBox[{"Get", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
- CellLabel->"In[85]:=",ExpressionUUID->"4ae1c006-c270-4eb3-a2e1-221f467b368d"],
+ CellLabel->
+  "In[225]:=",ExpressionUUID->"4ae1c006-c270-4eb3-a2e1-221f467b368d"],
 
 Cell[CellGroupData[{
 
@@ -26,251 +27,208 @@ Cell["Example meshes", \
 
 Cell[BoxData[{
  RowBox[{
-  RowBox[{"center", "=", 
+  RowBox[{"opts", "=", 
    RowBox[{"{", 
-    RowBox[{"0", ",", "0"}], "}"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"r1", "=", "0.8"}], ";", " ", 
-  RowBox[{"(*", " ", 
-   RowBox[{"inner", " ", "radius"}], " ", "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"r2", "=", "1."}], ";", " ", 
-  RowBox[{"(*", " ", 
-   RowBox[{"outer", " ", "radius"}], " ", "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"n1", "=", "10"}], ";", " ", 
-  RowBox[{"(*", " ", 
-   RowBox[{
-   "number", " ", "of", " ", "elements", " ", "on", " ", "quarter", " ", "of",
-     " ", "disk", " ", "perimeter"}], " ", "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"length", "=", "3"}], ";", " ", 
-  RowBox[{"(*", " ", 
-   RowBox[{"length", " ", "of", " ", "cylinder"}], " ", "*)"}], 
-  "\[IndentingNewLine]", 
-  RowBox[{"n2", "=", "10"}], ";", " ", 
-  RowBox[{"(*", " ", 
-   RowBox[{
-   "number", " ", "of", " ", "elements", " ", "in", " ", "length", " ", 
-    "direction"}], " ", "*)"}]}]}], "Input",
- CellLabel->
-  "In[128]:=",ExpressionUUID->"e20aa760-c8c4-41a4-981f-e3354fec65be"],
-
-Cell[BoxData[{
- RowBox[{"diskMesh", "=", 
-  RowBox[{"SmoothenMesh", "@", 
-   RowBox[{"DiskMesh", "[", 
-    RowBox[{"center", ",", "r1", ",", "n1", ",", 
-     RowBox[{"Method", "->", "\"\<Projection\>\""}]}], "]"}]}]}], "\n", 
- RowBox[{"annulusMesh", "=", 
-  RowBox[{"AnnulusMesh", "[", 
-   RowBox[{"center", ",", 
-    RowBox[{"{", 
-     RowBox[{"r1", ",", "r2"}], "}"}], ",", 
-    RowBox[{"{", 
-     RowBox[{"0", ",", 
-      RowBox[{"2", "Pi"}]}], "}"}], ",", 
-    RowBox[{"{", 
-     RowBox[{
-      RowBox[{"4", "*", "n1"}], ",", "3"}], "}"}]}], "]"}]}]}], "Input",
- CellLabel->
-  "In[142]:=",ExpressionUUID->"00d7411a-c35c-4bd6-b3fe-770d209dd509"],
-
-Cell[BoxData[
- RowBox[{"Show", "[", "\[IndentingNewLine]", 
-  RowBox[{
-   RowBox[{"diskMesh", "[", "\"\<Wireframe\>\"", "]"}], ",", 
-   "\[IndentingNewLine]", 
-   RowBox[{"annulusMesh", "[", "\"\<Wireframe\>\"", "]"}], ",", 
-   "\[IndentingNewLine]", 
-   RowBox[{"ImageSize", "\[Rule]", "200"}]}], "\[IndentingNewLine]", 
-  "]"}]], "Input",
- CellLabel->
-  "In[144]:=",ExpressionUUID->"30c48d4f-dd34-4983-a723-04d13d61ba79"],
-
-Cell[BoxData[
- RowBox[{"cylinderMesh", "=", 
-  RowBox[{"MergeMesh", "@", 
-   RowBox[{"{", "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{"AddMeshMarkers", "[", 
-      RowBox[{
-       RowBox[{"ExtrudeMesh", "[", 
-        RowBox[{"diskMesh", ",", "length", ",", "n2"}], "]"}], ",", "1"}], 
-      "]"}], ",", "\[IndentingNewLine]", 
-     RowBox[{"AddMeshMarkers", "[", 
-      RowBox[{
-       RowBox[{"ExtrudeMesh", "[", 
-        RowBox[{"annulusMesh", ",", "length", ",", "n2"}], "]"}], ",", "2"}], 
-      "]"}]}], "\[IndentingNewLine]", "}"}]}]}]], "Input",
- CellLabel->
-  "In[145]:=",ExpressionUUID->"6236121a-df2e-4f48-b805-f688eb76426a"],
-
-Cell[BoxData[
- RowBox[{"cylinderMesh", "[", 
-  RowBox[{"\"\<Wireframe\>\"", "[", "\[IndentingNewLine]", 
-   RowBox[{
-    RowBox[{"\"\<MeshElement\>\"", "\[Rule]", "\"\<MeshElements\>\""}], ",", 
-    "\[IndentingNewLine]", 
-    RowBox[{"ImageSize", "\[Rule]", "300"}], ",", "\[IndentingNewLine]", 
-    RowBox[{"Axes", "\[Rule]", "True"}], ",", "\[IndentingNewLine]", 
-    RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"FaceForm", "[", "Green", "]"}], ",", 
-       RowBox[{"FaceForm", "[", "Orange", "]"}]}], "}"}]}], ",", 
-    "\[IndentingNewLine]", 
-    RowBox[{"Lighting", "->", 
-     RowBox[{"{", 
-      RowBox[{"{", 
-       RowBox[{"\"\<Ambient\>\"", ",", " ", "White"}], "}"}], "}"}]}]}], 
-   "\[IndentingNewLine]", "]"}], "]"}]], "Input",
- CellLabel->
-  "In[146]:=",ExpressionUUID->"e98f5006-f5bb-4045-920e-1123ac611fbf"],
-
-Cell[BoxData[
+     RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
+      RowBox[{"FaceForm", "@", "LightBlue"}]}], ",", 
+     RowBox[{"ImageSize", "\[Rule]", "150"}]}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{"pic1", "=", 
   RowBox[{"Row", "[", 
    RowBox[{"{", "\[IndentingNewLine]", 
     RowBox[{
      RowBox[{
-      RowBox[{"DiskMesh", "[", "8", "]"}], "[", 
+      RowBox[{"CuboidMesh", "[", "8", "]"}], "[", 
       RowBox[{"\"\<Wireframe\>\"", "[", 
-       RowBox[{
-        RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
-         RowBox[{"FaceForm", "[", "Green", "]"}]}], ",", 
-        RowBox[{"ImageSize", "\[Rule]", "160"}]}], "]"}], "]"}], ",", 
+       RowBox[{"Sequence", "@@", "opts"}], "]"}], "]"}], ",", 
      "\[IndentingNewLine]", 
      RowBox[{
-      RowBox[{"SphereMesh", "[", "8", "]"}], "[", 
+      RowBox[{"BallMesh", "[", "8", "]"}], "[", 
       RowBox[{"\"\<Wireframe\>\"", "[", 
-       RowBox[{
-        RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
-         RowBox[{"FaceForm", "[", "LightBlue", "]"}]}], ",", 
-        RowBox[{"ImageSize", "\[Rule]", "200"}]}], "]"}], "]"}], 
-     "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
-     RowBox[{"cylinderMesh", "[", 
-      RowBox[{"\"\<Wireframe\>\"", "[", "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"\"\<MeshElement\>\"", "\[Rule]", "\"\<MeshElements\>\""}], 
-        ",", "\[IndentingNewLine]", 
-        RowBox[{"ImageSize", "\[Rule]", "200"}], ",", "\[IndentingNewLine]", 
-        RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"FaceForm", "[", "Green", "]"}], ",", 
-           RowBox[{"FaceForm", "[", "LightBlue", "]"}]}], "}"}]}], ",", 
-        "\[IndentingNewLine]", 
-        RowBox[{"ViewVertical", "->", 
-         RowBox[{"{", 
-          RowBox[{"0", ",", " ", "1", ",", " ", "0"}], "}"}]}]}], 
-       "\[IndentingNewLine]", "]"}], "]"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"Sequence", "@@", "opts"}], "]"}], "]"}], ",", 
+     "\[IndentingNewLine]", 
      RowBox[{
-      RowBox[{"RodriguesSpaceMesh", "[", "4", "]"}], "[", 
+      RowBox[{"CylinderMesh", "[", 
+       RowBox[{"{", 
+        RowBox[{"8", ",", "4"}], "}"}], "]"}], "[", 
       RowBox[{"\"\<Wireframe\>\"", "[", 
-       RowBox[{
-        RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
-         RowBox[{"FaceForm", "[", "LightBlue", "]"}]}], ",", 
-        RowBox[{"ImageSize", "\[Rule]", "200"}]}], "]"}], "]"}]}], 
-    "\[IndentingNewLine]", "}"}], "]"}]}]], "Input",
- CellLabel->
-  "In[152]:=",ExpressionUUID->"85461651-15cc-48df-ad42-8110135f4d83"],
-
-Cell[BoxData[
- RowBox[{"Export", "[", "\[IndentingNewLine]", 
-  RowBox[{
-   RowBox[{"FileNameJoin", "[", 
-    RowBox[{"{", 
+       RowBox[{"Sequence", "@@", "opts"}], "]"}], "]"}], ",", 
+     "\[IndentingNewLine]", 
      RowBox[{
-      RowBox[{"NotebookDirectory", "[", "]"}], ",", 
-      "\"\<ExampleMeshes.png\>\""}], "}"}], "]"}], ",", "\[IndentingNewLine]",
-    "pic1"}], "\[IndentingNewLine]", "]"}]], "Input",
- CellLabel->"In[153]:=",ExpressionUUID->"7a5bb01d-6c0f-417b-aa3e-af46aa0aa9d2"]
+      RowBox[{"PrismMesh", "[", 
+       RowBox[{"{", 
+        RowBox[{"8", ",", "4"}], "}"}], "]"}], "[", 
+      RowBox[{"\"\<Wireframe\>\"", "[", 
+       RowBox[{"Sequence", "@@", "opts"}], "]"}], "]"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"TetrahedronMesh", "[", "8", "]"}], "[", 
+      RowBox[{"\"\<Wireframe\>\"", "[", 
+       RowBox[{"Sequence", "@@", "opts"}], "]"}], "]"}]}], 
+    "\[IndentingNewLine]", "}"}], "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"NotebookDirectory", "[", "]"}], ",", 
+       "\"\<ExampleMeshes.png\>\""}], "}"}], "]"}], ",", 
+    "\[IndentingNewLine]", "%"}], "\[IndentingNewLine]", "]"}], 
+  ";"}]}], "Input",
+ CellLabel->"In[226]:=",ExpressionUUID->"65e664ae-e6b5-4e26-8ac1-95468faa963f"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
-Cell["Double annulus", \
-"Subsubsection",ExpressionUUID->"8a70efa0-ab2c-42c9-88b6-ebfcc054b9c4"],
-
-Cell[BoxData[{
- RowBox[{
-  RowBox[{"outerMesh", "=", 
-   RowBox[{"AnnulusMesh", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"0", ",", "0"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"2", "/", "3"}], ",", "1"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", 
-       RowBox[{"3", 
-        RowBox[{"Pi", "/", "2"}]}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"24", ",", "4"}], "}"}]}], "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"innerMesh", "=", 
-   RowBox[{"AnnulusMesh", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"0", ",", "0"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"1", "/", "2"}], ",", 
-       RowBox[{"2", "/", "3"}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", 
-       RowBox[{"3", 
-        RowBox[{"Pi", "/", "2"}]}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"24", ",", "2"}], "}"}]}], "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"mesh", "=", 
-    RowBox[{"MergeMesh", "[", 
-     RowBox[{"{", "\[IndentingNewLine]", 
-      RowBox[{
-       RowBox[{"AddMeshMarkers", "[", 
-        RowBox[{"outerMesh", ",", "1"}], "]"}], ",", "\[IndentingNewLine]", 
-       RowBox[{"AddMeshMarkers", "[", 
-        RowBox[{"innerMesh", ",", "2"}], "]"}]}], "\[IndentingNewLine]", 
-      "}"}], "]"}]}], ";"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
- RowBox[{"pic2", "=", 
-  RowBox[{"mesh", "[", 
-   RowBox[{"\"\<Wireframe\>\"", "[", "\[IndentingNewLine]", 
-    RowBox[{
-     RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
-      RowBox[{"FaceForm", "/@", 
-       RowBox[{"{", 
-        RowBox[{
-         RowBox[{"ColorData", "[", 
-          RowBox[{"112", ",", "3"}], "]"}], ",", 
-         RowBox[{"ColorData", "[", 
-          RowBox[{"112", ",", "2"}], "]"}]}], "}"}]}]}], ",", 
-     "\[IndentingNewLine]", 
-     RowBox[{"ImageSize", "\[Rule]", 
-      RowBox[{"{", 
-       RowBox[{"800", ",", "200"}], "}"}]}]}], "\[IndentingNewLine]", "]"}], 
-   "\[IndentingNewLine]", "]"}]}]}], "Input",
- CellLabel->
-  "In[159]:=",ExpressionUUID->"6def2372-1463-4f74-a829-a8efa3eb53c4"],
+Cell["Letter \[Pi]", \
+"Subsubsection",ExpressionUUID->"a2b95a58-7c9f-4dc8-a9ad-bf95dbca6248"],
 
 Cell[BoxData[
- RowBox[{"Export", "[", "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"$imageSize", "=", 
+   RowBox[{"{", 
+    RowBox[{"600", ",", "150"}], "}"}]}], ";"}]], "Input",
+ CellLabel->
+  "In[229]:=",ExpressionUUID->"ca4b915d-0bb0-44ad-9136-a92196cfb6fa"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{"Create", " ", "MeshRegion", " ", "object", " ", "from", " ", 
+    RowBox[{"Graphics", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{"region", "=", 
+   RowBox[{"DiscretizeGraphics", "[", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"Text", "[", 
+      RowBox[{"Style", "[", 
+       RowBox[{"\"\<\[Pi]\>\"", ",", 
+        RowBox[{"FontWeight", "\[Rule]", "\"\<Bold\>\""}]}], "]"}], "]"}], 
+     ",", "\[IndentingNewLine]", "_Text", ",", "\[IndentingNewLine]", 
+     RowBox[{"MaxCellMeasure", "\[Rule]", 
+      RowBox[{"1", "/", "10"}]}]}], "\[IndentingNewLine]", "]"}]}]}]], "Input",
+ CellLabel->
+  "In[230]:=",ExpressionUUID->"fc1e0645-b01d-4acf-b6e6-06a862250c0b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+   "Convert", " ", "MeshRegion", " ", "object", " ", "to", " ", "ElementMesh",
+     " ", "object", " ", "and", " ", "smoothen", " ", "mesh", " ", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"improve", " ", "quality"}], ")"}], "."}]}], " ", "*)"}], 
+  "\[IndentingNewLine]", 
   RowBox[{
-   RowBox[{"FileNameJoin", "[", 
-    RowBox[{"{", 
+   RowBox[{"meshTri", "=", 
+    RowBox[{"SmoothenMesh", "@", 
+     RowBox[{"ToElementMesh", "[", 
+      RowBox[{"region", ",", 
+       RowBox[{"\"\<MeshOrder\>\"", "\[Rule]", "1"}]}], "]"}]}]}], 
+   "\[IndentingNewLine]", 
+   RowBox[{"meshTri", "[", "\"\<Wireframe\>\"", "]"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"Export", "[", "\[IndentingNewLine]", 
      RowBox[{
-      RowBox[{"NotebookDirectory", "[", "]"}], ",", 
-      "\"\<DoubleAnnulus.png\>\""}], "}"}], "]"}], ",", "\[IndentingNewLine]",
-    "pic2"}], "\[IndentingNewLine]", "]"}]], "Input",
- CellLabel->"In[158]:=",ExpressionUUID->"d4fc45a8-faa8-4586-ac6f-2bce811062df"]
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"NotebookDirectory", "[", "]"}], ",", 
+         "\"\<PiMeshTriangle.png\>\""}], "}"}], "]"}], ",", 
+      "\[IndentingNewLine]", "%", ",", "\[IndentingNewLine]", 
+      RowBox[{"ImageSize", "\[Rule]", "$imageSize"}]}], "\[IndentingNewLine]",
+      "]"}], ";"}]}]}]], "Input",
+ CellLabel->
+  "In[231]:=",ExpressionUUID->"16aad253-b959-4505-a1dd-c8014e3bd8de"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+   "Convert", " ", "triangular", " ", "mesh", " ", "to", " ", "quadrilateral",
+     " ", "and", " ", "smoothen", " ", "it", " ", 
+    RowBox[{"again", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"meshQuad", "=", 
+    RowBox[{"SmoothenMesh", "@", 
+     RowBox[{"TriangleToQuadMesh", "@", "meshTri"}]}]}], 
+   "\[IndentingNewLine]", 
+   RowBox[{"meshQuad", "[", "\"\<Wireframe\>\"", "]"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"Export", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"NotebookDirectory", "[", "]"}], ",", 
+         "\"\<PiMeshQuad.png\>\""}], "}"}], "]"}], ",", "\[IndentingNewLine]",
+       "%", ",", "\[IndentingNewLine]", 
+      RowBox[{"ImageSize", "\[Rule]", "$imageSize"}]}], "\[IndentingNewLine]",
+      "]"}], ";"}]}]}]], "Input",
+ CellLabel->
+  "In[234]:=",ExpressionUUID->"c04d3b8c-adc6-4172-8c01-b4f1547ac31f"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+   "Extrude", " ", "2", "D", " ", "quadrilateral", " ", "mesh", " ", "to", 
+    " ", "3", "D", " ", "hexahedral", " ", "mesh", " ", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"with", " ", "8", " ", "layers"}], ")"}], "."}]}], " ", "*)"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"mesh3D", "=", 
+     RowBox[{"ExtrudeMesh", "[", 
+      RowBox[{"meshQuad", ",", "1", ",", "8"}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{"mesh3D", "[", 
+    RowBox[{"\"\<Wireframe\>\"", "[", 
+     RowBox[{"\"\<MeshElementStyle\>\"", "\[Rule]", 
+      RowBox[{"FaceForm", "@", "LightBlue"}]}], "]"}], "]"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"Export", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"NotebookDirectory", "[", "]"}], ",", 
+         "\"\<PiMesh3D.png\>\""}], "}"}], "]"}], ",", "\[IndentingNewLine]", 
+      "%", ",", "\[IndentingNewLine]", 
+      RowBox[{"ImageSize", "\[Rule]", "$imageSize"}]}], "\[IndentingNewLine]",
+      "]"}], ";"}]}]}]], "Input",
+ CellLabel->
+  "In[237]:=",ExpressionUUID->"c1933498-56c7-4be5-87e1-31e9a31efcde"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"Inspect", " ", "the", " ", "minimal"}], ",", " ", 
+    RowBox[{
+    "average", " ", "and", " ", "maximal", " ", "quality", " ", "of", " ", 
+     "3", "D", " ", 
+     RowBox[{"mesh", "."}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{"Through", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"Min", ",", "Mean", ",", "Max"}], "}"}], "@", 
+    RowBox[{"Flatten", "[", 
+     RowBox[{"mesh3D", "[", "\"\<Quality\>\"", "]"}], "]"}]}], 
+   "]"}]}]], "Input",
+ CellLabel->"In[240]:=",ExpressionUUID->"4fc94d70-fe49-4a31-8808-6a4595754dc5"]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{958, 966},
-WindowMargins->{{Automatic, -8}, {Automatic, 0}},
+WindowSize->{958, 1086},
+WindowMargins->{{-8, Automatic}, {Automatic, 0}},
 PrivateNotebookOptions->{"FileOutlineCache"->False},
-FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+FrontEndVersion->"12.0 for Microsoft Windows (64-bit) (April 8, 2019)",
 StyleDefinitions->"Default.nb"
 ]
+
