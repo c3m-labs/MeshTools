@@ -1662,7 +1662,7 @@ unitMeshSquareMethod[n_]:=RectangleMesh[{-1, -1},{1, 1},{n, n}];
 
 
 unitMeshPolygonMethod[n_,refinement_?BooleanQ]:=Module[
-	{squareMesh,sideMesh,d,raster,rotations},
+	{squareMesh,sideMesh,d,rotations},
 	(* Size of internal square. If mesh smoothing is used in the end, then this value is not important. *)
 	d=N[1/2];
 	squareMesh=RectangleMesh[d*{-1,-1},d*{1, 1},{n,n}];
@@ -1691,7 +1691,7 @@ DiskMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 DiskMesh[n_Integer,opts:OptionsPattern[]]:=DiskMesh[{0,0},1,n,opts];
 
 DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{method,order,unitSquare,unitDisk,rescale,unitCrds,crds},
+	{method,unitSquare,unitDisk,rescale,unitCrds,crds},
 	
 	If[n<2,Message[DiskMesh::elms,2];Return[$Failed,Module]];
 	
@@ -1911,7 +1911,7 @@ SphereMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 SphereMesh[n_Integer,opts:OptionsPattern[]]:=SphereMesh[{0,0,0},1,n,opts];
 
 SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
-	{order,rescale,cuboid,cuboidShell,crds},
+	{order,rescale,cuboidShell,crds},
 	
 	If[n<2,Message[SphereMesh::elms,2];Return[$Failed,Module]];
 	order=OptionValue["MeshOrder"]/.(Except[1|2]->1);
