@@ -1,6 +1,6 @@
 # MeshTools
 
-[![releases](http://img.shields.io/github/release-pre/c3m-labs/MeshTools.svg)](http://github.com/c3m-labs/MeshTools/releases)
+[![releases](http://img.shields.io/github/release/c3m-labs/MeshTools.svg)](http://github.com/c3m-labs/MeshTools/releases)
 [![SemVer 2.0.0](http://img.shields.io/badge/SemVer-2.0.0-brightgreen.svg)](http://semver.org/spec/v2.0.0.html)
 
 _MeshTools_ is a [Mathematica](http://www.wolfram.com/mathematica/) package for creating and manipulating

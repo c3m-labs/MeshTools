@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2019-07-04
+
+### Added
+
+- Options `"Refinement"` and `"MeshOrder"` for `DiskMesh`, `BallMesh` and `SphericalShellMesh`
+- Option `Method` for `SmoothenMesh` with values `"Direct"` or `"Iterative"`
+
+### Changed
+
+- Better accuracy of `PrismMesh` with non-coplanar faces
+- Better error reporting
+- Refactoring of internal code for readability and performance
+
 ## [0.7.1] - 2019-04-23
 
 ### Fixed
@@ -95,7 +108,8 @@ and this fixes some weird behaviour when handling boundary meshes
 
 - Initial functionality
 
-[Unreleased]: https://github.com/c3m-labs/MeshTools/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/c3m-labs/MeshTools/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/c3m-labs/MeshTools/compare/v0.7.1...v1.0.0
 [0.7.1]: https://github.com/c3m-labs/MeshTools/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/c3m-labs/MeshTools/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/c3m-labs/MeshTools/compare/v0.6.0...v0.6.1
