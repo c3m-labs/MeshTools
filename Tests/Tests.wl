@@ -1272,14 +1272,18 @@ VerificationTest[
 ];
 
 
-(* Check if all boundary nodes of unit disk are on theoretical circle. *)
+(* Check if all boundary nodes of unit disk have the same distance from the origin. *)
 VerificationTest[
 	Module[
 		{mesh,boundaryNodes},
 		mesh=DiskMesh[{0,0},1,4,"MeshOrder"->2];
 		boundaryNodes=Union@Flatten@ElementIncidents@mesh["BoundaryElements"];
-		Equal@@(Norm/@mesh["Coordinates"][[boundaryNodes]])
+		DeleteDuplicates[
+			Norm/@mesh["Coordinates"][[boundaryNodes]],
+			(Abs[#1-#2]<10^-8)&
+		]
 	],
+	{1.},
 	TestID->"DiskMesh_MeshOrder==2"
 ];
 
@@ -1383,7 +1387,7 @@ VerificationTest[
 	CircularVoidMesh[{0,0},0.2,1,0],
 	$Failed,
 	{CircularVoidMesh::elms},
-	TestID->"CircularV;oidMesh_wrong-elements"
+	TestID->"CircularVoidMesh_wrong-elements"
 ];
 
 
@@ -1622,17 +1626,26 @@ VerificationTest[
 
 
 VerificationTest[
-	SphereMesh[{1,2,3},3,3]["Bounds"],
-	{{-1.80534,3.80534},{-0.805339,4.80534},{0.194661,5.80534}},
-	SameTest->(Norm[#1-#2]<10^-3&),
+	SphereMesh[{1,2,3},2,4]["Bounds"],
+	{{-1.,3.},{0.,4.},{1.,5.}},
+	SameTest->(Norm[#1-#2]<10^-8 &),
 	TestID->"SphereMesh_arbitrary-sphere"
 ];
 
 
 VerificationTest[
-	SphereMesh[2,"MeshOrder"->2]["MeshOrder"],
-	2,
-	TestID->"SphereMesh_order=2"
+	Module[
+		{mesh,boundaryNodes},
+		mesh=SphereMesh[{0,0,0},1,4,"MeshOrder"->2];
+		boundaryNodes=Union@Flatten@ElementIncidents@mesh["BoundaryElements"];
+		DeleteDuplicates[
+			Norm/@mesh["Coordinates"][[boundaryNodes]],
+			(Abs[#1-#2]<10^-8)&
+		]
+	],
+	{1.},
+	SameTest->(Norm[#1-#2]<10^-8 &),
+	TestID->"SphereMesh_MeshOrder==2"
 ];
 
 
@@ -1741,14 +1754,18 @@ VerificationTest[
 ];
 
 
-(* Check if all boundary nodes of 2nd order mesh lie on theoretical sphere. *)
+(* Check if all boundary nodes of unit ball have the same distance from the origin. *)
 VerificationTest[
 	Module[
 		{mesh,boundaryNodes},
 		mesh=BallMesh[{0,0,0},1,4,"MeshOrder"->2];
 		boundaryNodes=Union@@First@ElementIncidents[mesh["BoundaryElements"]];
-		Equal@@(Norm/@mesh["Coordinates"][[boundaryNodes]])
+		DeleteDuplicates[
+			Norm/@mesh["Coordinates"][[boundaryNodes]],
+			(Abs[#1-#2]<10^-8)&
+		]
 	],
+	{1.},
 	TestID->"BallMesh_MeshOrder==2"
 ];
 
