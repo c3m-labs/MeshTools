@@ -1928,7 +1928,6 @@ SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	ToBoundaryMesh[
 		"Coordinates"->crds,
 		"BoundaryElements"->cuboidShell["BoundaryElements"],
-		"CheckIncidentsCompleteness"->False,
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
 		"DeleteDuplicateCoordinates"->False
