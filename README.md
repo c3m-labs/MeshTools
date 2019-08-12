@@ -42,6 +42,22 @@ All versions can be uninstalled with:
 PacletUninstall["MeshTools"]
 ```
 
+### Try it online
+
+You can try the package even without installation by going to
+[Wolfram Programming Lab](https://www.wolfram.com/programming-lab/)
+and clicking "Start programming now". This will open a new notebook in Cloud environment where you should evaluate the following to load the package.
+
+```mathematica
+Get["http://raw.githubusercontent.com/c3m-labs/MeshTools/master/MeshTools/MeshTools.wl"]
+```
+
+You will not be able to access documentation, but it is helpful to list all available functions. Then you can also try the usage example from the section below.
+
+```mathematica
+Information["MeshTools`*"]
+```
+
 ## Usage
 
 After installing the package, load it in the Mathematica session with `Needs`.
