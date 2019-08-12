@@ -15,11 +15,9 @@ meshes for finite element method (`ElementMesh` objects). It helps you to do the
 
 ## Installation
 
-The following installation guidelines are meant for people who just want to use the package functionality.
-If you would like to build the package from the source code see the "Contributing" section of this document.
-This package requires Mathematica version 11. or later.
+_MeshTools_ package requires Mathematica version 11. or later.
 
-_MeshTools_ package is released in the `.paclet` file format, which contains code,
+The package is released in the `.paclet` file format that contains the code,
 documentation and other necessary resources.
 Download the latest `.paclet` file from the
 repository ["releases"](https://github.com/c3m-labs/MeshTools/releases) page
@@ -46,7 +44,7 @@ PacletUninstall["MeshTools"]
 
 ## Usage
 
-After you have installed the paclet, load it to Mathematica session with `Needs`.
+After installing the package, load it in the Mathematica session with `Needs`.
 To access the documentation, open the notebook interface help viewer and search for "MeshTools".
 
 ### Example of extruded mesh
