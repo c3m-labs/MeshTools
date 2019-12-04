@@ -123,13 +123,15 @@ AddMeshMarkers[mesh_ElementMesh,type_String->int_Integer]:=Module[
 		ToBoundaryMesh[
 			"Coordinates"->mesh["Coordinates"],
 			"BoundaryElements"->insertMarkers[mesh,"BoundaryElements",bMark],
-			"PointElements"->insertMarkers[mesh,"PointElements",pMark]
+			"PointElements"->insertMarkers[mesh,"PointElements",pMark],
+			"RegionHoles"->mesh["RegionHoles"]
 		],
 		ToElementMesh[
 			"Coordinates"->mesh["Coordinates"],
 			"MeshElements"->insertMarkers[mesh,"MeshElements",mMark],
 			"BoundaryElements"->insertMarkers[mesh,"BoundaryElements",bMark],
-			"PointElements"->insertMarkers[mesh,"PointElements",pMark]
+			"PointElements"->insertMarkers[mesh,"PointElements",pMark],
+			"RegionHoles"->mesh["RegionHoles"]
 		]
 	]
 ];
@@ -191,7 +193,8 @@ IdentifyMeshBoundary[mesh_ElementMesh]:=Module[
 		"Coordinates"->mesh["Coordinates"],
 		"MeshElements"->mesh["MeshElements"],
 		"BoundaryElements"->{elementType[Join@@boundariesConn,markers]},
-		"PointElements"->mesh["PointElements"]
+		"PointElements"->mesh["PointElements"],
+		"RegionHoles"->mesh["RegionHoles"]
 	]
 ];
 
@@ -280,6 +283,7 @@ selectElementsByCoordinates[mesh_ElementMesh,crit_Function]:=Module[
 ];
 
 
+(* TODO: Figure out some way to handle "RegionHoles" or at least add a note to documentation.*)
 SelectElements::usage=(
 	"SelectElements[mesh, crit] creates ElementMesh made only out of nodes which match Function crit."<>"\n"<>
 	"SelectElements[mesh, ElementMarker==m] select elements with marker m."
@@ -393,6 +397,7 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction,opts:OptionsPattern[]
 			"Coordinates"->tfun/@mesh["Coordinates"],
 			"BoundaryElements"->transformElements[mesh["BoundaryElements"],reorderQ],
 			"PointElements"->transformElements[mesh["PointElements"],reorderQ],
+			"RegionHoles"->tfun/@mesh["RegionHoles"],
 			FilterRules[{opts},Options@ElementMesh]
 		],
 		ToElementMesh[
@@ -400,6 +405,7 @@ TransformMesh[mesh_ElementMesh,tfun_TransformationFunction,opts:OptionsPattern[]
 			"MeshElements"->transformElements[mesh["MeshElements"],reorderQ],
 			"BoundaryElements"->transformElements[mesh["BoundaryElements"],reorderQ],
 			"PointElements"->transformElements[mesh["PointElements"],reorderQ],
+			"RegionHoles"->tfun/@mesh["RegionHoles"],
 			FilterRules[{opts},Options@ElementMesh]
 		]
 	]
@@ -422,7 +428,7 @@ MergeMesh//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPattern[]}};
 MergeMesh[list_List/;Length[list]>=2,opts:OptionsPattern[]]:=Fold[MergeMesh[#1,#2,opts]&,list];
 
 MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
-	{elementType,head,c1,c2,newCrds,newElements,elementTypes,elementMarkers,inci1,inci2},
+	{elementType,head,c1,c2,newCrds,newElements,types,elementMarkers,inci1,inci2,regionHoles},
 	
 	If[
 		mesh1["MeshOrder"]=!=mesh2["MeshOrder"],
@@ -442,21 +448,26 @@ MergeMesh[mesh1_ElementMesh,mesh2_ElementMesh,opts:OptionsPattern[]]:=Module[
 	c1=mesh1["Coordinates"];
 	c2=mesh2["Coordinates"];
 	newCrds=Join[c1,c2];
-	elementTypes=Join[Head/@mesh1[elementType],Head/@mesh2[elementType]];
+	types=Join[Head/@mesh1[elementType],Head/@mesh2[elementType]];
 	elementMarkers=ElementMarkers/@{mesh1[elementType],mesh2[elementType]};
 	
 	inci1=ElementIncidents[mesh1[elementType]];
 	inci2=ElementIncidents[mesh2[elementType]]+Length[c1];
 	(* If all elements are of the same type, then this type is specified only once. *)
 	newElements=If[
-		SameQ@@elementTypes,
-		{First[elementTypes][Join[Join@@inci1,Join@@inci2],Flatten[elementMarkers]]},
-		MapThread[#1[#2,#3]&,{elementTypes,Join[inci1,inci2],Join@@elementMarkers}]
+		SameQ@@types,
+		{First[types][Join[Join@@inci1,Join@@inci2],Flatten[elementMarkers]]},
+		MapThread[#1[#2,#3]&,{types,Join[inci1,inci2],Join@@elementMarkers}]
 	];
+	regionHoles=DeleteDuplicates@Join[
+		mesh1["RegionHoles"]/.Automatic->{},
+		mesh2["RegionHoles"]/.Automatic->{}
+	]/.({}->Automatic);
 	
 	head[
 		"Coordinates"->newCrds,
 		elementType->newElements,
+		"RegionHoles"->regionHoles,
 		FilterRules[{opts},Options@ElementMesh]
 	]
 ];
@@ -504,7 +515,8 @@ ExtrudeMesh[mesh_ElementMesh,thickness_?Positive,layers_Integer?Positive]:=Modul
 	
 	ToElementMesh[
 		"Coordinates"->nodes3D,
-		"MeshElements"->{HexahedronElement[elements3D,markers3D]}
+		"MeshElements"->{HexahedronElement[elements3D,markers3D]},
+		"RegionHoles"->None
 	]
 ];
 
@@ -524,7 +536,7 @@ RevolveMesh::axis="Non-positive first coordinate (X) of nodes causes self-inters
 RevolveMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_}};
 
 RevolveMesh[mesh_ElementMesh,{fi1_,fi2_},layers_Integer?Positive]:=Module[
-	{min,max,n,nodes2D,nodes3DInitial,nodes3D,elements2D,elements3D,markers2D,markers3D},
+	{min,max,n,nodes2D,nodes3DInitial,nodes3D,elements2D,elements3D,markers2D,markers3D,regionHoles},
 
 	If[
 		mesh["MeshOrder"]=!=1,
@@ -576,10 +588,20 @@ RevolveMesh[mesh_ElementMesh,{fi1_,fi2_},layers_Integer?Positive]:=Module[
 	];
 
 	markers3D=Flatten@ConstantArray[markers2D,layers];
+	
+	regionHoles=If[(max-min)==2Pi,
+		If[
+			MatchQ[mesh["RegionHoles"],{{_?NumericQ..}..}],
+			Append[0.]/@mesh["RegionHoles"],
+			None
+		],
+		None
+	];
 
 	ToElementMesh[
 		"Coordinates"->nodes3D,
 		"MeshElements"->{HexahedronElement[elements3D,markers3D]},
+		"RegionHoles"->regionHoles,
 		"CheckIntersections"->False
 	]
 ];
@@ -775,7 +797,8 @@ QuadToTriangleMesh[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
 
 	head[
 		"Coordinates"->crds,
-		elementType->{TriangleElement[triangles,triMarkers]}
+		elementType->{TriangleElement[triangles,triMarkers]},
+		"RegionHoles" -> mesh["RegionHoles"]
 	]
 ];
 
@@ -822,7 +845,8 @@ HexToTetrahedronMesh[mesh_ElementMesh]:=Module[
 	
 	ToElementMesh[
 		"Coordinates"->mesh["Coordinates"],
-		"MeshElements"->{TetrahedronElement[newConnectivity,newMarkers]}
+		"MeshElements"->{TetrahedronElement[newConnectivity,newMarkers]},
+		"RegionHoles" -> mesh["RegionHoles"]
 	]
 ];
 
@@ -1546,15 +1570,17 @@ RectangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 RectangleMesh[n_Integer]:=RectangleMesh[{0,0},{1,1},{n,n}];
 
 RectangleMesh[{x1_,y1_},{x2_,y2_},{nx_Integer,ny_Integer}]:=Module[
-	{},
+	{mesh},
 	If[
 		Or[nx<1,ny<1],
 		Message[RectangleMesh::elms,1];Return[$Failed,Module]
 	];
-	StructuredMesh[
+	mesh=StructuredMesh[
 		{{{x1,y1},{x2,y1}},{{x1,y2},{x2,y2}}},
 		{nx,ny}
-	]
+	];
+	SetRegionHoles[mesh,None];
+	mesh
 ];
 
 
@@ -1604,7 +1630,7 @@ TriangleMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 TriangleMesh[n_Integer,opts:OptionsPattern[]]:=TriangleMesh[{{0,0},{1,0},{0,1}},n,opts];
 
 TriangleMesh[{p1_,p2_,p3_},n_Integer,opts:OptionsPattern[]]:=Module[
-	{type,unitMesh,tf},
+	{type,unitMesh,tf,mesh},
 	
 	If[n<1,Message[TriangleMesh::elms,1];Return[$Failed,Module]];
 	
@@ -1626,7 +1652,9 @@ TriangleMesh[{p1_,p2_,p3_},n_Integer,opts:OptionsPattern[]]:=Module[
 		Method->"Linear"
 	];
 	
-	TransformMesh[unitMesh,tf]
+	mesh=TransformMesh[unitMesh,tf];
+	SetRegionHoles[mesh,None];
+	mesh
 ];
 
 
@@ -1723,6 +1751,7 @@ DiskMesh[{x_,y_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 	ToElementMesh[
 		"Coordinates"->crds,
 		"MeshElements"->unitDisk["MeshElements"],
+		"RegionHoles"->None,
 		"CheckIntersections"->False,
 		"DeleteDuplicateCoordinates"->False
 	]
@@ -1748,7 +1777,7 @@ AnnulusMesh[{nfi_Integer,nr_Integer}]:=AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{nfi,n
 AnnulusMesh[{x_,y_},{rIn_,rOut_},{nfi_Integer,nr_Integer}]:=AnnulusMesh[{x,y},{rIn,rOut},{0,2*Pi},{nfi,nr}];
 
 AnnulusMesh[{x_,y_},{rIn_,rOut_},{fi1_,fi2_},{nfi_Integer,nr_Integer}]:=Module[
-	{min,max,raster},
+	{min,max,raster,mesh},
 	
 	If[
 		Or[nfi<1,nr<1],
@@ -1772,7 +1801,10 @@ AnnulusMesh[{x_,y_},{rIn_,rOut_},{fi1_,fi2_},{nfi_Integer,nr_Integer}]:=Module[
 		Table[rOut*{Cos[i],Sin[i]}+{x,y},{i,min,max,(max-min)/nfi}],
 		Table[rIn*{Cos[i],Sin[i]}+{x,y},{i,min,max,(max-min)/nfi}]
 	};
-	StructuredMesh[raster,{nfi,nr}]
+	mesh=StructuredMesh[raster,{nfi,nr}];
+	(* Set "RegionHoles" property if we have a proper annulus. *)
+	If[(max-min)==2Pi,SetRegionHoles[mesh,{{x,y}}]];
+	mesh
 ];
 
 
@@ -1787,7 +1819,7 @@ CircularVoidMesh::elms="Number of elements should be an integer equal or larger 
 CircularVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,_}};
 
 CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer]:=Module[
-	{raster,quarter},
+	{raster,quarter,mesh},
 	If[n<1,Message[CircularVoidMesh::elms,1];Return[$Failed,Module]];
 	(* This should also make sure that numerical quantities are compared. *)
 	If[
@@ -1801,12 +1833,14 @@ CircularVoidMesh[{cx_,cy_},radius_,size_,n_Integer]:=Module[
 	};
 	quarter=StructuredMesh[raster,{n,Ceiling[(size/radius/8)*n]}];
 	
-	MergeMesh[{
+	mesh=MergeMesh[{
 		quarter,
 		TransformMesh[quarter,RotationTransform[Pi/2,{cx,cy}]],
 		TransformMesh[quarter,RotationTransform[Pi,{cx,cy}]],
 		TransformMesh[quarter,RotationTransform[3*Pi/2,{cx,cy}]]
-	}]
+	}];
+	SetRegionHoles[mesh,{{cx,cy}}];
+	mesh
 ];
 
 
@@ -1826,15 +1860,17 @@ CuboidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,_.}};
 CuboidMesh[n_Integer]:=CuboidMesh[{0,0,0},{1,1,1},{n,n,n}];
 
 CuboidMesh[{x1_,y1_,z1_},{x2_,y2_,z2_},{nx_,ny_,nz_}]:=Module[
-	{},
+	{mesh},
 	If[Or[nx<1,ny<1,nz<1],Message[CuboidMesh::elms,1];Return[$Failed,Module]];
 	
-	StructuredMesh[{
+	mesh=StructuredMesh[{
 		{{{x1,y1,z1},{x2,y1,z1}},{{x1,y2,z1},{x2,y2,z1}}},
 		{{{x1,y1,z2},{x2,y1,z2}},{{x1,y2,z2},{x2,y2,z2}}}
 		},
 		{nx,ny,nz}
-	]
+	];
+	SetRegionHoles[mesh,None];
+	mesh
 ];
 
 
@@ -1862,7 +1898,9 @@ HexahedronMesh[{p1_,p2_,p3_,p4_,p5_,p6_,p7_,p8_},{nx_Integer,ny_Integer,nz_Integ
 			{nx,ny,nz}
 		],
 		Message[HexahedronMesh::ordering];mesh
-	]
+	];
+	SetRegionHoles[mesh,None];
+	mesh
 ];
 
 
@@ -1891,7 +1929,8 @@ CylinderMesh[{{x1_,y1_,z1_},{x2_,y2_,z2_}},r_,{nr_Integer,nz_Integer},opts:Optio
 	
 	ToElementMesh[
 		"Coordinates" -> (tf@alignedCylinder["Coordinates"]),
-		"MeshElements" -> alignedCylinder["MeshElements"]
+		"MeshElements" -> alignedCylinder["MeshElements"],
+		"RegionHoles"->None
 	]
 ];
 
@@ -1930,7 +1969,8 @@ SphereMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 		"BoundaryElements"->cuboidShell["BoundaryElements"],
 		"CheckIntersections"->False,
 		"CheckQuality"->False,
-		"DeleteDuplicateCoordinates"->False
+		"DeleteDuplicateCoordinates"->False,
+		"RegionHoles" -> {x,y,z}
 	]
 ];
 
@@ -1993,7 +2033,8 @@ SphericalShellMesh[{x_,y_,z_},{rIn_,rOut_},{nfi_Integer,nr_Integer},opts:Options
 		"BoundaryElements"->unitBall["BoundaryElements"],
 		"PointElements"->unitBall["PointElements"],
 		"CheckIntersections"->False,
-		"DeleteDuplicateCoordinates"->False
+		"DeleteDuplicateCoordinates"->False,
+		"RegionHoles" -> {x,y,z}
 	]
 ];
 
@@ -2069,6 +2110,7 @@ BallMesh[{x_,y_,z_},r_,n_Integer,opts:OptionsPattern[]]:=Module[
 		"MeshElements"->unitBall["MeshElements"],
 		"BoundaryElements"->unitBall["BoundaryElements"],
 		"PointElements"->unitBall["PointElements"],
+		"RegionHoles"->None,
 		"CheckIntersections"->False,
 		"DeleteDuplicateCoordinates"->False
 	]
@@ -2086,7 +2128,7 @@ SphericalVoidMesh::elms="Number of elements should be an integer equal or larger
 SphericalVoidMesh//SyntaxInformation={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern[]]:=Module[
-	{r,s,n,rescale,outerRaster,innerRaster,basicMesh,rt},
+	{r,s,n,rescale,outerRaster,innerRaster,basicMesh,rt,mesh},
 	
 	If[n<2,Message[SphericalVoidMesh::elms,2];Return[$Failed,Module]];
 	If[voidRadius>=cuboidSize,Message[SphericalVoidMesh::radius];Return[$Failed,Module]];
@@ -2110,7 +2152,9 @@ SphericalVoidMesh[voidRadius_,cuboidSize_,noElements_Integer,opts:OptionsPattern
 	basicMesh=StructuredMesh[{innerRaster,outerRaster},{n,n,Ceiling[n*(s/r/2)]}];
 
 	rt=RotationTransform[#*(2*Pi/3),{1,1,1},{0,0,0}]&/@{0,1,2};
-	MergeMesh[TransformMesh[basicMesh,#]&/@rt]
+	mesh=MergeMesh[TransformMesh[basicMesh,#]&/@rt];
+	SetRegionHoles[mesh,{{0.,0.,0.}}];
+	mesh
 ];
 
 
@@ -2179,7 +2223,7 @@ TetrahedronMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.,OptionsPattern[]}}
 TetrahedronMesh[n_Integer,opts:OptionsPattern[]]:=TetrahedronMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1}},n,opts];
 
 TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
-	{type,unitMesh,tf},
+	{type,unitMesh,tf,mesh},
 	
 	If[n<1,Message[TetrahedronMesh::elms,1];Return[$Failed,Module]];
 	type=OptionValue["MeshElementType"];
@@ -2200,7 +2244,9 @@ TetrahedronMesh[{p1_,p2_,p3_,p4_},n_Integer,opts:OptionsPattern[]]:=Module[
 		Method->"Linear"
 	];
 	
-	TransformMesh[unitMesh,tf]
+	mesh=TransformMesh[unitMesh,tf];
+	SetRegionHoles[mesh,None];
+	mesh
 ];
 
 
@@ -2227,7 +2273,7 @@ PrismMesh//SyntaxInformation={"ArgumentsPattern"->{_,_.}};
 PrismMesh[{n1_Integer,n2_Integer}]:=PrismMesh[{{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,0,1},{0,1,1}},{n1,n2}];
 
 PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
-	{c,m1,m2,m3},
+	{c,m1,m2,m3,mesh},
 	
 	If[n2<1,Message[PrismMesh::elms,1];Return[$Failed,Module]];
 	If[
@@ -2261,7 +2307,9 @@ PrismMesh[corners_List,{n1_Integer,n2_Integer}]:=Module[
 		{n1/2,n1/2,n2}
 	];
 	
-	MergeMesh[{m1,m2,m3}]
+	mesh=MergeMesh[{m1,m2,m3}];
+	SetRegionHoles[mesh,None];
+	mesh
 ];
 
 

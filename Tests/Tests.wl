@@ -96,6 +96,17 @@ With[{
 ];
 
 
+With[{
+	mesh=AnnulusMesh[{12,1}]
+	},
+	VerificationTest[
+		AddMeshMarkers[mesh,"MeshElementsMarker"->1]["RegionHoles"],	
+		{{0.,0.}},
+		TestID->"AddMeshMarkers_RegionHoles"
+	]
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*IdentifyMeshBoundary*)
 
@@ -235,6 +246,13 @@ With[{
 		mesh,
 		TestID->"TransformMesh_3D-double-reflection"
 	]
+];
+
+
+VerificationTest[
+	TransformMesh[AnnulusMesh[{16,2}],TranslationTransform[{1,0}]]["RegionHoles"],
+	{{1.,0.}},
+	TestID->"TransformMesh_move-RegionHoles"
 ];
 
 
@@ -469,6 +487,19 @@ Module[
 ];
 
 
+With[{
+	m1=AnnulusMesh[{0.,0.},{0.5,1.},{12,1}],
+	m2=AnnulusMesh[{3.,1.},{0.5,1.},{12,1}]
+	},
+	(* For some weird reason direct comparison of ElementMesh objects doesn't work here. *)
+	VerificationTest[
+		MergeMesh[{m1,m2}]["RegionHoles"],
+		{{0.,0.},{3.,1.}},
+		TestID->"MergeMesh_with-RegionHoles"
+	]
+];
+
+
 (* ::Subsubsection::Closed:: *)
 (*ExtrudeMesh*)
 
@@ -575,6 +606,17 @@ With[{
 		$Failed,
 		{RevolveMesh::axis},
 		TestID->"RevolveMesh_negative-Y-axis"
+	]
+];
+
+
+With[{
+	mesh=AnnulusMesh[{3.,0.},{0.8,1.},{12,1}]
+	},
+	VerificationTest[
+		RevolveMesh[mesh,{0,2*Pi},12]["RegionHoles"],	
+		{{3.,0.,0.}},
+		TestID->"RevolveMesh_RegionHoles"
 	]
 ];
 
@@ -1325,6 +1367,13 @@ VerificationTest[
 
 
 VerificationTest[
+	AnnulusMesh[{2.,3.},{0.9,1.},{4,1}]["RegionHoles"],
+	{{2.,3.}},
+	TestID->"AnnulusMesh_RegionHoles"
+];
+
+
+VerificationTest[
 	Equal[
 		AnnulusMesh[{0,0},{1/2,1},{0,2*Pi},{8,1}],
 		AnnulusMesh[{0,0},{1/2,1},{0,3*Pi},{8,1}]
@@ -1365,6 +1414,13 @@ VerificationTest[
 	CircularVoidMesh[{0,0},0.2,1,2]["Bounds"],
 	{{-0.5,0.5},{-0.5,0.5}},
 	TestID->"CircularVoidMesh_arbitrary-void-1"
+];
+
+
+VerificationTest[
+	CircularVoidMesh[{2.,3.},0.2,1,2]["RegionHoles"],
+	{{2.,3.}},
+	TestID->"CircularVoidMesh_RegionHoles"
 ];
 
 
