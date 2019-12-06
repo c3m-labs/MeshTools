@@ -1144,7 +1144,33 @@ BoundaryElementMeasure[mesh_ElementMesh]:=Module[
 (*Mesh visualization*)
 
 
-(* Based on https://mathematica.stackexchange.com/questions/176296 *)
+(* ::Subsubsection::Closed:: *)
+(*ElementMeshCurvedWireframe*)
+
+
+getEdges[ele_TriangleElement]:=Join@@Map[
+	ElementIncidents[ele][[All,#]]&,
+	MeshElementBaseFaceIncidents[TriangleElement,2][[All,{1,3,2}]]
+];
+getEdges[ele_QuadElement]:=Join@@Map[
+	ElementIncidents[ele][[All,#]]&,
+	MeshElementBaseFaceIncidents[QuadElement,2][[All,{1,3,2}]]
+];
+getEdges[ele_List]:=getEdges/@ele;
+
+
+interpolatingCurve[pts_List]/;Length[pts]==3:=BezierCurve[
+	{pts[[1]],1/2 (-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]}
+];
+interpolatingCurve[ptslist_List]:=interpolatingCurve/@ptslist;
+
+
+interpolatingCurveComplex[coords_,indices_]:=interpolatingCurve[
+	Map[coords[[#]]&,indices]
+];
+
+
+(* Based on https://mathematica.stackexchange.com/questions/108457 *)
 ElementMeshCurvedWireframe::usage="ElementMeshCurvedWireframe[mesh] plots second order mesh with curved edges.";
 ElementMeshCurvedWireframe::type="Only 2D ElementMesh objects with \"MeshOrder\"==2 are supported.";
 
@@ -1153,8 +1179,8 @@ ElementMeshCurvedWireframe//SyntaxInformation={"ArgumentsPattern"->{_,OptionsPat
 ElementMeshCurvedWireframe//Options=Join[{PlotStyle->Automatic},Options[Graphics]];
 
 ElementMeshCurvedWireframe[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
-	{triEdges,quadEdges,getEdges,interpolatingCurve,interpolatingCurveComplex,gr},
-	
+	{},
+
 	If[
 		Or[
 			mesh["EmbeddingDimension"]=!=2,
@@ -1163,21 +1189,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
 		Message[ElementMeshCurvedWireframe::type];Return[$Failed,Module]
 	];
 
-	triEdges=MeshElementBaseFaceIncidents[TriangleElement,2][[All,{1,3,2}]];
-	quadEdges=MeshElementBaseFaceIncidents[QuadElement,2][[All,{1,3,2}]];
-	
-	getEdges[ele_TriangleElement]:=Join@@(ElementIncidents[ele][[All,#]]&/@triEdges);
-	getEdges[ele_QuadElement]:=Join@@(ElementIncidents[ele][[All,#]]&/@quadEdges);
-	getEdges[ele_List]:=getEdges/@ele;
-	
-	interpolatingCurve[pts_List]/;Length[pts]==3:=
-		BezierCurve[{pts[[1]],1/2 (-pts[[1]]+4 pts[[2]]-pts[[3]]),pts[[3]]}];
-	interpolatingCurve[ptslist_List]:=interpolatingCurve/@ptslist;
-	
-	interpolatingCurveComplex[coords_,indices_]:=interpolatingCurve[
-		Map[coords[[#]]&,indices]
-	];
-	gr=Graphics[{
+	Graphics[{
 		(OptionValue[PlotStyle]/.Automatic->Black),
 		Map[
 			interpolatingCurveComplex[mesh["Coordinates"],#]&,
@@ -1185,10 +1197,7 @@ ElementMeshCurvedWireframe[mesh_ElementMesh,opts:OptionsPattern[]]:=Module[
 		]
 		},
 		FilterRules[{opts},Options@Graphics]
-	];
-	(* Explicity clear local symbols with DownValues to avoid memory leaks. *)
-	ClearAll[getEdges,interpolatingCurve,interpolatingCurveComplex];
-	gr
+	]
 ];
 
 
