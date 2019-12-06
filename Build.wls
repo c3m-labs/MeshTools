@@ -5,7 +5,7 @@
 (*This script builds the MeshTools-X.Y.Z.paclet. The creation is two step process. First the source code and other files need to be copied alongside the documentation and then the paclet file is created. Previously documentation should be generated separately with Workbench as outlined in the README.md file.*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsection:: *)
 (*Git functions*)
 
 
@@ -33,37 +33,65 @@ getGitCommitCount[dir_]:=Module[{value},
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsection:: *)
 (*Build procedure*)
 
 
+(* ::Subsubsection:: *)
+(*Initialization*)
+
+
 $name="MeshTools";
-(* Get the repository directory by using this notebook\[CloseCurlyQuote]s directory. *)
-$rootDir=If[$Notebooks,NotebookDirectory[],Directory[]];
-$source=FileNameJoin[{$rootDir,"MeshTools"}];
-$target=FileNameJoin[{$rootDir,"build",$name}];
+(* Get the distribution directory by using this notebook directory. *)
+$root=If[$Notebooks,NotebookDirectory[],Directory[]];
+(* Directory of main source code. *)
+$source=FileNameJoin[{$root,$name}];
+(* Construct the target directory from this notebooks base directory. *)
+$target=FileNameJoin[{$root,"build",$name}];
 
 
-$helpMessage=("  Script to build the paclet and install it.
-  Usage: Build.wls [options]
+$helpMessage=("
+  This script packs package source code to .paclet file.
+  Script options:
+    --help                       Output usage information
+    --release                    Build public release
+    --install                    Install just created paclet
+");
 
-  Options:
-    -h, --help                   Output usage information
-    -r, --release                Build public release");
+
+Print[$helpMessage];
+
+If[$VersionNumber<10.0, Print["Mathematica 10.0 or later required."];Quit[1]];
+
+
+(* This should support text based interface with "wolframscript" mechanism and 
+"wolfram -script" mechanism. See tutorial/WolframLanguageScripts for more info. *)
+$args=Join[$ScriptCommandLine,$CommandLine];
+
+
+(* Verify that we have git *)
+With[
+	{rg=RunProcess[{"git","--version"}]},
+	If[
+		rg===$Failed||rg["ExitCode"]!=0,
+		Print["git software is not available."];Quit[1]
+	]
+];
+
+
+If[
+	Not@DirectoryQ[$target],
+	CreateDirectory[$target,CreateIntermediateDirectories->True]
+];
+
+
+(* ::Subsubsection:: *)
+(*Copy files*)
 
 
 Module[
-	{directories},
-	
-	If[
-		MemberQ[Rest@$ScriptCommandLine,"/?"|"-h"|"--help"],
-		Print[$helpMessage];Quit[1]
-	];
-	If[
-		Not@DirectoryQ[$target],
-		CreateDirectory[$target,CreateIntermediateDirectories->True]
-	];
-	(* Copy neccesseary files from the source to the target directory. *)
+	{docDir,docFiles,lastModTime},
+	(* Copy package files from the source to the target directory. *)
 	Map[
 		CopyFile[
 			FileNameJoin[{$source,#}],
@@ -73,45 +101,59 @@ Module[
 		{"MeshTools.wl","PacletInfo.m"}
 	];
 
-	(* Delete old and copy the new source directories. 
-	"Documentation" directory should be already created by documentation build procedure. *)
-	If[
-		Not@FileExistsQ[FileNameJoin[{$target,"Documentation"}]],
-		Print["  Warning! Documentation directory was not found in build folder."]
-	];
-	
-	directories={"FrontEnd","Kernel"};
+	(* Delete old and copy the new source directories. *)
 	Map[
+		(
 		If[
 			FileExistsQ[FileNameJoin[{$target,#}]],
 			DeleteDirectory[FileNameJoin[{$target,#}],DeleteContents->True]
-		]&,
-		directories
+		];
+		CopyDirectory[FileNameJoin[{$source,#}],FileNameJoin[{$target,#}]]
+		)&,
+		{"FrontEnd","Kernel"}
 	];
-	Map[
-		CopyDirectory[FileNameJoin[{$source,#}],FileNameJoin[{$target,#}]]&,
-		directories
+
+	(* Documentation should be built with a separate procedure before. *)
+	docDir=FileNameJoin[{$target,"Documentation"}];
+	docFiles=FileNames["*.nb",docDir,Infinity];
+	If[
+		docFiles=!={},
+		lastModTime=Min[FileDate[#,"Modification"]&/@docFiles];
+		(* Check if all notebooks have been created at least one hour ago. *)
+		If[
+			(AbsoluteTime@Now-AbsoluteTime@lastModTime)/3600 > 1.,
+			Print["  Warning! Documentation notebooks may be outdated."];
+			Print["  Last modification date is: ",DateString@lastModTime]
+		],
+		Print["  Warning! Documentation notebooks are missing in build folder."]
 	];
 ];
 
 
 Module[
-	{original, modified,noCommits,revision,internalQ},
+	{original,modified,noCommits,revision,publicQ,version},
 
-	original=Import[FileNameJoin[{$source,"PacletInfo.m"}]];
-	noCommits=getGitCommitCount[$rootDir];
-	revision=getGitRevision[$rootDir];
-	internalQ=Not@MemberQ[Rest@$ScriptCommandLine,"-r"|"--release"];
-		
+	original=List@@Import[FileNameJoin[{$source,"PacletInfo.m"}]];
+	noCommits=getGitCommitCount[$root];
+	revision=getGitRevision[$root];
+	publicQ=MemberQ[$args,"--release"];
+
 	(* Description of git repository (git describe ...) returns a string that cannot 
 	be used as BuildNumber because only integers are accepted. 
-	Otherwise PackPaclet returns $Failed and procedure fails. Instead now commit count is used. *)
-	modified=Fold[
-			Insert[#1,#2,4]&,
-			original,
-			{Internal->internalQ,BuildNumber->noCommits,"Hash"->revision}
+	Otherwise PackPaclet returns $Failed and procedure fails. Instead commit count is used. 
+	Version cannot be appended with build number, because otherwise we break procedure
+	of loading development version with PacletDirectoryAdd. *)
+	modified=Paclet@@Normal[Merge[{
+		Association@@original,
+		<|Internal->Not@publicQ,BuildNumber->noCommits,"Hash"->revision|>
+		},
+		Last
+	]];
+
+	If[
+		StringContainsQ[revision,"dirty"],
+		Print["  Warning! Repository contains uncommited changes."]
 	];
-	
 	Export[
 		FileNameJoin[{$target,"PacletInfo.m"}],
 		modified,
@@ -120,23 +162,38 @@ Module[
 ];
 
 
+(* ::Subsubsection:: *)
+(*Create .paclet file*)
+
+
 Module[
-	{pacletPath,newPaclet},
-	
+	{path,newPaclet,buildNo,successQ},
+
+	buildNo=getGitCommitCount[$root];
+	Print["  Build number: ",buildNo];
+
 	Needs["PacletManager`"];
 	(* Change into the build directory and create the paclet. *)	
-	SetDirectory[FileNameJoin[{$rootDir,"build"}]];
-	pacletPath=PackPaclet[$name];
+	SetDirectory@FileNameJoin[{$root,"build"}];
+	path=PackPaclet[$name];
 	ResetDirectory[];
-	
-	(*Uninstall all previous versions. *)
-	If[PacletFind[$name]=!={},PacletUninstall[$name]];
-	newPaclet=PacletInstall[pacletPath];
-	RebuildPacletData[];
-	
+	(* We check if the paclet was created less than 1 second ago. *)
+	successQ=TrueQ[(AbsoluteTime@Now-AbsoluteTime@FileDate@path)<1.];
+
 	If[
-		Length@PacletFind["MeshTools"]===1,
-		Print["  ",FileNameTake[pacletPath]," built and installed succesfully."];Quit[0],
+		successQ,
+		Print["  ",FileNameTake[path]," built succesfully."],
 		Print["  Paclet build failed!"];Quit[1]
-	]
-];
+	];
+
+	If[
+		MemberQ[$args,"--install"],
+		(* Uninstall older versions first. *)
+		If[PacletFind[$name]=!={},PacletUninstall[$name]];
+		newPaclet=PacletInstall[path];
+		RebuildPacletData[];
+		Print["  Paclet is installed to $UserBasePacletsDirectory."];
+	];
+
+	If[successQ,Quit[0],Quit[1]]
+]
