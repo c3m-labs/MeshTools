@@ -4,7 +4,7 @@
 (* BuildNumber and Internal values should be inserted during build procedure. *)
 Paclet[
 	Name -> "MeshTools",
-	Version -> "1.0.0",
+	Version -> "1.0.1",
 	WolframVersion -> "11.+",
 	Description -> "Utilities for creating and manipulating ElementMesh objects.",
 	Creator -> "Matevz Pintar",
@@ -24,7 +24,7 @@ Paclet[
 		{"PacletServer",
 			"Tags" -> {"finite-elements","mesh","FEM"},
 			"Categories" -> {"FEM"},
-			"Description" -> "A package with utilities for creating and manipulating ElementMesh objects.",
+			"Description" -> "Utilities for creating and manipulating ElementMesh objects.",
 			"License" -> "MIT"
 		}
 	}
