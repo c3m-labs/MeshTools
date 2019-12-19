@@ -42,17 +42,27 @@ All versions can be uninstalled with:
 PacletUninstall["MeshTools"]
 ```
 
+Alternative method of installation for Mathematica version 12.0+ is to use
+[ResourceFunction["GitHubInstall"]](https://resources.wolframcloud.com/FunctionRepository/resources/GitHubInstall)
+from Wolfram Function Repository. Note that you need to be logged in with (free) Wolfram Account to use it.
+
+```mathematica
+ResourceFunction["GitHubInstall"]["c3m-labs", "MeshTools"]
+```
+
 ### Try it online
 
 You can try the package even without installation by going to
 [Wolfram Programming Lab](https://www.wolfram.com/programming-lab/)
-and clicking "Start programming now". This will open a new notebook in Cloud environment where you should evaluate the following to load the package.
+and clicking "Start programming now".
+This will open a new notebook in Cloud environment where you should evaluate the following to load the package.
 
 ```mathematica
 Get["http://raw.githubusercontent.com/c3m-labs/MeshTools/master/MeshTools/MeshTools.wl"]
 ```
 
-You will not be able to access documentation, but it is helpful to list all available functions. Then you can also try the usage example from the section below.
+You will not be able to access documentation, but it is helpful to list all available functions.
+Then you can also try the usage example from the section below.
 
 ```mathematica
 Information["MeshTools`*"]
