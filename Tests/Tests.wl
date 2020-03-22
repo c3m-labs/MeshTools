@@ -1013,24 +1013,15 @@ With[{
 
 (* Explicitly test node and element ordering in this fundamental function. *)
 VerificationTest[
-	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{2,1}],
-	ElementMesh[
-		{{0.,0.},{0.,1.},{1.,0.},{1.,1.},{2.,0.},{2.,1.}},
-		{QuadElement[{{1,3,4,2},{3,5,6,4}}]},
-		{LineElement[{{1,3},{4,2},{2,1},{3,5},{5,6},{6,4}}]}
-	],
+	StructuredMesh[{{{0,0},{2,0}},{{0,1},{2,1}}},{2,1}]["MeshElements"],
+	{QuadElement[{{1,3,4,2},{3,5,6,4}}]},
 	TestID->"StructuredMesh_2D-1"
 ];
 
 
 VerificationTest[
-	StructuredMesh[{{{0,0,0},{2,0,0}},{{0,1,0},{2,1,0}}},{2,1}],
-	ElementMesh[
-		{{0.,0.,0.},{0.,1.,0.},{1.,0.,0.},{1.,1.,0.},{2.,0.,0.},{2.,1.,0.}},
-		Automatic,
-		{QuadElement[{{1,3,4,2},{3,5,6,4}},{1,1}]},
-		{PointElement[{{1},{2},{3},{4},{5},{6}}]}
-	],
+	StructuredMesh[{{{0,0,0},{2,0,0}},{{0,1,0},{2,1,0}}},{2,1}]["BoundaryElements"],
+	{QuadElement[{{1,3,4,2},{3,5,6,4}},{1,1}]},
 	TestID->"StructuredMesh_3D-1"
 ];
 
