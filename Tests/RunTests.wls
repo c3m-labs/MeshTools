@@ -1,52 +1,43 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
-$helpMessage=("  Usage: RunTests.wls [options]
+$name = "MeshTools";
 
-  Options:
-    -h, --help                   Output usage information");
-
-
-If[
-	MemberQ[Rest@$ScriptCommandLine,"/?"|"-h"|"--help"],
-	Print[$helpMessage];Quit[1]
-];
-
-
-Print["  Running \"MeshTools\" tests...","\n"];
+Print["  Running tests for package ","\"",$name,"\"..."];
 
 (* Modify paths depending from which directory the script is started.
 By default we assume script is started from git root directory. *)
-PacletDirectoryAdd@Directory[];
-Get["MeshTools`"];
+(* Message appearing in Mma 12.1 is suppressed. *)
+Quiet[
+	PacletDirectoryAdd@Directory[],
+	PacletDirectoryAdd::expobs
+];
 
-Print["  Using Mathematica: ",$VersionNumber];
+Get[$name<>"`"];
+
+Print["  Mathematica: ",$VersionNumber];
 
 Module[
-	{report,time,results,failIdx},
-	
-	report=TestReport[
-		FileNameJoin[{Directory[],"Tests","Tests.wl"}]
-	];
-	time=Round[
-		QuantityMagnitude@report["TimeElapsed"],
-		0.001
-	];
+	{report,time,results,count},
+	(* Set here the name of file(s) containing actual tests. *)
+	report=TestReport@FileNameJoin[{Directory[],"Tests","Tests.wl"}];
+	time=Round[QuantityMagnitude@report["TimeElapsed"],0.01];
 	results=report["TestResults"];
-	failIdx=report["TestsFailedIndices"];
-	
-	Print["\n","  ",Length[results]," tests run in ",time," seconds."];
-	
+	count=Length[results];
+
+	Print["\n","  ",ToString@count," tests run in ",ToString@time," seconds."];
+
 	If[
 		TrueQ@report["AllTestsSucceeded"]
 		,
-		Print["  All tests succeeded!"];
+		Print["\n","  All tests passed."];
 		Quit[0] (* exit code if all test pass *)
 		,
-		Print["  ",Length[failIdx]," tests failed!"];
+		Print["\n","  Some tests failed!"];
+		Print["  Idx | Outcome | TestID"];
 		Do[
-			Print["  ",i," / ",results[i]["Outcome"]," / ",results[i]["TestID"]],
-			{i,failIdx}
+			Print["  ",StringPadLeft[ToString[i], 3]," | ",results[i]["Outcome"]," | ",results[i]["TestID"]],
+			{i,report["TestsFailedIndices"]}
 		];
 		Quit[1] (* exit code if any test fails *)
 	]
