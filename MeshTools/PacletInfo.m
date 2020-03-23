@@ -1,7 +1,6 @@
 (* ::Package:: *)
 
 (* Paclet Info File *)
-(* BuildNumber and Internal values should be inserted during build procedure. *)
 Paclet[
 	Name -> "MeshTools",
 	Version -> "1.0.1",
@@ -13,7 +12,7 @@ Paclet[
 	Thumbnail->"FrontEnd/Icon.png",
 	Extensions -> {
 		{"Kernel",
-			Root -> ".",
+			Root -> "Kernel",
 			Context ->{"MeshTools`"}
 		},
 		{"Documentation",
