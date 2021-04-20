@@ -163,7 +163,10 @@ Module[
 
 	(* Change into the build directory and create the paclet. *)	
 	SetDirectory@FileNameJoin[{$root,"build"}];
-	path=Quiet[PackPaclet[$name],PackPaclet::expobs];
+	path=With[
+		{createPaclet = If[$VersionNumber >= 12.1, CreatePacletArchive, PackPaclet]},
+		createPaclet@$name
+	];
 	ResetDirectory[];
 	successQ=TrueQ[(AbsoluteTime@Now-AbsoluteTime@FileDate@path)<1.];
 
@@ -172,8 +175,11 @@ Module[
 		(* Uninstall older versions first. *)
 		Quiet@PacletUninstall[$name];
 		(* Option ForceVersionInstall appears in 12.1 *)
-		PacletInstall[path,ForceVersionInstall->True];
-		Quiet[RebuildPacletData[], RebuildPacletData::expobs];
+		If[
+			$VersionNumber >= 12.1,
+			PacletInstall[path,ForceVersionInstall->True];PacletDataRebuild[],
+			PacletInstall[path];RebuildPacletData[]
+		];
 	];
 
 	If[

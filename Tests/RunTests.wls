@@ -7,10 +7,9 @@ Print["  Running tests for package ","\"",$name,"\"..."];
 
 (* Modify paths depending from which directory the script is started.
 By default we assume script is started from git root directory. *)
-(* Message appearing in Mma 12.1 is suppressed. *)
-Quiet[
-	PacletDirectoryAdd@Directory[],
-	PacletDirectoryAdd::expobs
+With[
+  {load = If[$VersionNumber >= 12.1, PacletDirectoryLoad, PacletDirectoryAdd]},
+  load@Directory[]
 ];
 
 Get[$name<>"`"];
