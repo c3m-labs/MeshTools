@@ -59,7 +59,7 @@ Cell[BoxData[{
        RowBox[{"{", 
         RowBox[{"fields", "/.", "abbreviations"}], "}"}], ",", "results"}], 
       "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}], "Code",
- CellLabel->"In[5]:=",ExpressionUUID->"04d04d1e-87b9-4ec7-8c6f-ce8dec6e1622"],
+ CellLabel->"In[23]:=",ExpressionUUID->"04d04d1e-87b9-4ec7-8c6f-ce8dec6e1622"],
 
 Cell[BoxData[{
  RowBox[{
@@ -132,7 +132,7 @@ Cell[BoxData[{
             RowBox[{"indx", "\[Rule]", "Pink"}], "]"}]}], "}"}]}]}], "\n", 
        "\t", "]"}]}], ";", "\n", "\t", "tr"}]}], "\[IndentingNewLine]", 
    "]"}]}]}], "Code",
- CellLabel->"In[7]:=",ExpressionUUID->"7e06ad6f-eade-47b7-9992-593d8a7fb9ec"]
+ CellLabel->"In[25]:=",ExpressionUUID->"7e06ad6f-eade-47b7-9992-593d8a7fb9ec"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -141,14 +141,25 @@ Cell["Run tests", \
 "Subsection",ExpressionUUID->"edf6a835-705a-40fc-8336-a18d15aeed56"],
 
 Cell[BoxData[
- RowBox[{"PacletDirectoryAdd", "@", 
-  RowBox[{"ParentDirectory", "[", 
-   RowBox[{"NotebookDirectory", "[", "]"}], "]"}]}]], "Input",
- CellLabel->"In[9]:=",ExpressionUUID->"039342a1-1f22-4eb4-9904-3c765afb5aa4"],
+ RowBox[{
+  RowBox[{"With", "[", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"load", "=", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{"$VersionNumber", "\[GreaterEqual]", "12.1"}], ",", 
+        "PacletDirectoryLoad", ",", "PacletDirectoryAdd"}], "]"}]}], "}"}], 
+    ",", "\[IndentingNewLine]", 
+    RowBox[{"load", "@", 
+     RowBox[{"ParentDirectory", "[", 
+      RowBox[{"NotebookDirectory", "[", "]"}], "]"}]}]}], 
+   "\[IndentingNewLine]", "]"}], ";"}]], "Input",
+ CellLabel->"In[27]:=",ExpressionUUID->"039342a1-1f22-4eb4-9904-3c765afb5aa4"],
 
 Cell[BoxData[
  RowBox[{"Get", "[", "\"\<MeshTools`\>\"", "]"}]], "Input",
- CellLabel->"In[10]:=",ExpressionUUID->"14195be3-dd3b-43e0-8f94-0c5b462dbb58"],
+ CellLabel->"In[28]:=",ExpressionUUID->"14195be3-dd3b-43e0-8f94-0c5b462dbb58"],
 
 Cell[BoxData[{
  RowBox[{
@@ -163,13 +174,13 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"printTestResults", "[", "$testReport", "]"}], ";"}]}], "Code",
  InitializationCell->False,
- CellLabel->"In[11]:=",ExpressionUUID->"7f575fa4-4912-41ac-85ef-d7cd3cf3fa68"]
+ CellLabel->"In[29]:=",ExpressionUUID->"7f575fa4-4912-41ac-85ef-d7cd3cf3fa68"]
 }, Open  ]]
 },
 WindowSize->{574.8, 579.6},
 WindowMargins->{{Automatic, -4.7999999999999545`}, {Automatic, 0}},
 PrivateNotebookOptions->{"FileOutlineCache"->False},
-FrontEndVersion->"12.1 for Microsoft Windows (64-bit) (March 14, 2020)",
+FrontEndVersion->"12.2 for Microsoft Windows (64-bit) (December 12, 2020)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"01e972ca-fd26-4301-807c-bec07cf57863"
 ]
